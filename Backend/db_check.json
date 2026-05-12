@@ -1,0 +1,678 @@
+{
+  "User": {
+    "id": {
+      "type": "CHAR(36)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": true,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "firstName": {
+      "type": "VARCHAR(255)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "lastName": {
+      "type": "VARCHAR(255)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "email": {
+      "type": "VARCHAR(255)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "password": {
+      "type": "VARCHAR(255)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "mobile": {
+      "type": "VARCHAR(255)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isEmailVerified": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isMobileVerified": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "emailVerificationToken": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "mobileOTP": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "otpExpiry": {
+      "type": "DATETIME",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "emailTokenExpiry": {
+      "type": "DATETIME",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isOnline": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "1",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "lastSeen": {
+      "type": "DATETIME",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isBlocked": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isDeleted": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "registrationIp": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "autoSuspended": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "passwordResetToken": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "passwordResetExpiry": {
+      "type": "DATETIME",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "createdAt": {
+      "type": "DATETIME",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "updatedAt": {
+      "type": "DATETIME",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "agreedToTerms": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "is18Plus": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "consentIp": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "consentAt": {
+      "type": "DATETIME",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "role": {
+      "type": "ENUM('user','admin')",
+      "allowNull": true,
+      "defaultValue": "user",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "dateOfBirth": {
+      "type": "DATE",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isSocialVerified": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isIdentityVerified": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "membershipType": {
+      "type": "ENUM('basic','gold','diamond','platinum')",
+      "allowNull": true,
+      "defaultValue": "basic",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    }
+  },
+  "Profile": {
+    "id": {
+      "type": "CHAR(36)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": true,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "userId": {
+      "type": "CHAR(36)",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "customId": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "firstName": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "lastName": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "dob": {
+      "type": "DATE",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "height": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "maritalStatus": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "gender": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "createdBy": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "country": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "state": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "city": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "area": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "relocate": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "religion": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "caste": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "subCaste": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "motherTongue": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "culture": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "highestDegree": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "college": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "profession": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "industry": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "company": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "income": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "familyType": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "familyLocation": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "fatherStatus": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "motherStatus": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "siblings": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "diet": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "smoking": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "drinking": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "activity": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "bio": {
+      "type": "TEXT",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "expectations": {
+      "type": "TEXT",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "preferredAge": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "preferredLocation": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "dealBreakers": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "mobile": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "email": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "contactTime": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "zodiacSign": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "horoscopeDob": {
+      "type": "DATE",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "horoscopeTime": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "horoscopePlace": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "verificationStatus": {
+      "type": "ENUM('pending','approved','rejected')",
+      "allowNull": true,
+      "defaultValue": "pending",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "rejectionReason": {
+      "type": "VARCHAR(255)",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "isKycVerified": {
+      "type": "TINYINT(1)",
+      "allowNull": true,
+      "defaultValue": "0",
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "createdAt": {
+      "type": "DATETIME",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "updatedAt": {
+      "type": "DATETIME",
+      "allowNull": false,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    },
+    "socialLinks": {
+      "type": "JSON",
+      "allowNull": true,
+      "defaultValue": null,
+      "primaryKey": false,
+      "autoIncrement": false,
+      "comment": null
+    }
+  }
+}
