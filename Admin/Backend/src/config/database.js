@@ -3,16 +3,22 @@ const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    dialect: "mysql",
-    logging: false,
-  },
-);
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: process.env.DB_DIALECT || "mysql",
+      logging: false,
+    })
+  : new Sequelize(
+      process.env.DB_NAME,
+      process.env.DB_USER,
+      process.env.DB_PASSWORD,
+      {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT || ((process.env.DB_DIALECT || "mysql") === "postgres" ? 5432 : 3306),
+        dialect: process.env.DB_DIALECT || "mysql",
+        logging: false,
+      },
+    );
 
 const connectDB = async () => {
   try {
@@ -46,22 +52,31 @@ const connectDB = async () => {
     await Coupon.sync();
     await OtaUpdate.sync();
 
-    // Programmatically ensure Feedback columns exist in Feedbacks table
-    try {
-      const [columns] = await sequelize.query("DESCRIBE Feedbacks");
-      const checkAndAdd = async (fieldName, columnDef) => {
-        const exists = columns.some(c => c.Field === fieldName);
-        if (!exists) {
-          console.log(`Adding '${fieldName}' column to Feedbacks table...`);
-          await sequelize.query(`ALTER TABLE Feedbacks ADD COLUMN ${fieldName} ${columnDef}`);
-          console.log(`✅ Added '${fieldName}' column successfully.`);
+    const queryInterface = sequelize.getQueryInterface();
+
+    // Helper to ensure a column exists
+    const ensureColumn = async (tableName, columnName, columnDefinition) => {
+      try {
+        const tableDefinition = await queryInterface.describeTable(tableName);
+        if (!tableDefinition[columnName]) {
+          console.log(`Adding '${columnName}' column to ${tableName} table...`);
+          await queryInterface.addColumn(tableName, columnName, columnDefinition);
+          console.log(`✅ Added '${columnName}' column to ${tableName} successfully.`);
         }
-      };
-      await checkAndAdd('attachmentUrl', 'VARCHAR(255) NULL');
-      await checkAndAdd('adminResponse', 'TEXT NULL');
-    } catch (feedbackColError) {
-      console.error("Error ensuring Feedback columns in database:", feedbackColError);
-    }
+      } catch (colError) {
+        console.error(`Error ensuring ${columnName} column in ${tableName}:`, colError);
+      }
+    };
+
+    // Programmatically ensure Feedback columns exist in Feedbacks table
+    await ensureColumn("Feedbacks", "attachmentUrl", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+    await ensureColumn("Feedbacks", "adminResponse", {
+      type: Sequelize.TEXT,
+      allowNull: true,
+    });
 
     console.log("✅ Admin Database synced.");
   } catch (error) {
