@@ -25,32 +25,11 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log("✅ Admin Database connected successfully.");
 
-    // Import all models via associations
-    const {
-      Admin,
-      AdminLog,
-      Report,
-      SystemSetting,
-      Announcement,
-      Notification,
-    } = require("../models/associations");
+    // Import all models via associations to register them with Sequelize
+    require("../models/associations");
 
-    // Sync tables.
-    // Admin specific tables:
-    // Sync tables
-    await Admin.sync();
-    await AdminLog.sync();
-
-    // Shared tables that Admin might have modified or specific to this phase:
-    await SystemSetting.sync();
-    await Announcement.sync();
-    await Report.sync();
-    await Notification.sync();
-    const { Feedback, SuccessStory, Coupon, OtaUpdate } = require("../models/associations");
-    await Feedback.sync();
-    await SuccessStory.sync();
-    await Coupon.sync();
-    await OtaUpdate.sync();
+    // Sync all tables automatically in the correct order (resolving foreign keys)
+    await sequelize.sync();
 
     const queryInterface = sequelize.getQueryInterface();
 
