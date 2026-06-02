@@ -1,9 +1,7 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import Toast from "react-native-toast-message";
-import { DEV_HOST } from "../services/api";
-
-const MAIN_SOCKET_URL = `http://${DEV_HOST}:5000`;
+import { MAIN_SOCKET_URL } from "../services/api";
 
 /**
  * Custom React hook to listen for real-time notification socket events.

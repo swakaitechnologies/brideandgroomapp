@@ -1,8 +1,6 @@
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import { DEV_HOST } from "../services/api";
-
-const MAIN_SOCKET_URL = `http://${DEV_HOST}:5000`;
+import { MAIN_SOCKET_URL } from "../services/api";
 
 /**
  * React hook to listen for real-time updates for a specific profile.
