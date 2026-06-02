@@ -91,6 +91,13 @@ app.use(
       if (process.env.NODE_ENV === "production") {
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
+          return;
+        }
+
+        // Dynamically allow any Vercel or Render subdomains for easier deployment
+        const isVercelOrRender = /https:\/\/[a-zA-Z0-9-]+\.(vercel\.app|onrender\.com)$/.test(origin);
+        if (isVercelOrRender) {
+          callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
         }
