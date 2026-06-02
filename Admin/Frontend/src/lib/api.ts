@@ -1,9 +1,16 @@
 import axios from "axios";
 
+// Production URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_ADMIN_API_URL || "http://localhost:5001/api/admin",
+  baseURL: import.meta.env.VITE_ADMIN_API_URL || "https://brideandgroomapp-b6zs.onrender.com/api/admin",
   withCredentials: true,
 });
+
+// Development URL
+// const api = axios.create({
+//   baseURL: import.meta.env.VITE_ADMIN_API_URL || "http://localhost:5001/api/admin",
+//   withCredentials: true,
+// });
 
 let csrfToken: string | null = null;
 
