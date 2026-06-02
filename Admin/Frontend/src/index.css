@@ -1,0 +1,105 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Premium & Elegant Palette (Luxury) */
+  --color-primary: #4b0082;
+  /* Deep Purple */
+  --color-primary-hover: #380062;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #d4af37;
+  /* Champagne Gold */
+  --color-secondary-hover: #b8972f;
+  --color-secondary-foreground: #ffffff;
+
+  --color-background: #fcfbfa;
+  /* Primary Neutral (60%) */
+  --color-foreground: #1a1a1a;
+
+  --color-muted: #f3f0ff;
+  /* Lavender Tint */
+  --color-muted-foreground: #6b6b6b;
+
+  --color-accent: #e6e6fa;
+  /* Lavender */
+  --color-accent-foreground: #4b0082;
+
+  --color-border: #e5e0f0;
+  /* Soft Purple divider */
+  --color-input: #ffffff;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+
+  --radius-lg: 24px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --shadow-soft:
+    0 10px 40px -10px rgba(75, 0, 130, 0.1),
+    0 4px 12px -5px rgba(26, 26, 26, 0.05);
+  --shadow-elevated: 0 25px 50px -12px rgba(75, 0, 130, 0.15);
+
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-float: float 4s ease-in-out infinite;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased font-medium;
+    font-family: "Plus Jakarta Sans", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-medium tracking-tight;
+    font-family: "Outfit", sans-serif;
+    /* Cleaner geometric headings */
+  }
+}
+
+@layer components {
+  .container {
+    @apply mx-auto px-4 max-w-7xl w-full;
+  }
+
+  .input-admin {
+    @apply px-4 py-3 bg-white border border-border rounded-2xl text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+
+
+

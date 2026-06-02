@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "615988142771",
+    "project_id": "brideandgroomapp",
+    "storage_bucket": "brideandgroomapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:615988142771:android:18af3369f17fef0c78c6c6",
+        "android_client_info": {
+          "package_name": "com.brideandgroom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCK0zTWt9YrEVmcHU2f2Gi2asqzd0tpmS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

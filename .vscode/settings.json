@@ -1,0 +1,59 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/bower_components/**",
+        "**/dist/**",
+        "**/build/**"
+    ],
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/android/build": true,
+        "**/android/app/build": true,
+        "**/ios/build": true
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/android/build": true,
+        "**/android/app/build": true,
+        "**/ios/build": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/*/**": true,
+        "**/dist/*/**": true,
+        "**/build/*/**": true,
+        "**/android/build/*/**": true,
+        "**/android/app/build/*/**": true,
+        "**/ios/build/*/**": true
+    },
+    "sonarlint.exclude": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/android/build/**",
+        "**/android/app/build/**",
+        "**/ios/build/**"
+    ],
+    "sonarlint.rules": {
+        "javascript:S5122": {
+            "level": "off"
+        },
+        "typescript:S5122": {
+            "level": "off"
+        },
+        "javascript:S5886": {
+            "level": "off"
+        },
+        "typescript:S5886": {
+            "level": "off"
+        }
+    },
+    "eslint.options": {
+        "ignore": true
+    },
+    "java.configuration.updateBuildConfiguration": "automatic"
+}

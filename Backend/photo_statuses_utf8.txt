@@ -1,0 +1,24 @@
+﻿[dotenv@17.2.3] injecting env (20) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+Executing (default): SELECT `id`, `userId`, `url`, `thumbnailUrl`, `isMain`, `status`, `isBlurred`, `createdAt`, `updatedAt` FROM `Photos` AS `Photo`;
+[
+  {
+    "u": "75a46378-07a2-4fb2-ae90-22e1c241d079",
+    "s": "approved",
+    "url": "http://localhost:9000/user-photos/users/75a46378-07a2-4fb2-ae90-22e1c241d079/74778b97-98df-4867-8f11-df7357e10359_full.webp"
+  },
+  {
+    "u": "75a46378-07a2-4fb2-ae90-22e1c241d079",
+    "s": "pending",
+    "url": "http://localhost:9000/user-photos/users/75a46378-07a2-4fb2-ae90-22e1c241d079/316f49a2-4be8-4c78-94be-a1bb422b0fd4_full.webp"
+  },
+  {
+    "u": "2832115a-637d-4175-b17a-ee8542a0255a",
+    "s": "approved",
+    "url": "http://localhost:9000/user-photos/2832115a-637d-4175-b17a-ee8542a0255a/c7619251-6e5a-43ca-923c-37ca90fd7436.webp"
+  },
+  {
+    "u": "75a46378-07a2-4fb2-ae90-22e1c241d079",
+    "s": "approved",
+    "url": "http://localhost:9000/user-photos/75a46378-07a2-4fb2-ae90-22e1c241d079/08a65219-9db6-4e04-8e07-83e334b61a2c.webp"
+  }
+]

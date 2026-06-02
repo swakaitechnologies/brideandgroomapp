@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.git
+.vscode
+.env
+.env*
+*.md
+Dockerfile
+.dockerignore
+*.js
+!src/**/*.js
+!config/**/*.js
+seed_*.js
+check_*.js
+.gitignore
