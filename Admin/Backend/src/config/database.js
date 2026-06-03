@@ -18,6 +18,12 @@ const dialect = getDialect();
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: dialect,
+      dialectOptions: dialect === "postgres" ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      } : {},
       logging: false,
     })
   : new Sequelize(
@@ -28,6 +34,12 @@ const sequelize = process.env.DATABASE_URL
         host: process.env.DB_HOST,
         port: process.env.DB_PORT || (dialect === "postgres" ? 5432 : 3306),
         dialect: dialect,
+        dialectOptions: dialect === "postgres" ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        } : {},
         logging: false,
       },
     );
