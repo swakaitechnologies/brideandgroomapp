@@ -146,3 +146,20 @@ exports.testTriggerNotificationPublic = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+exports.sendInternalPush = async (req, res) => {
+  try {
+    const { sendPushAndSocketNotification } = require("../utils/notificationHelper");
+    await sendPushAndSocketNotification(req.body);
+    res.status(200).json({
+      success: true,
+      message: "Internal notification processed successfully.",
+    });
+  } catch (error) {
+    console.error("❌ Send Internal Push Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process internal notification push.",
+    });
+  }
+};

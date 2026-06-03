@@ -238,7 +238,8 @@ module.exports = {
   Banner,
   PhotoRequest,
   CallHistory,
-  ContactFilter,
   Coupon,
   OtaUpdate,
+  ContactFilter,
+  WebSocketConnection: require("./WebSocketConnection"),
 };

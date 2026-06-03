@@ -33,12 +33,12 @@ async function invalidateProfileCache(userId) {
     console.log(`[CACHE_INVALIDATION] Invalidate keys: ${keysToDelete.join(", ")}`);
     await Promise.all(keysToDelete.map(key => redisClient.del(key)));
 
-    // Publish update event to Redis Pub/Sub for Socket.IO real-time updates
+    // Trigger real-time profile update socket emissions
     try {
-      await redisClient.publish("profile-updates", userId);
-      console.log(`[CACHE_INVALIDATION] Published update for user ${userId} to profile-updates channel`);
-    } catch (pubErr) {
-      console.error("[CACHE_INVALIDATION] Redis Publish error:", pubErr);
+      const { broadcastProfileUpdate } = require("../config/socket");
+      await broadcastProfileUpdate(userId);
+    } catch (socketErr) {
+      console.error("[CACHE_INVALIDATION] Socket broadcast error:", socketErr);
     }
   } catch (error) {
     console.error(`[CACHE_INVALIDATION] Error invalidating cache for userId ${userId}:`, error);

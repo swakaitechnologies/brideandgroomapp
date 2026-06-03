@@ -16,11 +16,13 @@ redisClient.on("error", (err) => {
 });
 redisClient.on("connect", () => console.log("Redis Client Connected"));
 
-const redisSubscriber = redisClient.duplicate();
-redisSubscriber.on("error", (err) => {
-  if (err.code === 'ECONNREFUSED') return;
-  console.log("Redis Subscriber Error", err);
-});
+const redisSubscriber = process.env.AWS_LAMBDA_FUNCTION_NAME ? null : redisClient.duplicate();
+if (redisSubscriber) {
+  redisSubscriber.on("error", (err) => {
+    if (err.code === 'ECONNREFUSED') return;
+    console.log("Redis Subscriber Error", err);
+  });
+}
 
 const connectRedis = async () => {
   try {
@@ -28,35 +30,12 @@ const connectRedis = async () => {
       await redisClient.connect();
     }
 
-    if (!redisSubscriber.isOpen) {
+    // Only configure subscriber on local environments (not on AWS Lambda)
+    if (!process.env.AWS_LAMBDA_FUNCTION_NAME && redisSubscriber && !redisSubscriber.isOpen) {
       await redisSubscriber.connect();
       console.log("Redis Subscriber Connected");
 
-      // Subscribe to profile updates channel
-      await redisSubscriber.subscribe("profile-updates", async (message) => {
-        console.log(`[REDIS_PUBSUB] Received update for user: ${message}`);
-        const { getIO } = require("./socket");
-        const io = getIO();
-        if (io) {
-          // Emit to UUID room
-          io.to(`profile:${message}`).emit("profile-updated", { userId: message });
-          console.log(`[SOCKET] Emitted profile-updated to room: profile:${message}`);
-
-          // Also look up customId to emit to customId-based room
-          try {
-            const { Profile } = require("../models/associations");
-            const profile = await Profile.findOne({ where: { userId: message }, attributes: ["customId"] });
-            if (profile && profile.customId) {
-              io.to(`profile:${profile.customId}`).emit("profile-updated", { userId: message });
-              console.log(`[SOCKET] Emitted profile-updated to room: profile:${profile.customId}`);
-            }
-          } catch (err) {
-            console.error("[REDIS_PUBSUB] Database error fetching customId for socket emit:", err);
-          }
-        }
-      });
-
-      // Subscribe to admin notifications channel
+      // Subscribe to admin notifications channel for local fallback
       await redisSubscriber.subscribe("admin-notification", async (message) => {
         try {
           console.log(`[REDIS_PUBSUB] Received admin-notification: ${message}`);
