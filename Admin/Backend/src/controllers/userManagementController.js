@@ -98,14 +98,38 @@ exports.getUserDetails = async (req, res) => {
     const { QueryTypes } = require("sequelize");
     const { sequelize } = require("../config/database");
 
+    const quote = (ident) => {
+      const dialect = sequelize.getDialect();
+      return dialect === "mysql" ? `\`${ident}\`` : `"${ident}"`;
+    };
+
+    const qInterests = quote("Interests");
+    const qMessages = quote("Messages");
+    const qProfiles = quote("Profiles");
+    const qPhotos = quote("Photos");
+    const qCallHistories = quote("CallHistories");
+    const qSenderId = quote("senderId");
+    const qReceiverId = quote("receiverId");
+    const qCallerId = quote("callerId");
+    const qUserId = quote("userId");
+    const qCustomId = quote("customId");
+    const qFirstName = quote("firstName");
+    const qLastName = quote("lastName");
+    const qUrl = quote("url");
+    const qId = quote("id");
+    const qIsMain = quote("isMain");
+    const qCreatedAt = quote("createdAt");
+    const qStartedAt = quote("startedAt");
+    const qDuration = quote("duration");
+
     // 1. Connection stats (Accepted Interests)
     const connectionStats = await sequelize.query(`
       SELECT 
-        (SELECT COUNT(*) FROM "Interests" WHERE senderId = :userId AND status = 'accepted') as sentAcceptedCount,
-        (SELECT COUNT(*) FROM "Interests" WHERE receiverId = :userId AND status = 'accepted') as receivedAcceptedCount,
+        (SELECT COUNT(*) FROM ${qInterests} WHERE ${qSenderId} = :userId AND status = 'accepted') as ${quote("sentAcceptedCount")},
+        (SELECT COUNT(*) FROM ${qInterests} WHERE ${qReceiverId} = :userId AND status = 'accepted') as ${quote("receivedAcceptedCount")},
         (SELECT COUNT(DISTINCT 
-          CASE WHEN senderId = :userId THEN receiverId ELSE senderId END
-         ) FROM "Interests" WHERE (senderId = :userId OR receiverId = :userId) AND status = 'accepted') as totalAcceptedCount
+          CASE WHEN ${qSenderId} = :userId THEN ${qReceiverId} ELSE ${qSenderId} END
+         ) FROM ${qInterests} WHERE (${qSenderId} = :userId OR ${qReceiverId} = :userId) AND status = 'accepted') as ${quote("totalAcceptedCount")}
     `, {
       replacements: { userId: id },
       type: QueryTypes.SELECT
@@ -114,36 +138,36 @@ exports.getUserDetails = async (req, res) => {
     // 2. Messaging Partners
     const messagingPartners = await sequelize.query(`
       SELECT 
-        p.userId as peerId,
-        p.customId as customId,
-        p.firstName as firstName,
-        p.lastName as lastName,
-        ph.url as photoUrl,
-        m.lastMessageAt as lastMessageAt,
-        m.messageCount as messageCount
+        p.${qUserId} as ${quote("peerId")},
+        p.${qCustomId} as ${quote("customId")},
+        p.${qFirstName} as ${quote("firstName")},
+        p.${qLastName} as ${quote("lastName")},
+        ph.${qUrl} as ${quote("photoUrl")},
+        m.${quote("lastMessageAt")} as ${quote("lastMessageAt")},
+        m.${quote("messageCount")} as ${quote("messageCount")}
       FROM (
         SELECT 
           CASE 
-            WHEN senderId = :userId THEN receiverId 
-            ELSE senderId 
-          END as peerId,
-          MAX(createdAt) as lastMessageAt,
-          COUNT(*) as messageCount
-        FROM "Messages"
-        WHERE senderId = :userId OR receiverId = :userId
+            WHEN ${qSenderId} = :userId THEN ${qReceiverId} 
+            ELSE ${qSenderId} 
+          END as ${quote("peerId")},
+          MAX(${qCreatedAt}) as ${quote("lastMessageAt")},
+          COUNT(*) as ${quote("messageCount")}
+        FROM ${qMessages}
+        WHERE ${qSenderId} = :userId OR ${qReceiverId} = :userId
         GROUP BY CASE 
-          WHEN senderId = :userId THEN receiverId 
-          ELSE senderId 
+          WHEN ${qSenderId} = :userId THEN ${qReceiverId} 
+          ELSE ${qSenderId} 
         END
       ) m
-      JOIN "Profiles" p ON p.userId = m.peerId
-      LEFT JOIN "Photos" ph ON ph.id = (
-        SELECT id FROM "Photos" 
-        WHERE userId = p.userId 
-        ORDER BY isMain DESC, createdAt DESC 
+      JOIN ${qProfiles} p ON p.${qUserId} = m.${quote("peerId")}
+      LEFT JOIN ${qPhotos} ph ON ph.${qId} = (
+        SELECT ${qId} FROM ${qPhotos} 
+        WHERE ${qUserId} = p.${qUserId} 
+        ORDER BY ${qIsMain} DESC, ${qCreatedAt} DESC 
         LIMIT 1
       )
-      ORDER BY m.lastMessageAt DESC
+      ORDER BY m.${quote("lastMessageAt")} DESC
       LIMIT 5
     `, {
       replacements: { userId: id },
@@ -153,38 +177,38 @@ exports.getUserDetails = async (req, res) => {
     // 3. Calling Partners
     const callingPartners = await sequelize.query(`
       SELECT 
-        p.userId as peerId,
-        p.customId as customId,
-        p.firstName as firstName,
-        p.lastName as lastName,
-        ph.url as photoUrl,
-        c.lastCallAt as lastCallAt,
-        c.callCount as callCount,
-        c.totalDuration as totalDuration
+        p.${qUserId} as ${quote("peerId")},
+        p.${qCustomId} as ${quote("customId")},
+        p.${qFirstName} as ${quote("firstName")},
+        p.${qLastName} as ${quote("lastName")},
+        ph.${qUrl} as ${quote("photoUrl")},
+        c.${quote("lastCallAt")} as ${quote("lastCallAt")},
+        c.${quote("callCount")} as ${quote("callCount")},
+        c.${quote("totalDuration")} as ${quote("totalDuration")}
       FROM (
         SELECT 
           CASE 
-            WHEN callerId = :userId THEN receiverId 
-            ELSE callerId 
-          END as peerId,
-          MAX(startedAt) as lastCallAt,
-          COUNT(*) as callCount,
-          SUM(duration) as totalDuration
-        FROM "CallHistories"
-        WHERE callerId = :userId OR receiverId = :userId
+            WHEN ${qCallerId} = :userId THEN ${qReceiverId} 
+            ELSE ${qCallerId} 
+          END as ${quote("peerId")},
+          MAX(${qStartedAt}) as ${quote("lastCallAt")},
+          COUNT(*) as ${quote("callCount")},
+          SUM(${qDuration}) as ${quote("totalDuration")}
+        FROM ${qCallHistories}
+        WHERE ${qCallerId} = :userId OR ${qReceiverId} = :userId
         GROUP BY CASE 
-          WHEN callerId = :userId THEN receiverId 
-          ELSE callerId 
+          WHEN ${qCallerId} = :userId THEN ${qReceiverId} 
+          ELSE ${qCallerId} 
         END
       ) c
-      JOIN "Profiles" p ON p.userId = c.peerId
-      LEFT JOIN "Photos" ph ON ph.id = (
-        SELECT id FROM "Photos" 
-        WHERE userId = p.userId 
-        ORDER BY isMain DESC, createdAt DESC 
+      JOIN ${qProfiles} p ON p.${qUserId} = c.${quote("peerId")}
+      LEFT JOIN ${qPhotos} ph ON ph.${qId} = (
+        SELECT ${qId} FROM ${qPhotos} 
+        WHERE ${qUserId} = p.${qUserId} 
+        ORDER BY ${qIsMain} DESC, ${qCreatedAt} DESC 
         LIMIT 1
       )
-      ORDER BY c.lastCallAt DESC
+      ORDER BY c.${quote("lastCallAt")} DESC
       LIMIT 5
     `, {
       replacements: { userId: id },
