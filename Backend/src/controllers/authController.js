@@ -594,10 +594,8 @@ exports.deleteAccount = async (req, res) => {
       return res.status(401).json({ message: "Incorrect password" });
     }
 
-    // Soft delete
-    user.isDeleted = true;
-    user.isOnline = false;
-    await user.save();
+    // Permanently delete user and all cascading associations
+    await user.destroy();
 
     // Clear Redis Refresh Token
     if (redisClient.isReady) {
