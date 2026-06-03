@@ -220,61 +220,7 @@ app.get("/api/cached/plans", cacheMiddleware(600), (req, res, next) => {
   req.url = "/plans";
   require("./routes/paymentRoutes").handle(req, res, next);
 });
-// Temporary migration route to fix database URLs
-app.get("/api/fix-db-urls", async (req, res) => {
-  try {
-    const { sequelize } = require("./config/database");
-    const [photos] = await sequelize.query('SELECT id, url, "thumbnailUrl" FROM "Photos";');
-    let updatedCount = 0;
-    
-    const photoBucket = 'brideandgroom-989346120215-ap-south-1-an';
-    const region = 'ap-south-1';
-    
-    // Regular expression matching local/legacy domains
-    const pattern = /(?:192\.168\.\d+\.\d+|127\.0\.0\.1|localhost|storage\.brideandgroom\.co\.in):9000\/user-photos\/?/gi;
-    
-    for (const photo of photos) {
-      let needsUpdate = false;
-      let newUrl = photo.url;
-      let newThumb = photo.thumbnailUrl;
-      
-      if (photo.url && pattern.test(photo.url)) {
-        newUrl = photo.url.replace(pattern, `https://${photoBucket}.s3.${region}.amazonaws.com/`);
-        needsUpdate = true;
-      }
-      
-      if (photo.thumbnailUrl && pattern.test(photo.thumbnailUrl)) {
-        newThumb = photo.thumbnailUrl.replace(pattern, `https://${photoBucket}.s3.${region}.amazonaws.com/`);
-        needsUpdate = true;
-      }
-      
-      if (needsUpdate) {
-        await sequelize.query('UPDATE "Photos" SET url = :newUrl, "thumbnailUrl" = :newThumb WHERE id = :id', {
-          replacements: { newUrl, newThumb, id: photo.id }
-        });
-        updatedCount++;
-      }
-    }
-    
-    // Also fix banners!
-    const [banners] = await sequelize.query('SELECT id, "imageUrl" FROM "Banners";');
-    const bannerBucket = 'banners-989346120215-ap-south-1-an';
-    const bannerPattern = /(?:192\.168\.\d+\.\d+|127\.0\.0\.1|localhost|storage\.brideandgroom\.co\.in):9000\/banners\/?/gi;
-    for (const banner of banners) {
-      if (banner.imageUrl && bannerPattern.test(banner.imageUrl)) {
-        const newImageUrl = banner.imageUrl.replace(bannerPattern, `https://${bannerBucket}.s3.${region}.amazonaws.com/`);
-        await sequelize.query('UPDATE "Banners" SET "imageUrl" = :newImageUrl WHERE id = :id', {
-          replacements: { newImageUrl, id: banner.id }
-        });
-        updatedCount++;
-      }
-    }
-    
-    res.json({ success: true, message: `Successfully updated ${updatedCount} URLs to S3 in production DB.` });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+
 
 // Health Check
 app.get("/api/health", (req, res) => {
