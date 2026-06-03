@@ -220,6 +220,17 @@ app.get("/api/cached/plans", cacheMiddleware(600), (req, res, next) => {
   req.url = "/plans";
   require("./routes/paymentRoutes").handle(req, res, next);
 });
+// Temporary debug route to inspect database URLs
+app.get("/api/debug-db-photos", async (req, res) => {
+  try {
+    const { sequelize } = require("./config/database");
+    const [photos] = await sequelize.query('SELECT id, "userId", url, "thumbnailUrl", "isMain" FROM "Photos" ORDER BY "createdAt" DESC LIMIT 10;');
+    res.json({ success: true, photos });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Health Check
 app.get("/api/health", (req, res) => {
   res
