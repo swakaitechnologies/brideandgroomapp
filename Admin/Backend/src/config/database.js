@@ -3,9 +3,21 @@ const path = require("path");
 
 require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 
+const getDialect = () => {
+  if (process.env.DB_DIALECT) return process.env.DB_DIALECT;
+  if (process.env.DATABASE_URL) {
+    if (process.env.DATABASE_URL.startsWith("postgres:") || process.env.DATABASE_URL.startsWith("postgresql:")) {
+      return "postgres";
+    }
+  }
+  return "mysql";
+};
+
+const dialect = getDialect();
+
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
-      dialect: process.env.DB_DIALECT || "mysql",
+      dialect: dialect,
       logging: false,
     })
   : new Sequelize(
@@ -14,8 +26,8 @@ const sequelize = process.env.DATABASE_URL
       process.env.DB_PASSWORD,
       {
         host: process.env.DB_HOST,
-        port: process.env.DB_PORT || ((process.env.DB_DIALECT || "mysql") === "postgres" ? 5432 : 3306),
-        dialect: process.env.DB_DIALECT || "mysql",
+        port: process.env.DB_PORT || (dialect === "postgres" ? 5432 : 3306),
+        dialect: dialect,
         logging: false,
       },
     );
