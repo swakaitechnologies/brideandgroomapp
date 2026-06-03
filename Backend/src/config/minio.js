@@ -1,12 +1,21 @@
 const Minio = require("minio");
 
-const minioClient = new Minio.Client({
-  endPoint: process.env.MINIO_ENDPOINT,
-  port: parseInt(process.env.MINIO_PORT),
+const minioConfig = {
+  endPoint: process.env.MINIO_ENDPOINT || "localhost",
   useSSL: process.env.MINIO_USE_SSL === "true",
   accessKey: process.env.MINIO_ACCESS_KEY,
   secretKey: process.env.MINIO_SECRET_KEY,
-});
+};
+
+if (process.env.MINIO_PORT) {
+  minioConfig.port = parseInt(process.env.MINIO_PORT);
+}
+
+if (process.env.MINIO_REGION) {
+  minioConfig.region = process.env.MINIO_REGION;
+}
+
+const minioClient = new Minio.Client(minioConfig);
 
 const bucketName = process.env.MINIO_BUCKET;
 const kycBucketName = process.env.MINIO_KYC_BUCKET || "kyc-documents";

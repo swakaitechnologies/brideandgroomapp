@@ -27,9 +27,17 @@ exports.uploadBannerToMinio = async (file) => {
     if (process.env.CDN_URL) return `${process.env.CDN_URL}/${name}`;
     const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
     const host = process.env.MINIO_ENDPOINT || "localhost";
-    const port = parseInt(process.env.MINIO_PORT) || 9000;
+    const port = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : null;
 
-    return `${protocol}://${host}:${port}/${bannerBucketName}/${name}`;
+    if (port) {
+      return `${protocol}://${host}:${port}/${bannerBucketName}/${name}`;
+    }
+
+    if (host.includes("amazonaws.com")) {
+      return `${protocol}://${bannerBucketName}.${host}/${name}`;
+    }
+
+    return `${protocol}://${host}/${bannerBucketName}/${name}`;
   };
 
   return {

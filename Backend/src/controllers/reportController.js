@@ -65,8 +65,14 @@ exports.submitReport = async (req, res) => {
         const protocol =
           process.env.MINIO_USE_SSL === "true" ? "https" : "http";
         const host = process.env.MINIO_ENDPOINT || "localhost";
-        const port = process.env.MINIO_PORT || 9000;
-        reportImageUrl = `${protocol}://${host}:${port}/${bucketName}/${fileName}`;
+        const port = process.env.MINIO_PORT;
+        if (port) {
+          reportImageUrl = `${protocol}://${host}:${port}/${bucketName}/${fileName}`;
+        } else if (host.includes("amazonaws.com")) {
+          reportImageUrl = `${protocol}://${bucketName}.${host}/${fileName}`;
+        } else {
+          reportImageUrl = `${protocol}://${host}/${bucketName}/${fileName}`;
+        }
       }
     }
 

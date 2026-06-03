@@ -67,12 +67,21 @@ exports.uploadToMinio = async (folder, file, options = { thumb: true, width: 120
     if (process.env.CDN_URL) return `${process.env.CDN_URL}/${name}`;
     const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
     const host = process.env.MINIO_ENDPOINT;
-    const port = parseInt(process.env.MINIO_PORT);
+    const port = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : null;
 
-    if (!host || isNaN(port)) {
-      throw new Error("MINIO_ENDPOINT or MINIO_PORT not configured in environment variables");
+    if (!host) {
+      throw new Error("MINIO_ENDPOINT not configured in environment variables");
     }
-    return `${protocol}://${host}:${port}/${targetBucket}/${name}`;
+
+    if (port) {
+      return `${protocol}://${host}:${port}/${targetBucket}/${name}`;
+    }
+
+    if (host.includes("amazonaws.com")) {
+      return `${protocol}://${targetBucket}.${host}/${name}`;
+    }
+
+    return `${protocol}://${host}/${targetBucket}/${name}`;
   };
 
   return {

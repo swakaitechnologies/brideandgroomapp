@@ -25,8 +25,17 @@ const getMinioUrl = (bucket, fileName) => {
   }
   const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
   const host = process.env.MINIO_ENDPOINT || "localhost";
-  const port = parseInt(process.env.MINIO_PORT) || 9000;
-  return `${protocol}://${host}:${port}/${bucket}/${fileName}`;
+  const port = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : null;
+  
+  if (port) {
+    return `${protocol}://${host}:${port}/${bucket}/${fileName}`;
+  }
+  
+  if (host.includes("amazonaws.com")) {
+    return `${protocol}://${bucket}.${host}/${fileName}`;
+  }
+  
+  return `${protocol}://${host}/${bucket}/${fileName}`;
 };
 
 // Check if update is available for mobile app
