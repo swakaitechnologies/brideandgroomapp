@@ -19,6 +19,11 @@ const csrfProtection = (req, res, next) => {
         return next();
     }
 
+    // Skip CSRF if Authorization header is present (JWT authentication is immune to CSRF)
+    if (req.get("Authorization")) {
+        return next();
+    }
+
     // For safe methods (GET, HEAD, OPTIONS), attach/verify a CSRF token
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
         let token = req.cookies[CSRF_COOKIE_NAME];
