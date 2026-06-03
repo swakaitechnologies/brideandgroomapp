@@ -101,11 +101,11 @@ exports.getUserDetails = async (req, res) => {
     // 1. Connection stats (Accepted Interests)
     const connectionStats = await sequelize.query(`
       SELECT 
-        (SELECT COUNT(*) FROM Interests WHERE senderId = :userId AND status = 'accepted') as sentAcceptedCount,
-        (SELECT COUNT(*) FROM Interests WHERE receiverId = :userId AND status = 'accepted') as receivedAcceptedCount,
+        (SELECT COUNT(*) FROM "Interests" WHERE senderId = :userId AND status = 'accepted') as sentAcceptedCount,
+        (SELECT COUNT(*) FROM "Interests" WHERE receiverId = :userId AND status = 'accepted') as receivedAcceptedCount,
         (SELECT COUNT(DISTINCT 
           CASE WHEN senderId = :userId THEN receiverId ELSE senderId END
-         ) FROM Interests WHERE (senderId = :userId OR receiverId = :userId) AND status = 'accepted') as totalAcceptedCount
+         ) FROM "Interests" WHERE (senderId = :userId OR receiverId = :userId) AND status = 'accepted') as totalAcceptedCount
     `, {
       replacements: { userId: id },
       type: QueryTypes.SELECT
@@ -129,13 +129,13 @@ exports.getUserDetails = async (req, res) => {
           END as peerId,
           MAX(createdAt) as lastMessageAt,
           COUNT(*) as messageCount
-        FROM Messages
+        FROM "Messages"
         WHERE senderId = :userId OR receiverId = :userId
         GROUP BY peerId
       ) m
-      JOIN Profiles p ON p.userId = m.peerId
-      LEFT JOIN Photos ph ON ph.id = (
-        SELECT id FROM Photos 
+      JOIN "Profiles" p ON p.userId = m.peerId
+      LEFT JOIN "Photos" ph ON ph.id = (
+        SELECT id FROM "Photos" 
         WHERE userId = p.userId 
         ORDER BY isMain DESC, createdAt DESC 
         LIMIT 1
@@ -167,13 +167,13 @@ exports.getUserDetails = async (req, res) => {
           MAX(startedAt) as lastCallAt,
           COUNT(*) as callCount,
           SUM(duration) as totalDuration
-        FROM CallHistories
+        FROM "CallHistories"
         WHERE callerId = :userId OR receiverId = :userId
         GROUP BY peerId
       ) c
-      JOIN Profiles p ON p.userId = c.peerId
-      LEFT JOIN Photos ph ON ph.id = (
-        SELECT id FROM Photos 
+      JOIN "Profiles" p ON p.userId = c.peerId
+      LEFT JOIN "Photos" ph ON ph.id = (
+        SELECT id FROM "Photos" 
         WHERE userId = p.userId 
         ORDER BY isMain DESC, createdAt DESC 
         LIMIT 1

@@ -269,6 +269,16 @@ app.get("/api/fix-db-urls-2", async (req, res) => {
   }
 });
 
+app.get("/api/list-photos-urls", async (req, res) => {
+  try {
+    const { sequelize } = require("./config/database");
+    const [photos] = await sequelize.query('SELECT id, url, "thumbnailUrl" FROM "Photos";');
+    res.json({ success: true, photos });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get("/api/debug-db-tables", async (req, res) => {
   try {
     const { sequelize } = require("./config/database");
