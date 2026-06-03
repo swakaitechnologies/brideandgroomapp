@@ -5,6 +5,10 @@ dotenv.config();
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
+  socket: {
+    reconnectStrategy: false, // Fail fast in serverless to prevent hangs
+    connectTimeout: 3000,    // 3s connection timeout limit
+  }
 });
 
 redisClient.on("error", (err) => {
