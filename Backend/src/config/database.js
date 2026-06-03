@@ -7,8 +7,20 @@ const isProduction = process.env.NODE_ENV === "production";
 // Read replica support: set DB_READ_HOST in .env to enable
 const hasReadReplica = !!process.env.DB_READ_HOST;
 
+const getDialect = () => {
+  if (process.env.DB_DIALECT) return process.env.DB_DIALECT;
+  if (process.env.DATABASE_URL) {
+    if (process.env.DATABASE_URL.startsWith("postgres:") || process.env.DATABASE_URL.startsWith("postgresql:")) {
+      return "postgres";
+    }
+  }
+  return "mysql";
+};
+
+const dialect = getDialect();
+
 const baseConfig = {
-  dialect: process.env.DB_DIALECT || "mysql",
+  dialect: dialect,
   logging: isProduction
     ? (msg, timing) => {
         // Log slow queries in production (> 500ms)
@@ -30,7 +42,7 @@ const baseConfig = {
     match: [/ETIMEDOUT/, /ECONNREFUSED/, /ECONNRESET/],
   },
   // Charset / collation is MySQL specific
-  ...( (process.env.DB_DIALECT || "mysql") === "mysql" ? {
+  ...( dialect === "mysql" ? {
     define: {
       charset: "utf8mb4",
       collate: "utf8mb4_unicode_ci",
@@ -39,7 +51,15 @@ const baseConfig = {
 };
 
 const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, baseConfig)
+  ? new Sequelize(process.env.DATABASE_URL, {
+      ...baseConfig,
+      dialectOptions: dialect === "postgres" ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      } : {},
+    })
   : (hasReadReplica
     ? new Sequelize({
         ...baseConfig,
@@ -50,7 +70,7 @@ const sequelize = process.env.DATABASE_URL
               username: process.env.DB_USER,
               password: process.env.DB_PASSWORD,
               database: process.env.DB_NAME,
-              port: process.env.DB_PORT || (baseConfig.dialect === "postgres" ? 5432 : 3306),
+              port: process.env.DB_PORT || (dialect === "postgres" ? 5432 : 3306),
             },
           ],
           write: {
@@ -58,7 +78,7 @@ const sequelize = process.env.DATABASE_URL
             username: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
-            port: process.env.DB_PORT || (baseConfig.dialect === "postgres" ? 5432 : 3306),
+            port: process.env.DB_PORT || (dialect === "postgres" ? 5432 : 3306),
           },
         },
       })
@@ -69,7 +89,13 @@ const sequelize = process.env.DATABASE_URL
         {
           ...baseConfig,
           host: process.env.DB_HOST,
-          port: process.env.DB_PORT || (baseConfig.dialect === "postgres" ? 5432 : 3306),
+          port: process.env.DB_PORT || (dialect === "postgres" ? 5432 : 3306),
+          dialectOptions: dialect === "postgres" ? {
+            ssl: {
+              require: true,
+              rejectUnauthorized: false
+            }
+          } : {},
         }
       )
     );
