@@ -11,8 +11,8 @@ const getDevHost = () => {
 export const DEV_HOST = getDevHost();
 
 // Production Render URL
-export const API_BASE_URL = 'https://brideandgroomapp.onrender.com/api';
-export const MAIN_SOCKET_URL = 'https://brideandgroomapp.onrender.com';
+export const API_BASE_URL = 'https://brideandgroomapp-2.onrender.com/api';
+export const MAIN_SOCKET_URL = 'https://brideandgroomapp-2.onrender.com';
 
 // Development Local URL
 // export const API_BASE_URL = `http://${DEV_HOST}:5000/api`;
