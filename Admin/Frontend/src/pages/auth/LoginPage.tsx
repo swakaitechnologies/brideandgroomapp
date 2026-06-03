@@ -27,7 +27,10 @@ const LoginPage = () => {
         password,
       });
 
-      const { admin } = response.data;
+      const { admin, token } = response.data;
+      if (token) {
+        localStorage.setItem("adminToken", token);
+      }
       login(admin);
       toast.success("Welcome back, Admin!");
       navigate("/dashboard");

@@ -9,9 +9,16 @@ const crypto = require("crypto");
 const CSRF_COOKIE_NAME = "admin-csrf-token";
 const CSRF_HEADER_NAME = "x-csrf-token";
 
+const SKIP_PATHS = ["/api/admin/login", "/api/admin/logout", "/api/admin/health", "/api/admin/metrics"];
+
 const generateToken = () => crypto.randomBytes(32).toString("hex");
 
 const csrfProtection = (req, res, next) => {
+    // Skip CSRF for safe paths or metrics
+    if (SKIP_PATHS.some((path) => req.path.startsWith(path)) || req.path === "/health") {
+        return next();
+    }
+
     // For safe methods (GET, HEAD, OPTIONS), attach/verify a CSRF token
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
         let token = req.cookies[CSRF_COOKIE_NAME];

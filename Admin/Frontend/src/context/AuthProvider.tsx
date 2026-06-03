@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Ignore logout errors as we clear local state anyway
     }
     localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminToken");
     setAdmin(null);
   };
 

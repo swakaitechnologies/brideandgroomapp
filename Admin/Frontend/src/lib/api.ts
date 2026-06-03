@@ -14,8 +14,13 @@ const api = axios.create({
 
 let csrfToken: string | null = null;
 
-// Request interceptor: attach CSRF token
+// Request interceptor: attach token and CSRF token
 api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("adminToken");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+
   if (csrfToken && config.method && !["get", "head", "options"].includes(config.method)) {
     config.headers["X-CSRF-Token"] = csrfToken;
   }

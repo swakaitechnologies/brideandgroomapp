@@ -86,6 +86,7 @@ exports.loginAdmin = async (req, res) => {
     });
 
     res.json({
+      token,
       admin: {
         id: admin.id,
         email: admin.email,
