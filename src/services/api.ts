@@ -10,9 +10,9 @@ const getDevHost = () => {
 
 export const DEV_HOST = getDevHost();
 
-// Production Render URL
-export const API_BASE_URL = 'https://brideandgroomapp-2.onrender.com/api';
-export const MAIN_SOCKET_URL = 'https://brideandgroomapp-2.onrender.com';
+// Production AWS Lambda Endpoints
+export const API_BASE_URL = 'https://uocgjbzgm9.execute-api.us-east-1.amazonaws.com/api';
+export const MAIN_SOCKET_URL = 'wss://pqoxy2xqz8.execute-api.us-east-1.amazonaws.com/prod';
 
 // Development Local URL
 // export const API_BASE_URL = `http://${DEV_HOST}:5000/api`;

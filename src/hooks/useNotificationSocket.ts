@@ -16,61 +16,110 @@ export function useNotificationSocket(
   navigationRef?: any,
   onNewNotification?: () => void
 ) {
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<Socket | WebSocket | null>(null);
 
   useEffect(() => {
     if (!userId) return;
 
-    console.log(`[SOCKET] Connecting for real-time notifications for user: ${userId}`);
+    const isAwsWebSocket = MAIN_SOCKET_URL.startsWith("ws://") || MAIN_SOCKET_URL.startsWith("wss://");
 
-    // Connect to Main Backend
-    const socket = io(MAIN_SOCKET_URL, {
-      transports: ["websocket"],
-      forceNew: true,
-    });
+    if (isAwsWebSocket) {
+      console.log(`[SOCKET] Connecting via native WebSocket to: ${MAIN_SOCKET_URL}`);
+      const ws = new WebSocket(MAIN_SOCKET_URL);
+      socketRef.current = ws;
 
-    socketRef.current = socket;
+      ws.onopen = () => {
+        console.log(`[SOCKET] Native WS connected. Joining user notification room: ${userId}`);
+        ws.send(JSON.stringify({ action: "join-profile-room", userId: userId }));
+      };
 
-    socket.on("connect", () => {
-      console.log(`[SOCKET] Connected. Joining user notification room: profile:${userId}`);
-      socket.emit("join-profile-room", userId);
-    });
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "new-notification") {
+            const data = payload.data;
+            console.log("[SOCKET] Received new-notification via WS:", data);
 
-    // Handle incoming real-time notifications
-    socket.on("new-notification", (data: any) => {
-      console.log("[SOCKET] Received new-notification:", data);
+            if (onNewNotification) {
+              onNewNotification();
+            }
 
-      // Trigger optional callback (e.g. to reload notification counts/lists)
-      if (onNewNotification) {
-        onNewNotification();
-      }
+            Toast.show({
+              type: getToastType(data.type),
+              text1: formatToastTitle(data.type),
+              text2: data.message,
+              position: "top",
+              visibilityTime: 4000,
+              autoHide: true,
+              onPress: () => {
+                Toast.hide();
+                handleToastClick(data, navigationRef);
+              },
+            });
+          }
+        } catch (err) {
+          console.warn("[SOCKET] Failed to parse WS notification message:", err);
+        }
+      };
 
-      // Show in-app Toast banner
-      Toast.show({
-        type: getToastType(data.type),
-        text1: formatToastTitle(data.type),
-        text2: data.message,
-        position: "top",
-        visibilityTime: 4000,
-        autoHide: true,
-        onPress: () => {
-          Toast.hide();
-          handleToastClick(data, navigationRef);
-        },
+      ws.onerror = (error) => {
+        console.warn("[SOCKET] Native WS notification connection error:", error);
+      };
+
+      return () => {
+        console.log(`[SOCKET] Native WS disconnecting notification listener for user: ${userId}`);
+        try {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action: "leave-profile-room", userId: userId }));
+          }
+        } catch (err) {}
+        ws.close();
+      };
+    } else {
+      console.log(`[SOCKET] Connecting via Socket.IO to: ${MAIN_SOCKET_URL}`);
+      const socket = io(MAIN_SOCKET_URL, {
+        transports: ["websocket"],
+        forceNew: true,
       });
-    });
 
-    socket.on("connect_error", (error) => {
-      console.warn(`[SOCKET] Notification socket connection error:`, error.message);
-    });
+      socketRef.current = socket;
 
-    return () => {
-      if (socketRef.current) {
+      socket.on("connect", () => {
+        console.log(`[SOCKET] Connected. Joining user notification room: profile:${userId}`);
+        socket.emit("join-profile-room", userId);
+      });
+
+      socket.on("new-notification", (data: any) => {
+        console.log("[SOCKET] Received new-notification:", data);
+
+        if (onNewNotification) {
+          onNewNotification();
+        }
+
+        Toast.show({
+          type: getToastType(data.type),
+          text1: formatToastTitle(data.type),
+          text2: data.message,
+          position: "top",
+          visibilityTime: 4000,
+          autoHide: true,
+          onPress: () => {
+            Toast.hide();
+            handleToastClick(data, navigationRef);
+          },
+        });
+      });
+
+      socket.on("connect_error", (error) => {
+        console.warn(`[SOCKET] Socket.IO connection error:`, error.message);
+      });
+
+      return () => {
         console.log(`[SOCKET] Leaving notification room and disconnecting user: ${userId}`);
-        socketRef.current.emit("leave-profile-room", userId);
-        socketRef.current.disconnect();
-      }
-    };
+        socket.emit("leave-profile-room", userId);
+        socket.disconnect();
+      };
+    }
   }, [userId, navigationRef, onNewNotification]);
 }
 

@@ -1,14 +1,18 @@
 const nodemailer = require("nodemailer");
 let transporter;
 
-if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+const awsAccessKeyId = process.env.APP_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+const awsSecretAccessKey = process.env.APP_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+const awsRegion = process.env.APP_AWS_REGION || process.env.AWS_REGION || "us-east-1";
+
+if (awsAccessKeyId && awsSecretAccessKey) {
   try {
     const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
     const sesClient = new SESv2Client({
-      region: process.env.AWS_REGION || "us-east-1",
+      region: awsRegion,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        accessKeyId: awsAccessKeyId,
+        secretAccessKey: awsSecretAccessKey,
       }
     });
     transporter = nodemailer.createTransport({

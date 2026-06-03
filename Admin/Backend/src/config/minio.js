@@ -2,7 +2,11 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand, Crea
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Minio = require("minio");
 
-const useS3 = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
+const awsAccessKeyId = process.env.APP_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+const awsSecretAccessKey = process.env.APP_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+const awsRegion = process.env.APP_AWS_REGION || process.env.AWS_REGION || "us-east-1";
+
+const useS3 = !!(awsAccessKeyId && awsSecretAccessKey);
 
 let minioClient;
 
@@ -14,10 +18,10 @@ const feedbackBucketName = useS3 ? (process.env.AWS_FEEDBACK_BUCKET || "user-fee
 if (useS3) {
   console.log("Admin Backend: Initializing AWS S3 Client...");
   const s3 = new S3Client({
-    region: process.env.AWS_REGION || "us-east-1",
+    region: awsRegion,
     credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      accessKeyId: awsAccessKeyId,
+      secretAccessKey: awsSecretAccessKey,
     }
   });
 

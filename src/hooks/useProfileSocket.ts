@@ -12,41 +12,76 @@ export function useProfileSocket(
   profileId: string | null | undefined,
   onProfileUpdate: () => void
 ) {
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<Socket | WebSocket | null>(null);
 
   useEffect(() => {
     if (!profileId) return;
 
-    console.log(`[SOCKET] Connecting to main backend for profile: ${profileId}`);
-    
-    // Connect to Main Backend port 5000
-    const socket = io(MAIN_SOCKET_URL, {
-      transports: ["websocket"],
-      forceNew: true
-    });
-    
-    socketRef.current = socket;
+    const isAwsWebSocket = MAIN_SOCKET_URL.startsWith("ws://") || MAIN_SOCKET_URL.startsWith("wss://");
 
-    socket.on("connect", () => {
-      console.log(`[SOCKET] Connected. Joining profile room: profile:${profileId}`);
-      socket.emit("join-profile-room", profileId);
-    });
+    if (isAwsWebSocket) {
+      console.log(`[SOCKET] Connecting via native WebSocket to: ${MAIN_SOCKET_URL}`);
+      const ws = new WebSocket(MAIN_SOCKET_URL);
+      socketRef.current = ws;
 
-    socket.on("profile-updated", () => {
-      console.log(`[SOCKET] Received profile-updated event for profile: ${profileId}`);
-      onProfileUpdate();
-    });
+      ws.onopen = () => {
+        console.log(`[SOCKET] Native WS connected. Joining profile room: ${profileId}`);
+        ws.send(JSON.stringify({ action: "join-profile-room", userId: profileId }));
+      };
 
-    socket.on("connect_error", (error) => {
-      console.warn(`[SOCKET] Main backend socket connection error:`, error.message);
-    });
+      ws.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "profile-updated") {
+            console.log(`[SOCKET] Profile updated event trigger for: ${profileId}`);
+            onProfileUpdate();
+          }
+        } catch (err) {
+          console.warn("[SOCKET] Failed to parse message:", err);
+        }
+      };
 
-    return () => {
-      if (socketRef.current) {
+      ws.onerror = (error) => {
+        console.warn("[SOCKET] Native WS connection error:", error);
+      };
+
+      return () => {
+        console.log(`[SOCKET] Native WS disconnecting for profile: ${profileId}`);
+        try {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ action: "leave-profile-room", userId: profileId }));
+          }
+        } catch (err) {}
+        ws.close();
+      };
+    } else {
+      console.log(`[SOCKET] Connecting via Socket.IO to: ${MAIN_SOCKET_URL}`);
+      const socket = io(MAIN_SOCKET_URL, {
+        transports: ["websocket"],
+        forceNew: true
+      });
+      
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        console.log(`[SOCKET] Connected. Joining profile room: profile:${profileId}`);
+        socket.emit("join-profile-room", profileId);
+      });
+
+      socket.on("profile-updated", () => {
+        console.log(`[SOCKET] Received profile-updated event for profile: ${profileId}`);
+        onProfileUpdate();
+      });
+
+      socket.on("connect_error", (error) => {
+        console.warn(`[SOCKET] Socket.IO connection error:`, error.message);
+      });
+
+      return () => {
         console.log(`[SOCKET] Leaving profile room and disconnecting: ${profileId}`);
-        socketRef.current.emit("leave-profile-room", profileId);
-        socketRef.current.disconnect();
-      }
-    };
+        socket.emit("leave-profile-room", profileId);
+        socket.disconnect();
+      };
+    }
   }, [profileId, onProfileUpdate]);
 }
