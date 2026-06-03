@@ -10,7 +10,7 @@ import { secureStorage } from './src/services/secureStorage';
 import OfflineOverlay from './src/components/OfflineOverlay';
 import Toast, { ToastConfig } from 'react-native-toast-message';
 import { ShieldCheck, Zap, Info, AlertTriangle } from 'lucide-react-native';
-import { checkForOtaUpdates, DEFAULT_BUNDLE_VERSION } from './src/services/otaService';
+import { DEFAULT_BUNDLE_VERSION } from './src/services/otaService';
 
 
 // Screens
@@ -61,7 +61,6 @@ function App() {
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
 
   useEffect(() => {
-    checkForOtaUpdates();
     const checkAuthAndOnboarding = async () => {
       const startTime = Date.now();
       let targetRoute = 'Welcome';

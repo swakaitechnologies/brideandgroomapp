@@ -11,10 +11,6 @@ import com.google.firebase.FirebaseApp
 class MainApplication : Application(), ReactApplication {
 
   override val reactHost: ReactHost by lazy {
-    val otaFile = java.io.File(applicationContext.filesDir, "ota/index.android.bundle")
-    val jsBundlePath = if (otaFile.exists()) otaFile.absolutePath else null
-    val useDev = if (otaFile.exists()) false else com.facebook.react.common.build.ReactBuildConfig.DEBUG
-
     getDefaultReactHost(
       context = applicationContext,
       packageList =
@@ -22,8 +18,8 @@ class MainApplication : Application(), ReactApplication {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           add(PushNotificationPackage())
         },
-      jsBundleFilePath = jsBundlePath,
-      useDevSupport = useDev
+      jsBundleFilePath = null,
+      useDevSupport = com.facebook.react.common.build.ReactBuildConfig.DEBUG
     )
   }
 
