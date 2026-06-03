@@ -1,5 +1,14 @@
-import { AppRegistry, Text, TextInput } from 'react-native';
+import { AppRegistry, Text, TextInput, Platform } from 'react-native';
 import App from './App';
+import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
+
+// Force OTA updates to resolve local image assets from the APK drawables
+resolveAssetSource.setCustomSourceTransformer((resolver) => {
+  if (Platform.OS === 'android' && resolver.isLoadedFromFileSystem()) {
+    return resolver.resourceIdentifierWithoutScale();
+  }
+  return resolver.defaultAsset();
+});
 import { name as appName } from './app.json';
 
 // Global Quicksand Font — set default fontFamily on all Text and TextInput
