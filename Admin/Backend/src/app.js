@@ -86,6 +86,22 @@ app.get("/api/admin/health", (req, res) => {
     .json({ success: true, status: "healthy", timestamp: new Date() });
 });
 
+// Temp MinIO Diagnostics Route
+app.get("/api/admin/diagnose-minio", async (req, res) => {
+  try {
+    const { minioClient, bucketName } = require("./config/minio");
+    const bucketExists = await minioClient.bucketExists(bucketName);
+    res.json({ success: true, bucketName, bucketExists });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+  }
+});
+
 app.use(limiter);
 
 // Routes
