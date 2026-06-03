@@ -30,7 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { logout } from '../store/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentBundleVersion } from '../services/otaService';
+import { getCurrentBundleVersion, checkForOtaUpdates } from '../services/otaService';
 import { secureStorage } from '../services/secureStorage';
 import { API_BASE_URL, getActivePromoBanner, getMySubscription } from '../services/api';
 import ReactNativeBlobUtil from 'react-native-blob-util';
@@ -106,6 +106,16 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
       await AsyncStorage.setItem('preAppliedCoupon', promoCoupon.code);
     }
     handleTabNavigation("Premium");
+  };
+
+  const handleCheckUpdate = async () => {
+    try {
+      await checkForOtaUpdates(true);
+      const version = await getCurrentBundleVersion();
+      setAppVersion(version);
+    } catch (err) {
+      Alert.alert('Error', 'An unexpected error occurred while checking for updates.');
+    }
   };
 
   // Dynamic Theme Colors
@@ -459,7 +469,9 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               </TouchableOpacity>
             </View>
             <Text style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
-            <Text style={styles.versionText}>App Version: {appVersion}</Text>
+            <TouchableOpacity onPress={handleCheckUpdate} activeOpacity={0.7}>
+              <Text style={styles.versionText}>App Version: {appVersion}</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
 

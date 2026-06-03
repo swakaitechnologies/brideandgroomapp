@@ -20,8 +20,15 @@ export interface OtaCheckResponse {
  */
 export async function getCurrentBundleVersion(): Promise<string> {
   try {
-    const version = await AsyncStorage.getItem(BUNDLE_VERSION_KEY);
-    return version || DEFAULT_BUNDLE_VERSION;
+    const otaDir = `${ReactNativeBlobUtil.fs.dirs.DocumentDir}/ota`;
+    const targetPath = `${otaDir}/index.android.bundle`;
+    const fileExists = await ReactNativeBlobUtil.fs.exists(targetPath);
+
+    if (fileExists) {
+      const version = await AsyncStorage.getItem(BUNDLE_VERSION_KEY);
+      return version || DEFAULT_BUNDLE_VERSION;
+    }
+    return DEFAULT_BUNDLE_VERSION;
   } catch (error) {
     console.warn('[OTA] Error reading bundle version:', error);
     return DEFAULT_BUNDLE_VERSION;
@@ -31,13 +38,15 @@ export async function getCurrentBundleVersion(): Promise<string> {
 /**
  * Check for updates, download bundle if available, and prompt restart.
  */
-export async function checkForOtaUpdates() {
-  if (Platform.OS !== 'android') return; // OTA currently targeted for Android
+export async function checkForOtaUpdates(showNoUpdateAlert: boolean = false) {
+  if (Platform.OS !== 'android') {
+    if (showNoUpdateAlert) {
+      Alert.alert('OTA Update', 'OTA updates are only supported on Android devices.');
+    }
+    return;
+  }
 
   try {
-    // Sync stored version with the executing bundle's hardcoded version first
-    await AsyncStorage.setItem(BUNDLE_VERSION_KEY, DEFAULT_BUNDLE_VERSION);
-
     const currentBundleVersion = await getCurrentBundleVersion();
     console.log(`[OTA] Checking for updates. Native: ${NATIVE_VERSION}, Bundle: ${currentBundleVersion}`);
 
@@ -55,6 +64,9 @@ export async function checkForOtaUpdates() {
     const result: OtaCheckResponse = await response.json();
     if (!result.success || !result.updateAvailable || !result.bundleUrl || !result.version) {
       console.log('[OTA] App is up to date.');
+      if (showNoUpdateAlert) {
+        Alert.alert('App Update', 'Your app is up to date. No new updates available.');
+      }
       return;
     }
 
@@ -62,6 +74,9 @@ export async function checkForOtaUpdates() {
     await downloadAndApplyUpdate(result.bundleUrl, result.version, result.releaseNotes || '');
   } catch (error) {
     console.warn('[OTA] Check update failed:', error);
+    if (showNoUpdateAlert) {
+      Alert.alert('Update Error', 'Unable to check for updates. Please check your internet connection and try again.');
+    }
   }
 }
 
