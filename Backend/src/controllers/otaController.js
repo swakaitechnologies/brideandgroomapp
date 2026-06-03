@@ -1,5 +1,5 @@
 const { OtaUpdate } = require("../models/associations");
-const { minioClient, bucketName } = require("../config/minio");
+const { minioClient, bucketName, useS3 } = require("../config/minio");
 const logger = require("../utils/logger");
 
 // Helper to check if server version is greater than client version (semantic versioning comparison)
@@ -19,23 +19,18 @@ function isNewerVersion(serverVersion, clientVersion) {
 
 // Helper to construct MinIO file public URL
 const getMinioUrl = (bucket, fileName) => {
+  if (useS3) {
+    const region = process.env.AWS_REGION || "us-east-1";
+    return `https://${bucket}.s3.${region}.amazonaws.com/${fileName}`;
+  }
   const publicUrl = process.env.MINIO_PUBLIC_URL;
   if (publicUrl) {
     return `${publicUrl}/${bucket}/${fileName}`;
   }
   const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
   const host = process.env.MINIO_ENDPOINT || "localhost";
-  const port = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : null;
-  
-  if (port) {
-    return `${protocol}://${host}:${port}/${bucket}/${fileName}`;
-  }
-  
-  if (host.includes("amazonaws.com")) {
-    return `${protocol}://${bucket}.${host}/${fileName}`;
-  }
-  
-  return `${protocol}://${host}/${bucket}/${fileName}`;
+  const port = parseInt(process.env.MINIO_PORT) || 9000;
+  return `${protocol}://${host}:${port}/${bucket}/${fileName}`;
 };
 
 // Check if update is available for mobile app

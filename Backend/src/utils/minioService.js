@@ -1,4 +1,4 @@
-const { minioClient, bucketName } = require("../config/minio");
+const { minioClient, bucketName, useS3 } = require("../config/minio");
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 const path = require("path");
@@ -65,23 +65,18 @@ exports.uploadToMinio = async (folder, file, options = { thumb: true, width: 120
 
   const getUrl = (name) => {
     if (process.env.CDN_URL) return `${process.env.CDN_URL}/${name}`;
+    if (useS3) {
+      const region = process.env.AWS_REGION || "us-east-1";
+      return `https://${targetBucket}.s3.${region}.amazonaws.com/${name}`;
+    }
     const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
     const host = process.env.MINIO_ENDPOINT;
-    const port = process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : null;
+    const port = parseInt(process.env.MINIO_PORT);
 
-    if (!host) {
-      throw new Error("MINIO_ENDPOINT not configured in environment variables");
+    if (!host || isNaN(port)) {
+      throw new Error("MINIO_ENDPOINT or MINIO_PORT not configured in environment variables");
     }
-
-    if (port) {
-      return `${protocol}://${host}:${port}/${targetBucket}/${name}`;
-    }
-
-    if (host.includes("amazonaws.com")) {
-      return `${protocol}://${targetBucket}.${host}/${name}`;
-    }
-
-    return `${protocol}://${host}/${targetBucket}/${name}`;
+    return `${protocol}://${host}:${port}/${targetBucket}/${name}`;
   };
 
   return {

@@ -1,26 +1,93 @@
+const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand, PutBucketPolicyCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Minio = require("minio");
 
-const minioConfig = {
-  endPoint: process.env.MINIO_ENDPOINT || "localhost",
-  useSSL: process.env.MINIO_USE_SSL === "true",
-  accessKey: process.env.MINIO_ACCESS_KEY,
-  secretKey: process.env.MINIO_SECRET_KEY,
-};
+const useS3 = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
 
-if (process.env.MINIO_PORT) {
-  minioConfig.port = parseInt(process.env.MINIO_PORT);
+let minioClient;
+
+const bucketName = useS3 ? (process.env.AWS_BUCKET || "brideandgroom") : (process.env.MINIO_BUCKET || "brideandgroom");
+const kycBucketName = useS3 ? (process.env.AWS_KYC_BUCKET || "kyc-documents") : (process.env.MINIO_KYC_BUCKET || "kyc-documents");
+const bannerBucketName = useS3 ? (process.env.AWS_BANNER_BUCKET || "banners") : (process.env.MINIO_BANNER_BUCKET || "banners");
+const feedbackBucketName = useS3 ? (process.env.AWS_FEEDBACK_BUCKET || "user-feedback") : (process.env.MINIO_FEEDBACK_BUCKET || "user-feedback");
+
+if (useS3) {
+  console.log("Admin Backend: Initializing AWS S3 Client...");
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+  });
+
+  // Compatibility Wrapper matching minioClient interface
+  minioClient = {
+    async putObject(bucket, key, body, size, metadata = {}) {
+      const contentType = metadata["Content-Type"] || metadata["content-type"] || "application/octet-stream";
+      const command = new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      });
+      return s3.send(command);
+    },
+
+    async removeObject(bucket, key) {
+      const command = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+      return s3.send(command);
+    },
+
+    async presignedGetObject(bucket, key, expires = 3600) {
+      const { GetObjectCommand } = require("@aws-sdk/client-s3");
+      const command = new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+      return getSignedUrl(s3, command, { expiresIn: expires });
+    },
+
+    async bucketExists(bucket) {
+      try {
+        const command = new HeadBucketCommand({ Bucket: bucket });
+        await s3.send(command);
+        return true;
+      } catch (err) {
+        if (err.name === "NotFound" || err.$metadata?.httpStatusCode === 404) return false;
+        throw err;
+      }
+    },
+
+    async makeBucket(bucket) {
+      const command = new CreateBucketCommand({ Bucket: bucket });
+      return s3.send(command);
+    },
+
+    async setBucketPolicy(bucket, policy) {
+      try {
+        const command = new PutBucketPolicyCommand({
+          Bucket: bucket,
+          Policy: typeof policy === "string" ? policy : JSON.stringify(policy),
+        });
+        return s3.send(command);
+      } catch (err) {
+        console.warn(`[AWS S3] Warning setting policy for ${bucket}:`, err.message);
+      }
+    }
+  };
+} else {
+  console.log("Admin Backend: Initializing local MinIO Client...");
+  minioClient = new Minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT || "localhost",
+    port: parseInt(process.env.MINIO_PORT) || 9000,
+    useSSL: process.env.MINIO_USE_SSL === "true",
+    accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
+    secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
+  });
 }
 
-if (process.env.MINIO_REGION) {
-  minioConfig.region = process.env.MINIO_REGION;
-}
-
-const minioClient = new Minio.Client(minioConfig);
-
-const bucketName = process.env.MINIO_BUCKET || "brideandgroom";
-const kycBucketName = process.env.MINIO_KYC_BUCKET || "kyc-documents";
-const bannerBucketName = process.env.MINIO_BANNER_BUCKET || "banners";
-const feedbackBucketName = process.env.MINIO_FEEDBACK_BUCKET || "user-feedback";
-
-module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName };
-
+module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, useS3 };

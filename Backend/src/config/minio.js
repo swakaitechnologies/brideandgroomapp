@@ -1,86 +1,151 @@
+const { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand, CreateBucketCommand, PutBucketPolicyCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const Minio = require("minio");
 
-const minioConfig = {
-  endPoint: process.env.MINIO_ENDPOINT || "localhost",
-  useSSL: process.env.MINIO_USE_SSL === "true",
-  accessKey: process.env.MINIO_ACCESS_KEY,
-  secretKey: process.env.MINIO_SECRET_KEY,
-};
+const useS3 = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
 
-if (process.env.MINIO_PORT) {
-  minioConfig.port = parseInt(process.env.MINIO_PORT);
+let minioClient;
+
+const bucketName = useS3 ? (process.env.AWS_BUCKET || "user-photos") : process.env.MINIO_BUCKET;
+const kycBucketName = useS3 ? (process.env.AWS_KYC_BUCKET || "kyc-documents") : (process.env.MINIO_KYC_BUCKET || "kyc-documents");
+const bannerBucketName = useS3 ? (process.env.AWS_BANNER_BUCKET || "banners") : (process.env.MINIO_BANNER_BUCKET || "banners");
+const feedbackBucketName = useS3 ? (process.env.AWS_FEEDBACK_BUCKET || "user-feedback") : (process.env.MINIO_FEEDBACK_BUCKET || "user-feedback");
+
+if (useS3) {
+  console.log("Initializing AWS S3 Client...");
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION || "us-east-1",
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+  });
+
+  // Compatibility Wrapper matching minioClient interface
+  minioClient = {
+    async putObject(bucket, key, body, size, metadata = {}) {
+      const contentType = metadata["Content-Type"] || metadata["content-type"] || "application/octet-stream";
+      const command = new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+      });
+      return s3.send(command);
+    },
+
+    async removeObject(bucket, key) {
+      const command = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+      return s3.send(command);
+    },
+
+    async presignedGetObject(bucket, key, expires = 3600) {
+      const { GetObjectCommand } = require("@aws-sdk/client-s3");
+      const command = new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      });
+      return getSignedUrl(s3, command, { expiresIn: expires });
+    },
+
+    async bucketExists(bucket) {
+      try {
+        const command = new HeadBucketCommand({ Bucket: bucket });
+        await s3.send(command);
+        return true;
+      } catch (err) {
+        if (err.name === "NotFound" || err.$metadata?.httpStatusCode === 404) return false;
+        throw err;
+      }
+    },
+
+    async makeBucket(bucket) {
+      const command = new CreateBucketCommand({ Bucket: bucket });
+      return s3.send(command);
+    },
+
+    async setBucketPolicy(bucket, policy) {
+      try {
+        const command = new PutBucketPolicyCommand({
+          Bucket: bucket,
+          Policy: typeof policy === "string" ? policy : JSON.stringify(policy),
+        });
+        return s3.send(command);
+      } catch (err) {
+        console.warn(`[AWS S3] Warning setting policy for ${bucket}:`, err.message);
+      }
+    }
+  };
+} else {
+  console.log("Initializing local MinIO Client...");
+  minioClient = new Minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT || "localhost",
+    port: parseInt(process.env.MINIO_PORT) || 9000,
+    useSSL: process.env.MINIO_USE_SSL === "true",
+    accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
+    secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
+  });
 }
 
-if (process.env.MINIO_REGION) {
-  minioConfig.region = process.env.MINIO_REGION;
-}
-
-const minioClient = new Minio.Client(minioConfig);
-
-const bucketName = process.env.MINIO_BUCKET;
-const kycBucketName = process.env.MINIO_KYC_BUCKET || "kyc-documents";
-const bannerBucketName = process.env.MINIO_BANNER_BUCKET || "banners";
-const feedbackBucketName = process.env.MINIO_FEEDBACK_BUCKET || "user-feedback";
-
-// Delay function
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-// Ensure bucket and policies exist
+// Ensure buckets exist
 const initMinio = async (retries = 5) => {
   const buckets = [bucketName, kycBucketName, bannerBucketName, feedbackBucketName];
 
-
   for (let i = 0; i < retries; i++) {
     try {
-      console.log(`Checking MinIO connection (Attempt ${i + 1}/${retries})...`);
+      console.log(`Checking ${useS3 ? "S3" : "MinIO"} connection (Attempt ${i + 1}/${retries})...`);
 
       for (const bucket of buckets) {
+        if (!bucket) continue;
         const exists = await minioClient.bucketExists(bucket);
         if (!exists) {
-          await minioClient.makeBucket(bucket);
-          console.log(`Bucket "${bucket}" created successfully.`);
+          console.log(`Bucket "${bucket}" does not exist. Creating...`);
+          try {
+            await minioClient.makeBucket(bucket);
+            console.log(`Bucket "${bucket}" created successfully.`);
+          } catch (createErr) {
+            console.warn(`Could not create bucket "${bucket}" (it may already exist or creation is not allowed):`, createErr.message);
+          }
         }
 
-        // 1. Set bucket policy to allow public READ access for frontend visibility
-        const policy = {
-          Version: "2012-10-17",
-          Statement: [
-            {
-              Effect: "Allow",
-              Principal: { AWS: ["*"] },
-              Action: ["s3:GetBucketLocation", "s3:ListBucket"],
-              Resource: [`arn:aws:s3:::${bucket}`],
-            },
-            {
-              Effect: "Allow",
-              Principal: { AWS: ["*"] },
-              Action: ["s3:GetObject"],
-              Resource: [`arn:aws:s3:::${bucket}/*`],
-            },
-          ],
-        };
-
-        await minioClient.setBucketPolicy(bucket, JSON.stringify(policy));
-        console.log(`Bucket "${bucket}" policy set to PUBLIC READ.`);
-
+        // Set policy if using MinIO, or try S3 (usually public read is configured via S3 Block Public Access/Policy manually)
+        if (!useS3) {
+          const policy = {
+            Version: "2012-10-17",
+            Statement: [
+              {
+                Effect: "Allow",
+                Principal: { AWS: ["*"] },
+                Action: ["s3:GetBucketLocation", "s3:ListBucket"],
+                Resource: [`arn:aws:s3:::${bucket}`],
+              },
+              {
+                Effect: "Allow",
+                Principal: { AWS: ["*"] },
+                Action: ["s3:GetObject"],
+                Resource: [`arn:aws:s3:::${bucket}/*`],
+              },
+            ],
+          };
+          await minioClient.setBucketPolicy(bucket, JSON.stringify(policy));
+        }
       }
       return; // Success
     } catch (err) {
       console.error(`Attempt ${i + 1} failed:`, err.message);
-      
-      // If license is expired, don't keep retrying as it will always fail
       if (err.message.includes("License has fully expired")) {
-        console.warn("⚠️ Minio License Expired. Skipping further initialization attempts for local development.");
         return;
       }
-
       if (i === retries - 1) {
-        console.error("Failed to initialize MinIO after all attempts.");
+        console.error(`Failed to initialize ${useS3 ? "S3" : "MinIO"} after all attempts.`);
       } else {
-        await delay(3000); // Wait 3 seconds before next retry
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     }
   }
 };
 
-module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, initMinio };
+module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, initMinio, useS3 };
