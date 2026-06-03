@@ -131,7 +131,10 @@ exports.getUserDetails = async (req, res) => {
           COUNT(*) as messageCount
         FROM "Messages"
         WHERE senderId = :userId OR receiverId = :userId
-        GROUP BY peerId
+        GROUP BY CASE 
+          WHEN senderId = :userId THEN receiverId 
+          ELSE senderId 
+        END
       ) m
       JOIN "Profiles" p ON p.userId = m.peerId
       LEFT JOIN "Photos" ph ON ph.id = (
@@ -169,7 +172,10 @@ exports.getUserDetails = async (req, res) => {
           SUM(duration) as totalDuration
         FROM "CallHistories"
         WHERE callerId = :userId OR receiverId = :userId
-        GROUP BY peerId
+        GROUP BY CASE 
+          WHEN callerId = :userId THEN receiverId 
+          ELSE callerId 
+        END
       ) c
       JOIN "Profiles" p ON p.userId = c.peerId
       LEFT JOIN "Photos" ph ON ph.id = (
