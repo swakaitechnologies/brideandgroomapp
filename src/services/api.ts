@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules, Platform } from 'react-native';
 import { secureStorage } from './secureStorage';
 
-const LOCAL_IP = '127.0.0.1';
+const LOCAL_IP = '192.168.1.2';
 
 const getDevHost = () => {
   return LOCAL_IP;
@@ -10,13 +10,8 @@ const getDevHost = () => {
 
 export const DEV_HOST = getDevHost();
 
-// Production AWS Lambda Endpoints
-export const API_BASE_URL = 'https://uocgjbzgm9.execute-api.us-east-1.amazonaws.com/api';
-export const MAIN_SOCKET_URL = 'wss://pqoxy2xqz8.execute-api.us-east-1.amazonaws.com/prod';
-
-// Development Local URL
-// export const API_BASE_URL = `http://${DEV_HOST}:5000/api`;
-// export const MAIN_SOCKET_URL = `http://${DEV_HOST}:5000`;
+export const API_BASE_URL = `http://${DEV_HOST}:5000/api`;
+export const MAIN_SOCKET_URL = `http://${DEV_HOST}:5000`;
 
 export const resolvePhotoUrl = (url: string) => {
   if (!url) return url;

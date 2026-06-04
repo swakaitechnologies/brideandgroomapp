@@ -1,4 +1,4 @@
-const { minioClient, bucketName, useS3 } = require("../config/minio");
+const { minioClient, bucketName } = require("../config/minio");
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 const path = require("path");
@@ -64,12 +64,8 @@ exports.uploadToMinio = async (folder, file, options = { thumb: true, width: 120
   }
 
   const getUrl = (name) => {
-    if (process.env.CDN_URL && (!useS3 || (!process.env.CDN_URL.includes("127.0.0.1") && !process.env.CDN_URL.includes("localhost")))) {
+    if (process.env.CDN_URL) {
       return `${process.env.CDN_URL}/${name}`;
-    }
-    if (useS3) {
-      const region = process.env.AWS_REGION || "us-east-1";
-      return `https://${targetBucket}.s3.${region}.amazonaws.com/${name}`;
     }
     const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
     const host = process.env.MINIO_ENDPOINT;

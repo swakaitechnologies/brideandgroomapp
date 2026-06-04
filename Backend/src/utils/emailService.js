@@ -1,60 +1,31 @@
 const nodemailer = require("nodemailer");
-let transporter;
 
-const awsAccessKeyId = process.env.APP_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
-const awsSecretAccessKey = process.env.APP_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
-const awsRegion = process.env.APP_AWS_REGION || process.env.AWS_REGION || "us-east-1";
-
-if (awsAccessKeyId && awsSecretAccessKey) {
-  try {
-    const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
-    const sesClient = new SESv2Client({
-      region: awsRegion,
-      credentials: {
-        accessKeyId: awsAccessKeyId,
-        secretAccessKey: awsSecretAccessKey,
-      }
-    });
-    transporter = nodemailer.createTransport({
-      SES: { sesClient, SendEmailCommand },
-    });
-    console.log("📧 Email Service configured with AWS SES (v2)");
-  } catch (sesErr) {
-    console.error("❌ Failed to initialize AWS SES transport, falling back to SMTP:", sesErr.message);
-  }
-}
-
-if (!transporter) {
-  transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.hostinger.com",
-    port: parseInt(process.env.EMAIL_PORT) || 465,
-    secure: process.env.EMAIL_PORT === "465", // true for 465, false for 587
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-  console.log("📧 Email Service configured with SMTP");
-}
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.hostinger.com",
+  port: parseInt(process.env.EMAIL_PORT) || 465,
+  secure: process.env.EMAIL_PORT === "465", // true for 465, false for 587
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+console.log("📧 Email Service configured with SMTP");
 
 const LOGO_URL = process.env.LOGO_URL || "https://brideandgroom.co.in/Logo.png";
 const PLATFORM_NAME = process.env.PLATFORM_NAME || "Bride&Groom";
 
-// Verify connection on startup (disabled in Lambda to optimize cold start time)
-if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  transporter.verify((error, success) => {
-    if (error) {
-      console.error("❌ Email Service Error:", error.message);
-      if (error.message.includes("Username and Password not accepted")) {
-        console.error(
-          "👉 TIP: You are using a regular password. Google requires an 'App Password'.",
-        );
-      }
-    } else {
-      console.log("📧 Email Service is ready to send messages");
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Email Service Error:", error.message);
+    if (error.message.includes("Username and Password not accepted")) {
+      console.error(
+        "👉 TIP: You are using a regular password. Google requires an 'App Password'.",
+      );
     }
-  });
-}
+  } else {
+    console.log("📧 Email Service is ready to send messages");
+  }
+});
 
 const sendVerificationEmail = async (email, token) => {
   const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";

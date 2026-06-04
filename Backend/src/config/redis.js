@@ -6,8 +6,8 @@ dotenv.config();
 const redisClient = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
   socket: {
-    reconnectStrategy: false, // Fail fast in serverless to prevent hangs
-    connectTimeout: 3000,    // 3s connection timeout limit
+    reconnectStrategy: (retries) => Math.min(retries * 50, 2000),
+    connectTimeout: 3000,
   }
 });
 
@@ -20,13 +20,11 @@ redisClient.on("error", (err) => {
 });
 redisClient.on("connect", () => console.log("Redis Client Connected"));
 
-const redisSubscriber = process.env.AWS_LAMBDA_FUNCTION_NAME ? null : redisClient.duplicate();
-if (redisSubscriber) {
-  redisSubscriber.on("error", (err) => {
-    if (err.code === 'ECONNREFUSED') return;
-    console.log("Redis Subscriber Error", err);
-  });
-}
+const redisSubscriber = redisClient.duplicate();
+redisSubscriber.on("error", (err) => {
+  if (err.code === 'ECONNREFUSED') return;
+  console.log("Redis Subscriber Error", err);
+});
 
 const connectRedis = async () => {
   try {
@@ -34,8 +32,7 @@ const connectRedis = async () => {
       await redisClient.connect();
     }
 
-    // Only configure subscriber on local environments (not on AWS Lambda)
-    if (!process.env.AWS_LAMBDA_FUNCTION_NAME && redisSubscriber && !redisSubscriber.isOpen) {
+    if (redisSubscriber && !redisSubscriber.isOpen) {
       await redisSubscriber.connect();
       console.log("Redis Subscriber Connected");
 

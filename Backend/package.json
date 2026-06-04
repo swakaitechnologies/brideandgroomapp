@@ -14,13 +14,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-apigatewaymanagementapi": "^3.1060.0",
-    "@aws-sdk/client-s3": "^3.1059.0",
-    "@aws-sdk/client-sesv2": "^3.1060.0",
-    "@aws-sdk/s3-request-presigner": "^3.1059.0",
     "@sentry/node": "^10.53.1",
     "@sentry/profiling-node": "^10.53.1",
-    "@vendia/serverless-express": "^4.12.6",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -59,7 +54,6 @@
     "eslint": "^10.2.0",
     "globals": "^17.4.0",
     "nodemon": "^3.1.11",
-    "sequelize-cli": "^6.6.5",
-    "serverless-offline": "^14.7.1"
+    "sequelize-cli": "^6.6.5"
   }
 }

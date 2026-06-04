@@ -12,11 +12,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1059.0",
-    "@aws-sdk/s3-request-presigner": "^3.1059.0",
-    "@img/sharp-libvips-linux-x64": "^1.2.4",
-    "@img/sharp-linux-x64": "^0.34.5",
-    "@vendia/serverless-express": "^4.12.6",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -43,7 +38,6 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.13",
-    "serverless-offline": "^14.7.1"
+    "nodemon": "^3.1.13"
   }
 }

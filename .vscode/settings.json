@@ -55,5 +55,7 @@
     "eslint.options": {
         "ignore": true
     },
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.gradle.java.home": "C:\\Program Files\\Android\\Android Studio\\jbr",
+    "gradle.java.home": "C:\\Program Files\\Android\\Android Studio\\jbr"
 }

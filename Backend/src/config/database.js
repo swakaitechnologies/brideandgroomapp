@@ -30,20 +30,13 @@ const baseConfig = {
       }
     : console.log,
   benchmark: isProduction, // Track query timing in production
-  pool: process.env.AWS_LAMBDA_FUNCTION_NAME
-    ? {
-        max: 2,
-        min: 0,
-        idle: 1000,
-        evict: 1000
-      }
-    : {
-        max: isProduction ? 30 : 20,
-        min: isProduction ? 10 : 5,
-        acquire: 30000,
-        idle: 10000,
-        evict: 5000, // Evict stale connections every 5s
-      },
+  pool: {
+    max: isProduction ? 30 : 20,
+    min: isProduction ? 10 : 5,
+    acquire: 30000,
+    idle: 10000,
+    evict: 5000, // Evict stale connections every 5s
+  },
   retry: {
     max: 3, // Retry failed queries up to 3 times
     match: [/ETIMEDOUT/, /ECONNREFUSED/, /ECONNRESET/],
@@ -111,11 +104,7 @@ const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log(`✅ Database connected${hasReadReplica ? " (with read replica)" : ""}.`);
-    // Skip heavy sync and column checks in AWS Lambda to prevent cold start latency
-    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-      console.log("⚡ Running under AWS Lambda: Skipping database sync & column checks.");
-      return;
-    }
+
 
     // In Production, we avoid using sync({ alter: true }) to prevent
     // redundant index issues. We only use simple sync().

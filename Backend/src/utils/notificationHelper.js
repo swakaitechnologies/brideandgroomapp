@@ -80,7 +80,6 @@ async function sendNotification({ receiverId, senderId = null, type, message, re
       return notification;
     }
 
-    // 3. Emit via Socket.IO for in-app real-time toast
     const io = getIO();
     if (io) {
       const socketPayload = {
@@ -164,13 +163,36 @@ function formatNotificationTitle(type) {
     case "contact_reveal":
       return "Contact Revealed";
     case "kyc":
-      return "KYC Status Update";
+    case "kyc_approved":
+      return "KYC Approved";
+    case "kyc_rejected":
+      return "KYC Rejected";
     case "feedback":
       return "Feedback Update";
     case "block":
-      return "Profile Blocked";
+    case "banned":
+      return "Account Restricted";
     case "unblock":
-      return "Profile Unblocked";
+    case "unbanned":
+      return "Account Restored";
+    case "account_approved":
+    case "profile_approved":
+      return "Account Approved";
+    case "account_rejected":
+    case "profile_rejected":
+      return "Account Action Required";
+    case "announcement":
+      return "📢 Announcement";
+    case "call_incoming":
+      return "Incoming Call";
+    case "call_missed":
+      return "Missed Call";
+    case "like":
+      return "Someone Liked You";
+    case "shortlist":
+      return "Added to Shortlist";
+    case "profile_view":
+      return "Profile Viewed";
     default:
       return "New Notification";
   }
@@ -206,7 +228,6 @@ async function sendPushAndSocketNotification({ id, userId, senderId = null, type
       return;
     }
 
-    // 2. Emit via Socket.IO for in-app real-time toast
     const io = getIO();
     if (io) {
       const socketPayload = {

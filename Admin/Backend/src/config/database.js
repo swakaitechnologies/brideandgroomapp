@@ -15,19 +15,12 @@ const getDialect = () => {
 
 const dialect = getDialect();
 
-const poolConfig = process.env.AWS_LAMBDA_FUNCTION_NAME
-  ? {
-      max: 2,
-      min: 0,
-      idle: 1000,
-      evict: 1000
-    }
-  : {
-      max: 10,
-      min: 2,
-      acquire: 30000,
-      idle: 10000,
-    };
+const poolConfig = {
+  max: 10,
+  min: 2,
+  acquire: 30000,
+  idle: 10000,
+};
 
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
@@ -65,12 +58,7 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log("✅ Admin Database connected successfully.");
 
-    // Skip heavy sync and column checks in AWS Lambda to prevent cold start latency
-    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-      console.log("⚡ Running under AWS Lambda: Skipping database sync & column checks.");
-      require("../models/associations");
-      return;
-    }
+
 
     // Import all models via associations to register them with Sequelize
     require("../models/associations");

@@ -239,5 +239,4 @@ module.exports = {
   CallHistory,
   Coupon,
   ContactFilter,
-  WebSocketConnection: require("./WebSocketConnection"),
 };

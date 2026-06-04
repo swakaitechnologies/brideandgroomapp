@@ -1,6 +1,6 @@
 const { KYC, Profile, User, Photo: PhotoModel, PartnerPreference: PPModel, ProfileView, Interest, Subscription } = require("../models/associations");
 const { invalidateProfileCache } = require("../utils/cacheInvalidation");
-const { useS3 } = require("../config/minio");
+const { bucketName: minioBucketName } = require("../config/minio");
 
 /**
  * Helper to calculate profile completion percentage
@@ -59,9 +59,6 @@ const calculateCompletion = (profile) => {
   return Math.min(Math.round(score), 100);
 };
 
-/**
- * Helper to ensure all photo URLs are absolute
- */
 const ensureAbsoluteUrls = (profile) => {
   if (!profile) return profile;
   const profileJson = typeof profile.toJSON === "function" ? profile.toJSON() : profile;
@@ -70,27 +67,18 @@ const ensureAbsoluteUrls = (profile) => {
     const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
     const host = process.env.MINIO_ENDPOINT;
     const port = process.env.MINIO_PORT;
-    const bucket = process.env.MINIO_BUCKET || 'user-photos';
+    // Use the resolved bucket name from minio.js config
+    const bucket = minioBucketName || process.env.MINIO_BUCKET || 'user-photos';
     
     profileJson.photos = profileJson.photos.map(photo => {
       // Ensure photo is a plain object
       const p = typeof photo.toJSON === "function" ? photo.toJSON() : photo;
       
       if (p.url && !p.url.startsWith('http')) {
-        if (useS3) {
-          const region = process.env.AWS_REGION || "us-east-1";
-          p.url = `https://${bucket}.s3.${region}.amazonaws.com/${p.url}`;
-        } else {
-          p.url = `${protocol}://${host}:${port}/${bucket}/${p.url}`;
-        }
+        p.url = `${protocol}://${host}:${port}/${bucket}/${p.url}`;
       }
       if (p.thumbnailUrl && !p.thumbnailUrl.startsWith('http')) {
-        if (useS3) {
-          const region = process.env.AWS_REGION || "us-east-1";
-          p.thumbnailUrl = `https://${bucket}.s3.${region}.amazonaws.com/${p.thumbnailUrl}`;
-        } else {
-          p.thumbnailUrl = `${protocol}://${host}:${port}/${bucket}/${p.thumbnailUrl}`;
-        }
+        p.thumbnailUrl = `${protocol}://${host}:${port}/${bucket}/${p.thumbnailUrl}`;
       }
       return p;
     });
