@@ -16,12 +16,12 @@ import {
   ShieldCheck, 
   CreditCard, 
   ArrowRight,
-  CheckCircle,
   Percent,
   Info,
   Tag,
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import LottieView from 'lottie-react-native';
 import { palette } from '../../theme/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -233,10 +233,13 @@ export default function CheckoutScreen() {
       </View>
 
       {success ? (
-        <View style={[styles.successContainer, { paddingTop: 40 }]}>
-          <View style={styles.successIconWrapper}>
-            <CheckCircle size={64} color="#4CAF50" />
-          </View>
+        <View style={[styles.successContainer, { paddingTop: 20 }]}>
+          <LottieView
+            source={require('../../../assets/animations/c22b3edc-116e-11ee-b29e-6b53b36a56ea.json')}
+            autoPlay
+            loop={false}
+            style={{ width: 160, height: 160, marginBottom: 20 }}
+          />
           <Text style={[styles.successTitle, { color: textColor }]}>Payment Confirmed!</Text>
           <Text style={[styles.successSub, { color: mutedText }]}>
             Your profile has been upgraded to <Text style={{ ...fonts.bold, color: accentColor }}>{activatedPlan || plan.name}</Text>.
