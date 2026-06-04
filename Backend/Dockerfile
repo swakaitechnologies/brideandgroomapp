@@ -27,6 +27,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy source code and necessary files
 COPY --from=selector /app/src ./src
+COPY --from=selector /app/firebase-service-account.json* ./
 
 # Create logs directory and set permissions
 RUN mkdir -p /app/logs && chown -R node:node /app/logs
