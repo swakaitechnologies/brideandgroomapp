@@ -13,7 +13,7 @@ const { connectRedis } = require("./config/redis");
 require("./models/associations");
 const seedDefaultAdmin = require("./utils/seeder");
 
-const PORT = process.env.ADMIN_PORT || 5001;
+const PORT = process.env.PORT || process.env.ADMIN_PORT || 5001;
 
 const startServer = async () => {
   // Required Environment Variables Check
