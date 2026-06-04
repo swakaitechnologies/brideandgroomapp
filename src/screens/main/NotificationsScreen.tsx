@@ -174,14 +174,14 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
         return {
           Icon: Heart,
           color: "#FF4D4D",
-          bgColor: "rgba(255, 77, 77, 0.08)",
+          bgColor: "rgba(255, 77, 77, 0.04)",
           label: "New Interest",
         };
       case "interest_accepted":
         return {
           Icon: CheckCircle,
           color: "#4CAF50",
-          bgColor: "rgba(76, 175, 80, 0.08)",
+          bgColor: "rgba(76, 175, 80, 0.04)",
           label: "Interest Accepted",
         };
       case "interest_declined":
@@ -189,14 +189,14 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
         return {
           Icon: XCircle,
           color: "#F44336",
-          bgColor: "rgba(244, 67, 54, 0.08)",
+          bgColor: "rgba(244, 67, 54, 0.04)",
           label: "Request Declined",
         };
       case "profile_view":
         return {
           Icon: Eye,
           color: "#2196F3",
-          bgColor: "rgba(33, 150, 243, 0.08)",
+          bgColor: "rgba(33, 150, 243, 0.04)",
           label: "Profile Viewer",
         };
       case "contact_request":
@@ -204,14 +204,14 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
         return {
           Icon: Phone,
           color: "#FF9800",
-          bgColor: "rgba(255, 152, 0, 0.08)",
+          bgColor: "rgba(255, 152, 0, 0.04)",
           label: "Contact Update",
         };
       case "new_message":
         return {
           Icon: MessageCircle,
           color: "#9C27B0",
-          bgColor: "rgba(156, 39, 176, 0.08)",
+          bgColor: "rgba(156, 39, 176, 0.04)",
           label: "New Message",
         };
       case "photo_request":
@@ -219,28 +219,28 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
         return {
           Icon: ImageIcon,
           color: "#00BCD4",
-          bgColor: "rgba(0, 188, 212, 0.08)",
+          bgColor: "rgba(0, 188, 212, 0.04)",
           label: "Photo Request",
         };
       case "kyc":
         return {
           Icon: CheckCircle,
           color: "#4CAF50",
-          bgColor: "rgba(76, 175, 80, 0.08)",
+          bgColor: "rgba(76, 175, 80, 0.04)",
           label: "KYC Verification",
         };
       case "profile":
         return {
           Icon: CheckCircle,
           color: "#2196F3",
-          bgColor: "rgba(33, 150, 243, 0.08)",
+          bgColor: "rgba(33, 150, 243, 0.04)",
           label: "Profile Status",
         };
       case "feedback":
         return {
           Icon: HelpCircle,
           color: palette.gold.main,
-          bgColor: "rgba(212, 175, 55, 0.08)",
+          bgColor: "rgba(212, 175, 55, 0.04)",
           label: "Query Status",
         };
       case "admin":
@@ -248,7 +248,7 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
         return {
           Icon: Bell,
           color: deepPurple,
-          bgColor: "rgba(59, 30, 84, 0.08)",
+          bgColor: "rgba(59, 30, 84, 0.04)",
           label: "System Alert",
         };
     }
@@ -287,7 +287,9 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
           styles.notificationCard,
           {
             backgroundColor: cardBg,
-            borderColor: !item.isRead ? color + "40" : "rgba(59, 30, 84, 0.06)",
+            borderLeftWidth: 5,
+            borderLeftColor: color,
+            borderColor: !item.isRead ? color + "40" : "rgba(232, 224, 240, 0.6)",
           },
           !item.isRead && { backgroundColor: isDark ? "rgba(212, 175, 55, 0.05)" : bgColor },
         ]}
@@ -576,7 +578,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "rgba(59, 30, 84, 0.06)",
-    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#3B1E54",
@@ -595,7 +596,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -628,9 +629,9 @@ const styles = StyleSheet.create({
     padding: 30,
   },
   emptyIconContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
@@ -649,12 +650,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   homeButton: {
-    height: 46,
-    paddingHorizontal: 24,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
   },
   homeButtonText: {
     fontSize: 15,
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: "rgba(59, 30, 84, 0.08)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -671,8 +671,6 @@ const styles = StyleSheet.create({
     width: width * 0.85,
     borderRadius: 20,
     padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(59, 30, 84, 0.1)",
     ...Platform.select({
       ios: {
         shadowColor: "#3B1E54",
@@ -735,15 +733,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   modalActionButtonText: {
-    color: "#FFFFFF",
+    color: "#D4AF37",
     ...fonts.bold,
     fontSize: 15,
   },
   modalCloseTextButton: {
     height: 48,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(59, 30, 84, 0.1)",
+    borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
