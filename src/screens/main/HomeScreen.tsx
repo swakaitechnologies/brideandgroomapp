@@ -623,7 +623,6 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                     type="grid"
                     isDark={isDark}
                     onPress={() => navigation.navigate("ProfileDetail", { profile: item })}
-                    style={{ width: (width - 50) / 2, marginBottom: 15 }}
                   />
                 ))}
               </View>
@@ -1058,10 +1057,8 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
   },
   newProfilesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     paddingHorizontal: 20,
-    justifyContent: "space-between",
+    gap: 12,
   },
   loadMoreBtn: {
     flexDirection: "row",

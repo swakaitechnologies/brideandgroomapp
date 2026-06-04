@@ -495,9 +495,7 @@ export default function MatchesScreen() {
         <FlatList
           data={filteredProfiles}
           keyExtractor={(item) => item.id || item.userId || Math.random().toString()}
-          numColumns={2}
           contentContainerStyle={styles.listContent}
-          columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState()}
           refreshControl={
