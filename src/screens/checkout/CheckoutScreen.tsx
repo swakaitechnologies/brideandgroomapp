@@ -172,22 +172,6 @@ export default function CheckoutScreen() {
         const planName = verifyRes.data.subscription?.planName || plan.name;
         setActivatedPlan(planName);
         setSuccess(true);
-
-        setTimeout(() => {
-          Alert.alert(
-            "Payment Successful! 🎉",
-            `You are now subscribed to the ${planName} Plan. Enjoy premium features!`,
-            [
-              {
-                text: "Go to Home",
-                onPress: () => navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Tabs' }],
-                }),
-              },
-            ]
-          );
-        }, 800);
       } else {
         Alert.alert(
           "Verification Failed",
