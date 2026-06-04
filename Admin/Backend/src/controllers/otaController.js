@@ -1,10 +1,14 @@
 const { OtaUpdate } = require("../models/associations");
-const { minioClient, bucketName } = require("../config/minio");
+const { minioClient, bucketName, useS3 } = require("../config/minio");
 const { logAdminAction } = require("../utils/logger");
 const logger = require("../utils/logger");
 
 // Helper to construct MinIO file public URL
 const getMinioUrl = (bucket, fileName) => {
+  if (useS3) {
+    const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+    return `https://${bucket}.s3.${region}.amazonaws.com/${fileName}`;
+  }
   const publicUrl = process.env.MINIO_PUBLIC_URL;
   if (publicUrl) {
     return `${publicUrl}/${bucket}/${fileName}`;

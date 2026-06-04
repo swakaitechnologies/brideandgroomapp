@@ -1,4 +1,4 @@
-const { minioClient, bannerBucketName } = require("../config/minio");
+const { minioClient, bannerBucketName, useS3 } = require("../config/minio");
 const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 const path = require("path");
@@ -24,8 +24,12 @@ exports.uploadBannerToMinio = async (file) => {
   });
 
   const getUrl = (name) => {
-    if (process.env.CDN_URL) {
+    if (process.env.CDN_URL && (!useS3 || (!process.env.CDN_URL.includes("127.0.0.1") && !process.env.CDN_URL.includes("localhost")))) {
       return `${process.env.CDN_URL}/${name}`;
+    }
+    if (useS3) {
+      const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+      return `https://${bannerBucketName}.s3.${region}.amazonaws.com/${name}`;
     }
     const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
     const host = process.env.MINIO_ENDPOINT || "localhost";

@@ -1,7 +1,7 @@
 const Report = require("../models/Report");
 const User = require("../models/User");
 const sharp = require("sharp");
-const { minioClient, bucketName } = require("../config/minio");
+const { minioClient, bucketName, useS3 } = require("../config/minio");
 const { v4: uuidv4 } = require("uuid");
 
 const CDN_URL = process.env.CDN_URL || null;
@@ -59,8 +59,11 @@ exports.submitReport = async (req, res) => {
       );
 
       // 4. Construct URL
-      if (CDN_URL) {
+      if (CDN_URL && (!useS3 || (!CDN_URL.includes("127.0.0.1") && !CDN_URL.includes("localhost")))) {
         reportImageUrl = `${CDN_URL}/${fileName}`;
+      } else if (useS3) {
+        const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+        reportImageUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
       } else {
         const protocol =
           process.env.MINIO_USE_SSL === "true" ? "https" : "http";

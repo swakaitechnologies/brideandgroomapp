@@ -1,6 +1,6 @@
 const { KYC, Profile, User, Photo: PhotoModel, PartnerPreference: PPModel, ProfileView, Interest, Subscription } = require("../models/associations");
 const { invalidateProfileCache } = require("../utils/cacheInvalidation");
-const { bucketName: minioBucketName } = require("../config/minio");
+const { bucketName: minioBucketName, useS3 } = require("../config/minio");
 
 /**
  * Helper to calculate profile completion percentage
@@ -75,10 +75,20 @@ const ensureAbsoluteUrls = (profile) => {
       const p = typeof photo.toJSON === "function" ? photo.toJSON() : photo;
       
       if (p.url && !p.url.startsWith('http')) {
-        p.url = `${protocol}://${host}:${port}/${bucket}/${p.url}`;
+        if (useS3) {
+          const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+          p.url = `https://${bucket}.s3.${region}.amazonaws.com/${p.url}`;
+        } else {
+          p.url = `${protocol}://${host}:${port}/${bucket}/${p.url}`;
+        }
       }
       if (p.thumbnailUrl && !p.thumbnailUrl.startsWith('http')) {
-        p.thumbnailUrl = `${protocol}://${host}:${port}/${bucket}/${p.thumbnailUrl}`;
+        if (useS3) {
+          const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+          p.thumbnailUrl = `https://${bucket}.s3.${region}.amazonaws.com/${p.thumbnailUrl}`;
+        } else {
+          p.thumbnailUrl = `${protocol}://${host}:${port}/${bucket}/${p.thumbnailUrl}`;
+        }
       }
       return p;
     });
