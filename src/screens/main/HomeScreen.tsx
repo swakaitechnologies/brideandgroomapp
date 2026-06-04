@@ -221,9 +221,6 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
   // Show permissions modal if any of gallery, camera, or location is not granted
   useEffect(() => {
-    // Trigger toast notification on mount
-    showToast("Welcome back! Your dashboard has loaded.", "Dashboard Updated");
-
     const checkPermissionsStatus = async () => {
       if (Platform.OS !== "android") return;
 
