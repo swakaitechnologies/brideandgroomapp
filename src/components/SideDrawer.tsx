@@ -124,12 +124,12 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
   };
 
   // Dynamic Theme Colors
-  const themeBg = isDark ? palette.purple.deep : palette.neutral.white;
+  const themeBg = isDark ? palette.purple.deep : '#F8F7FA'; // Elegant off-white background
   const textColor = isDark ? palette.purple.light : palette.purple.deep;
   const mutedText = isDark ? palette.purple.muted : palette.neutral.grey;
-  const borderColor = isDark ? '#3D2B4F' : palette.purple.border;
-  const headerBg = isDark ? '#1E1E1E' : '#FAFAFA';
-  const cardBg = isDark ? '#1E1E1E' : palette.neutral.white;
+  const borderColor = isDark ? '#3D2B4F' : 'rgba(59, 30, 84, 0.08)'; // Subtle divider color
+  const headerBg = isDark ? '#1E1E1E' : '#FFFFFF';
+  const cardBg = isDark ? '#1E1E1E' : '#FFFFFF';
 
   // Animation values using standard Animated
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -293,11 +293,17 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
     }
   };
 
-  const MenuItem = ({ icon: Icon, label, onPress, badge }: any) => (
-    <TouchableOpacity style={[styles.menuItem, { borderBottomColor: borderColor }]} onPress={onPress}>
+  const MenuItem = ({ icon: Icon, label, onPress, badge, isLast, labelColor }: any) => (
+    <TouchableOpacity 
+      style={[
+        styles.menuItem, 
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: borderColor }
+      ]} 
+      onPress={onPress}
+    >
       <View style={styles.menuItemLeft}>
-        <Icon size={22} color={isDark ? palette.gold.main : palette.purple.deep} />
-        <Text style={[styles.menuItemLabel, { color: textColor }]}>{label}</Text>
+        <Icon size={20} color={labelColor || (isDark ? palette.gold.main : palette.purple.deep)} />
+        <Text style={[styles.menuItemLabel, { color: labelColor || textColor }]}>{label}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {badge && (
@@ -305,7 +311,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         )}
-        <ChevronRight size={18} color={mutedText} />
+        <ChevronRight size={16} color={labelColor || mutedText} />
       </View>
     </TouchableOpacity>
   );
@@ -333,10 +339,6 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
       >
         <View style={[styles.header, { backgroundColor: headerBg }]}>
           <View style={styles.headerTop}>
-            <TouchableOpacity onPress={handleLogout} style={styles.logoutTopBtn}>
-              <LogOut size={20} color="#FF4D4D" />
-              <Text style={styles.logoutTopText}>Logout</Text>
-            </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <X size={24} color={textColor} />
             </TouchableOpacity>
@@ -352,15 +354,9 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
                   `https://api.dicebear.com/7.x/avataaars/png?seed=${user?.email || "default"}`
                 )
               }}
-              style={[
-                styles.avatar,
-                subscription ? { borderColor: palette.gold.main } : { borderColor: '#E0E0E0' }
-              ]}
+              style={styles.avatar}
             />
             <View style={styles.profileInfo}>
-              <Text style={[styles.greetingText, { color: mutedText }]}>
-                {getGreeting()},
-              </Text>
               <View style={styles.nameRow}>
                 <Text style={[styles.userName, { color: textColor }]} numberOfLines={1}>
                   {profileData?.firstName || user?.firstName || "Valued"} {profileData?.lastName || user?.lastName || "Member"}
@@ -372,6 +368,19 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
                   <BadgeCheck size={16} color={palette.gold.main} style={{ marginLeft: 4 }} />
                 )}
               </View>
+              <View style={styles.badgeRow}>
+                {subscription ? (
+                  <View style={[styles.statusBadge, { backgroundColor: 'rgba(212, 175, 55, 0.12)' }]}>
+                    <Crown size={10} color={palette.gold.main} fill={palette.gold.main} />
+                    <Text style={[styles.statusBadgeText, { color: palette.gold.main }]}>Premium Member</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.statusBadge, { backgroundColor: 'rgba(128, 128, 128, 0.1)' }]}>
+                    <User size={10} color={mutedText} />
+                    <Text style={[styles.statusBadgeText, { color: mutedText }]}>Free Account</Text>
+                  </View>
+                )}
+              </View>
               <TouchableOpacity onPress={copyToClipboard} style={styles.idBadge}>
                 <Text style={styles.idText}>ID: {profileData?.customId || user?.customId || "MEMBER"}</Text>
                 <Copy size={11} color={palette.purple.deep} style={{ marginLeft: 6 }} />
@@ -379,139 +388,113 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             </View>
           </View>
 
-          {/* Plan Status Card */}
-          <View style={[styles.planCard, { backgroundColor: isDark ? '#1E1E1E' : '#F9F7FF', borderColor: borderColor }]}>
-            {subscription ? (
-              <>
-                <View style={styles.planCardHeader}>
-                  <View style={[styles.planBadge, { backgroundColor: palette.gold.main }]}>
-                    <Crown size={14} color={palette.purple.deep} />
-                  </View>
-                  <View style={styles.planCardInfo}>
-                    <Text style={[styles.planCardTitle, { color: textColor }]}>{subscription.plan?.name || 'Premium'} Plan</Text>
-                    <Text style={[styles.planCardSub, { color: mutedText }]}>
-                      Expires: {subscription.endDate ? new Date(subscription.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.planCardDetails}>
-                  <View style={styles.planDetailItem}>
-                    <Text style={[styles.planDetailValue, { color: textColor }]}>{subscription.plan?.durationDays || '—'}</Text>
-                    <Text style={[styles.planDetailLabel, { color: mutedText }]}>Days</Text>
-                  </View>
-                  <View style={[styles.planDetailDivider, { backgroundColor: borderColor }]} />
-                  <View style={styles.planDetailItem}>
-                    <Text style={[styles.planDetailValue, { color: textColor }]}>{subscription.contactsUsed || 0}</Text>
-                    <Text style={[styles.planDetailLabel, { color: mutedText }]}>Contacts</Text>
-                  </View>
-                  <View style={[styles.planDetailDivider, { backgroundColor: borderColor }]} />
-                  <View style={styles.planDetailItem}>
-                    <Text style={[styles.planDetailValue, { color: textColor }]}>{subscription.plan?.maxMessages === -1 ? '∞' : (subscription.messagesUsed || 0)}</Text>
-                    <Text style={[styles.planDetailLabel, { color: mutedText }]}>Messages</Text>
-                  </View>
-                </View>
-              </>
-            ) : (
-              <TouchableOpacity style={styles.planCardFree} onPress={() => handleTabNavigation('Premium')} activeOpacity={0.7}>
-                <View style={styles.planCardFreeHeader}>
-                  <View style={[styles.planBadge, { backgroundColor: '#E0E0E0' }]}>
-                    <User size={14} color="#888" />
-                  </View>
-                  <View style={styles.planCardInfo}>
-                    <Text style={[styles.planCardTitle, { color: textColor }]}>Free Plan</Text>
-                    <Text style={[styles.planCardSub, { color: mutedText }]}>Limited features available</Text>
-                  </View>
-                </View>
-                <View style={[styles.upgradePlanBtn, { backgroundColor: palette.gold.main }]}>
-                  <Crown size={12} color={palette.purple.deep} />
-                  <Text style={[styles.upgradePlanText, { color: palette.purple.deep }]}>Upgrade</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          </View>
+          {/* Compact Subscription Info */}
+          {subscription ? (
+            <View style={styles.compactStatsRow}>
+              <View style={styles.compactStatItem}>
+                <Text style={[styles.compactStatVal, { color: textColor }]}>
+                  {subscription.endDate ? Math.ceil((new Date(subscription.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : '—'}
+                </Text>
+                <Text style={[styles.compactStatLabel, { color: mutedText }]}>Days Left</Text>
+              </View>
+              <View style={[styles.compactStatDivider, { backgroundColor: borderColor }]} />
+              <View style={styles.compactStatItem}>
+                <Text style={[styles.compactStatVal, { color: textColor }]}>
+                  {subscription.contactsUsed || 0}
+                </Text>
+                <Text style={[styles.compactStatLabel, { color: mutedText }]}>Contacts</Text>
+              </View>
+              <View style={[styles.compactStatDivider, { backgroundColor: borderColor }]} />
+              <View style={styles.compactStatItem}>
+                <Text style={[styles.compactStatVal, { color: textColor }]}>
+                  {subscription.plan?.maxMessages === -1 ? '∞' : (subscription.messagesUsed || 0)}
+                </Text>
+                <Text style={[styles.compactStatLabel, { color: mutedText }]}>Messages</Text>
+              </View>
+            </View>
+          ) : null}
 
+          {/* Header Action Buttons */}
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={[styles.headerBtn, { borderColor: borderColor }]}
+              style={styles.headerActionBtn}
               onPress={() => { onClose(); navigation.navigate('EditProfile'); }}
             >
-              <Edit3 size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit={true}
-                minimumFontScale={0.8}
-                style={[styles.headerBtnText, { color: textColor }]}
-              >
-                Edit Profile
-              </Text>
+              <Edit3 size={14} color={palette.purple.deep} />
+              <Text style={[styles.headerActionBtnText, { color: textColor }]}>Edit Profile</Text>
             </TouchableOpacity>
-            <View style={[styles.headerDivider, { backgroundColor: borderColor }]} />
-            <TouchableOpacity style={styles.headerBtn} onPress={handleDownloadProfile}>
-              <Download size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit={true}
-                minimumFontScale={0.8}
-                style={[styles.headerBtnText, { color: textColor }]}
-              >
-                Download
-              </Text>
+            <View style={[styles.headerActionDivider, { backgroundColor: borderColor }]} />
+            <TouchableOpacity style={styles.headerActionBtn} onPress={handleDownloadProfile}>
+              <Download size={14} color={palette.purple.deep} />
+              <Text style={[styles.headerActionBtnText, { color: textColor }]}>Download</Text>
             </TouchableOpacity>
-            <View style={[styles.headerDivider, { backgroundColor: borderColor }]} />
-            <TouchableOpacity style={styles.headerBtn} onPress={handleShareProfile}>
-              <Share2 size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text
-                numberOfLines={1}
-                adjustsFontSizeToFit={true}
-                minimumFontScale={0.8}
-                style={[styles.headerBtnText, { color: textColor }]}
-              >
-                Share
-              </Text>
+            <View style={[styles.headerActionDivider, { backgroundColor: borderColor }]} />
+            <TouchableOpacity style={styles.headerActionBtn} onPress={handleShareProfile}>
+              <Share2 size={14} color={palette.purple.deep} />
+              <Text style={[styles.headerActionBtnText, { color: textColor }]}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           {/* Category Group 1: Preferences & Matches */}
-          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <Text style={[styles.groupHeading, { color: mutedText }]}>Preferences & Matches</Text>
-            <MenuItem icon={Settings} label="Partner Preference" onPress={() => { onClose(); navigation.navigate('PartnerPreference'); }} />
-            <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} />
+          <View style={styles.flatSection}>
+            <Text style={[styles.flatSectionHeader, { color: mutedText }]}>Preferences & Matches</Text>
+            <View style={[styles.flatSectionContent, { backgroundColor: cardBg }]}>
+              <MenuItem icon={Settings} label="Partner Preference" onPress={() => { onClose(); navigation.navigate('PartnerPreference'); }} />
+              <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} isLast={true} />
+            </View>
           </View>
 
           {/* Category Group 2: Verification & Settings */}
-          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <Text style={[styles.groupHeading, { color: mutedText }]}>Verification & Settings</Text>
-            <MenuItem icon={ShieldCheck} label="KYC Verification" onPress={() => { onClose(); navigation.navigate('KYCVerification'); }} />
-            <MenuItem icon={User} label="Account Setting" onPress={() => { onClose(); navigation.navigate('AccountSetting'); }} />
-            <MenuItem icon={ShieldCheck} label="Be Safe Online" onPress={() => { onClose(); navigation.navigate('Safety'); }} />
+          <View style={styles.flatSection}>
+            <Text style={[styles.flatSectionHeader, { color: mutedText }]}>Verification & Settings</Text>
+            <View style={[styles.flatSectionContent, { backgroundColor: cardBg }]}>
+              <MenuItem icon={ShieldCheck} label="KYC Verification" onPress={() => { onClose(); navigation.navigate('KYCVerification'); }} />
+              <MenuItem icon={User} label="Account Setting" onPress={() => { onClose(); navigation.navigate('AccountSetting'); }} />
+              <MenuItem icon={ShieldCheck} label="Be Safe Online" onPress={() => { onClose(); navigation.navigate('Safety'); }} isLast={true} />
+            </View>
           </View>
 
           {/* Category Group 3: Support & Feedback */}
-          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <Text style={[styles.groupHeading, { color: mutedText }]}>Support & Feedback</Text>
-            <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
-            <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
-            <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
-            <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} />
+          <View style={styles.flatSection}>
+            <Text style={[styles.flatSectionHeader, { color: mutedText }]}>Support & Feedback</Text>
+            <View style={[styles.flatSectionContent, { backgroundColor: cardBg }]}>
+              <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
+              <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
+              <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
+              <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} isLast={true} />
+            </View>
           </View>
 
           {/* Section: Promotions */}
           {promoCoupon && (
             <View style={styles.couponSection}>
-              <View style={[styles.couponCard, { backgroundColor: isDark ? '#1E1E1E' : '#F9F7FF', borderColor: isDark ? palette.gold.main : palette.purple.border }]}>
-                <Ticket size={24} color={palette.gold.main} />
+              <View style={[styles.couponCard, { backgroundColor: isDark ? '#1E1E1E' : '#FFF9E6', borderColor: palette.gold.main }]}>
+                <Ticket size={20} color={palette.gold.main} />
                 <View style={styles.couponInfo}>
                   <Text style={[styles.couponTitle, { color: textColor }]}>{promoCoupon.description}</Text>
                   <Text style={[styles.couponSubtitle, { color: mutedText }]}>Use code: {promoCoupon.code}</Text>
                 </View>
                 <TouchableOpacity style={styles.applyBtn} onPress={handlePromoApply}>
-                  <Text style={styles.applyBtnText}>Apply</Text>
+                  <Text style={[styles.applyBtnText, { color: palette.purple.deep }]}>Apply</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
+
+          {/* Logout Button Section */}
+          <View style={[styles.flatSection, { marginBottom: 20 }]}>
+            <View style={[styles.flatSectionContent, { backgroundColor: cardBg }]}>
+              <MenuItem 
+                icon={LogOut} 
+                label="Logout" 
+                onPress={handleLogout} 
+                isLast={true} 
+                labelColor="#FF3B30" 
+              />
+            </View>
+          </View>
 
           <View style={styles.footerInfo}>
             <Text style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
@@ -613,15 +596,17 @@ const styles = StyleSheet.create({
     }),
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(59, 30, 84, 0.08)',
   },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   logoutTopBtn: {
     flexDirection: 'row',
@@ -640,9 +625,8 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 15,
-    marginBottom: 5,
-    paddingHorizontal: 4,
+    marginTop: 8,
+    marginBottom: 8,
   },
   avatar: {
     width: 60,
@@ -667,6 +651,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     ...fonts.bold,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  statusBadgeText: {
+    fontSize: 9,
+    ...fonts.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   idBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -682,84 +685,72 @@ const styles = StyleSheet.create({
     ...fonts.bold,
     color: palette.purple.deep,
   },
-  menuGroupCard: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#3B1E54',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 1.5,
-      },
-    }),
-  },
-  groupHeading: {
-    fontSize: 11,
-    ...fonts.bold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    paddingHorizontal: 20,
-    paddingVertical: 6,
-    opacity: 0.7,
-  },
-  idRow: {
+  compactStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-around',
+    marginTop: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FAF9FC',
+    borderRadius: 10,
+  },
+  compactStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  compactStatVal: {
+    fontSize: 14,
+    ...fonts.bold,
+  },
+  compactStatLabel: {
+    fontSize: 9,
     marginTop: 2,
   },
-  userId: {
-    fontSize: 13,
-    color: palette.purple.muted,
+  compactStatDivider: {
+    width: 1,
+    height: 16,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    backgroundColor: 'rgba(59, 30, 84, 0.05)',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderRadius: 12,
+    justifyContent: 'space-around',
+    marginTop: 14,
   },
-  headerBtn: {
+  headerActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 6,
+    flex: 1,
   },
-  headerBtnText: {
-    fontSize: 11,
+  headerActionBtnText: {
+    fontSize: 12,
     ...fonts.semibold,
-    color: palette.purple.deep,
-    marginLeft: 4,
   },
-  headerDivider: {
+  headerActionDivider: {
     width: 1,
-    height: 15,
-    backgroundColor: palette.purple.border,
-    marginHorizontal: 2,
+    height: 12,
   },
   scrollContent: {
     paddingTop: 15,
     paddingBottom: 120,
   },
-  sectionLabel: {
-    fontSize: 12,
-    ...fonts.semibold,
-    color: palette.purple.muted,
+  flatSection: {
+    marginTop: 20,
+    marginHorizontal: 16,
+  },
+  flatSectionHeader: {
+    fontSize: 11,
+    ...fonts.bold,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    paddingHorizontal: 20,
-    marginTop: 15,
+    letterSpacing: 0.8,
+    paddingHorizontal: 4,
     marginBottom: 8,
+  },
+  flatSectionContent: {
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
@@ -790,41 +781,30 @@ const styles = StyleSheet.create({
     fontSize: 10,
     ...fonts.semibold,
   },
-  divider: {
-    height: 1,
-    backgroundColor: palette.purple.border,
-    marginHorizontal: 20,
-    marginVertical: 10,
-  },
   couponSection: {
-    paddingHorizontal: 20,
-    marginTop: 20,
+    paddingHorizontal: 16,
+    marginTop: 16,
   },
   couponCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(59, 30, 84, 0.05)',
-    padding: 15,
-    borderRadius: 15,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: palette.gold.main,
-    borderStyle: 'dashed',
+    gap: 10,
   },
   couponInfo: {
     flex: 1,
-    marginLeft: 12,
   },
   couponTitle: {
-    fontSize: 14,
+    fontSize: 13,
     ...fonts.semibold,
-    color: palette.purple.deep,
   },
   couponSubtitle: {
-    fontSize: 11,
-    color: palette.purple.muted,
+    fontSize: 10,
+    marginTop: 2,
   },
   applyBtn: {
-    backgroundColor: palette.gold.main,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -832,32 +812,15 @@ const styles = StyleSheet.create({
   applyBtnText: {
     fontSize: 11,
     ...fonts.semibold,
-    color: palette.purple.deep,
   },
   footerInfo: {
-    padding: 20,
-    paddingTop: 16,
-    paddingBottom: 28,
+    paddingVertical: 24,
     alignItems: 'center',
-  },
-  footerLinksRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-    paddingHorizontal: 12,
-  },
-  footerLink: {
-    fontSize: 11,
-    color: palette.purple.muted,
-    paddingVertical: 4,
-    lineHeight: 16,
+    gap: 4,
   },
   copyrightText: {
     fontSize: 10,
     color: palette.neutral.grey,
-    marginBottom: 8,
   },
   versionText: {
     fontSize: 10,
@@ -869,8 +832,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 15,
-    borderTopWidth: 1,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(59, 30, 84, 0.1)',
   },
   upgradeBtn: {
     backgroundColor: palette.gold.main,
@@ -885,81 +850,6 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
     fontSize: 16,
     marginLeft: 10,
-  },
-  planCard: {
-    marginHorizontal: 0,
-    marginTop: 8,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  planCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  planBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  planCardInfo: {
-    marginLeft: 10,
-    flex: 1,
-  },
-  planCardTitle: {
-    fontSize: 14,
-    ...fonts.semibold,
-  },
-  planCardSub: {
-    fontSize: 10,
-    marginTop: 1,
-  },
-  planCardDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(59, 30, 84, 0.08)',
-  },
-  planDetailItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  planDetailValue: {
-    fontSize: 14,
-    ...fonts.bold,
-  },
-  planDetailLabel: {
-    fontSize: 9,
-    marginTop: 1,
-  },
-  planDetailDivider: {
-    width: 1,
-    height: 18,
-  },
-  planCardFree: {
-    flexDirection: 'column',
-  },
-  planCardFreeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  upgradePlanBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
-    gap: 6,
-    marginTop: 10,
-  },
-  upgradePlanText: {
-    fontSize: 12,
-    ...fonts.semibold,
   },
   logoutModalOverlay: {
     flex: 1,
