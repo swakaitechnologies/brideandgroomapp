@@ -53,6 +53,7 @@ import {
 } from "../../services/api";
 import { showToast } from "../../utils/toast";
 import { fonts } from "@/src/theme";
+import { Skeleton } from "../../components/Skeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -437,6 +438,50 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
     }
   };
 
+  const renderUpdatesSkeleton = () => (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={[styles.cardsScroll, { paddingBottom: insets.bottom + 100 }]}
+    >
+      {Array.from({ length: 3 }).map((_, i) => (
+        <View key={i} style={styles.card}>
+          {/* User Info Row */}
+          <View style={styles.cardHeader}>
+            <View style={styles.avatarContainer}>
+              <Skeleton width={68} height={68} borderRadius={34} />
+            </View>
+            <View style={styles.profileTextInfo}>
+              <View style={styles.nameRow}>
+                <Skeleton width={140} height={16} />
+              </View>
+              <Skeleton width={180} height={12} style={{ marginTop: 6 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 5 }}>
+                <Skeleton width={12} height={12} borderRadius={6} />
+                <Skeleton width={100} height={12} />
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 5 }}>
+                <Skeleton width={12} height={12} borderRadius={6} />
+                <Skeleton width={120} height={12} />
+              </View>
+            </View>
+          </View>
+
+          {/* Sub info or date indicator */}
+          <View style={[styles.cardInfoFooter, { marginTop: 12, flexDirection: 'row', alignItems: 'center' }]}>
+            <Skeleton width={12} height={12} borderRadius={6} />
+            <Skeleton width={100} height={12} style={{ marginLeft: 6 }} />
+          </View>
+
+          {/* Card Action Buttons */}
+          <View style={styles.cardActions}>
+            <Skeleton width="48%" height={36} borderRadius={18} />
+            <Skeleton width="48%" height={36} borderRadius={18} />
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  );
+
   const mainTabs: MainTabType[] = ["Received", "Accepted", "Likes", "Shortlist", "Contact", "Sent", "More"];
 
   return (
@@ -604,9 +649,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
 
       {/* 3. Connection Cards List */}
       {loading && !refreshing ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={palette.gold.main} />
-        </View>
+        renderUpdatesSkeleton()
       ) : activeList.length === 0 ? (
         <ScrollView
           contentContainerStyle={styles.emptyScroll}

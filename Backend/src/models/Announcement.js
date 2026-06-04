@@ -16,8 +16,12 @@ const Announcement = sequelize.define("Announcement", {
     allowNull: false,
   },
   targetType: {
-    type: DataTypes.ENUM("all", "verified", "unverified", "premium"),
+    type: DataTypes.ENUM("all", "verified", "unverified", "premium", "custom"),
     defaultValue: "all",
+  },
+  targetCustomId: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   isActive: {
     type: DataTypes.BOOLEAN,

@@ -43,6 +43,7 @@ import {
   getActivePromoBanner,
 } from "../../services/api";
 import { fonts } from "@/src/theme";
+import { Skeleton } from "../../components/Skeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -324,9 +325,44 @@ export default function PremiumScreen() {
 
         {/* Carousel */}
         {loading ? (
-          <View style={{ padding: 50 }}>
-            <ActivityIndicator size="large" color={accentGold} />
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, paddingTop: 15 }}
+          >
+            {Array.from({ length: 2 }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.planCard,
+                  {
+                    borderColor: isDark ? "#2C2C2E" : "#E5E5EA",
+                    backgroundColor: cardBg,
+                  },
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <Skeleton width={120} height={22} style={{ marginBottom: 8 }} />
+                  <Skeleton width={80} height={12} />
+                </View>
+                <View style={styles.priceContainer}>
+                  <Skeleton width={140} height={40} style={{ marginBottom: 8 }} />
+                  <View style={styles.discountRow}>
+                    <Skeleton width={60} height={14} />
+                  </View>
+                </View>
+                <View style={styles.featureList}>
+                  {Array.from({ length: 4 }).map((_, idx) => (
+                    <View key={idx} style={styles.featureItem}>
+                      <Skeleton width={16} height={16} borderRadius={8} />
+                      <Skeleton width={150} height={12} />
+                    </View>
+                  ))}
+                </View>
+                <Skeleton width="100%" height={48} borderRadius={15} />
+              </View>
+            ))}
+          </ScrollView>
         ) : (
           <FlatList
             data={plans}

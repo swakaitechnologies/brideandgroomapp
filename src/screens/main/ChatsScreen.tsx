@@ -34,6 +34,7 @@ import {
 import { palette } from "../../theme/colors";
 import { getChatList, getAllProfiles, getCallHistory, resolvePhotoUrl } from "../../services/api";
 import { fonts } from "@/src/theme";
+import { Skeleton } from "../../components/Skeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -209,6 +210,50 @@ export default function ChatsScreen() {
     </TouchableOpacity>
   );
 
+  const renderChatsSkeleton = () => (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 100 }}
+    >
+      {activeTab === "All" && (
+        <View style={styles.activeUsersSection}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>Active Matches</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activeUsersScroll}
+          >
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={styles.activeUserItem}>
+                <Skeleton width={56} height={56} borderRadius={28} />
+                <Skeleton width={50} height={10} style={{ marginTop: 8 }} />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <View style={styles.listSection}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <View key={i} style={[styles.chatCard, { backgroundColor: cardBg }]}>
+            <View style={styles.avatarContainer}>
+              <Skeleton width={50} height={50} borderRadius={25} />
+            </View>
+            <View style={styles.chatInfo}>
+              <View style={styles.chatHeader}>
+                <Skeleton width={120} height={14} />
+                <Skeleton width={40} height={10} />
+              </View>
+              <View style={[styles.chatFooter, { marginTop: 8 }]}>
+                <Skeleton width={180} height={12} />
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeBg }} edges={["left", "right"]}>
       {/* Search Bar Placeholder */}
@@ -242,9 +287,7 @@ export default function ChatsScreen() {
       </View>
 
       {loading && !refreshing ? (
-        <View style={styles.loadingCenter}>
-          <ActivityIndicator size="large" color={accentColor} />
-        </View>
+        renderChatsSkeleton()
       ) : (
         <ScrollView 
           showsVerticalScrollIndicator={false}

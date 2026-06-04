@@ -82,6 +82,31 @@ const connectDB = async () => {
       }
     };
 
+    // Programmatically ensure Announcement 'targetType' column supports 'custom' (PostgreSQL / MySQL)
+    try {
+      if (dialect === "mysql") {
+        console.log("Ensuring Announcement 'targetType' column supports 'custom' (MySQL)...");
+        await sequelize.query("ALTER TABLE Announcements MODIFY COLUMN targetType ENUM('all', 'verified', 'unverified', 'premium', 'custom') NOT NULL DEFAULT 'all'");
+        console.log("✅ Updated 'targetType' column in Announcements table successfully.");
+      } else if (dialect === "postgres") {
+        console.log("Ensuring Announcement 'targetType' column supports 'custom' (PostgreSQL)...");
+        try {
+          await sequelize.query("ALTER TYPE \"enum_Announcements_targetType\" ADD VALUE IF NOT EXISTS 'custom'");
+          console.log("✅ Added 'custom' to enum_Announcements_targetType successfully.");
+        } catch (enumErr) {
+          console.warn("Could not alter pg enum type directly, sync should cover it:", enumErr.message);
+        }
+      }
+    } catch (annColError) {
+      console.error("Error updating targetType column in Announcements:", annColError);
+    }
+
+    // Programmatically ensure targetCustomId column exists in Announcements
+    await ensureColumn("Announcements", "targetCustomId", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+
     // Programmatically ensure Feedback columns exist in Feedbacks table
     await ensureColumn("Feedbacks", "attachmentUrl", {
       type: Sequelize.STRING,

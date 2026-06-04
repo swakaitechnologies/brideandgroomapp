@@ -156,38 +156,54 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
     try {
       const [premiumRes, newRes, visitorsRes, profileRes, bannerRes, kycRes, subRes] =
         await Promise.all([
-          getDailyPicks().catch(() => ({ data: { data: [] } })),
-          getAllProfiles().catch(() => ({ data: { data: [] } })),
-          getProfileViewers().catch(() => ({ data: { data: [] } })),
-          getProfile().catch(() => ({ data: { data: null } })),
-          getBanners().catch(() => ({ data: { data: [] } })),
-          getKYCStatus().catch(() => ({ data: { data: null } })),
-          getMySubscription().catch(() => ({ data: { success: false } })),
+          getDailyPicks().catch(() => null),
+          getAllProfiles().catch(() => null),
+          getProfileViewers().catch(() => null),
+          getProfile().catch(() => null),
+          getBanners().catch(() => null),
+          getKYCStatus().catch(() => null),
+          getMySubscription().catch(() => null),
         ]);
 
-      const allFetchedProfiles = [
-        ...(premiumRes.data.data || []),
-        ...(newRes.data.data || [])
-      ];
-      const uniqueProfiles = Array.from(new Map(allFetchedProfiles.map((p: any) => [p.userId || p.id, p])).values());
-      const premiumOnly = uniqueProfiles.filter((p: any) => p.isPremium === true || p.accountType === 'Premium');
-
-      setPremiumMatches(premiumOnly);
-      setNewMatches(newRes.data.data || []);
-      setRecentVisitors(visitorsRes.data.data || []);
-      setUserProfile(profileRes.data.data || null);
-      setBanners(bannerRes.data.data || []);
-
-      if (kycRes && kycRes.data && kycRes.data.success) {
-        setKycStatus(kycRes.data.data || { status: kycRes.data.status || 'not_submitted' });
-      } else {
-        setKycStatus({ status: 'not_submitted', selfieStatus: 'not_submitted' });
+      if (premiumRes?.data?.data || newRes?.data?.data) {
+        const premiumData = premiumRes?.data?.data || [];
+        const newData = newRes?.data?.data || [];
+        const allFetchedProfiles = [
+          ...premiumData,
+          ...newData
+        ];
+        const uniqueProfiles = Array.from(new Map(allFetchedProfiles.map((p: any) => [p.userId || p.id, p])).values());
+        const premiumOnly = uniqueProfiles.filter((p: any) => p.isPremium === true || p.accountType === 'Premium');
+        setPremiumMatches(premiumOnly);
       }
 
-      if (subRes?.data?.success && subRes.data.subscription) {
-        setSubscription(subRes.data.subscription);
-      } else {
-        setSubscription(null);
+      if (newRes?.data?.data) {
+        setNewMatches(newRes.data.data);
+      }
+      if (visitorsRes?.data?.data) {
+        setRecentVisitors(visitorsRes.data.data);
+      }
+      if (profileRes?.data?.data) {
+        setUserProfile(profileRes.data.data);
+      }
+      if (bannerRes?.data?.data) {
+        setBanners(bannerRes.data.data);
+      }
+
+      if (kycRes?.data) {
+        if (kycRes.data.success && kycRes.data.data) {
+          setKycStatus(kycRes.data.data);
+        } else if (!kycStatus) {
+          setKycStatus({ status: 'not_submitted', selfieStatus: 'not_submitted' });
+        }
+      }
+
+      if (subRes?.data) {
+        if (subRes.data.success && subRes.data.subscription) {
+          setSubscription(subRes.data.subscription);
+        } else if (!subscription) {
+          setSubscription(null);
+        }
       }
     } catch (error) {
       console.error("Error fetching home data:", error);

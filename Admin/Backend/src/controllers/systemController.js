@@ -1,5 +1,6 @@
-const { SystemSetting, Announcement, User, Profile, Notification } = require("../models/associations");
+const { SystemSetting, Announcement, User, Profile, Notification, Subscription } = require("../models/associations");
 const { logAdminAction } = require("../utils/logger");
+const { Op } = require("sequelize");
 const { sendBroadcastEmail } = require("../utils/emailService");
 
 exports.getSettings = async (req, res) => {
@@ -37,13 +38,18 @@ exports.updateSetting = async (req, res) => {
 
 exports.createAnnouncement = async (req, res) => {
   try {
-    const { title, content, targetType, expiryDate } = req.body;
+    const { title, content, targetType, targetCustomId, expiryDate } = req.body;
     const adminId = req.admin.id;
+
+    if (targetType === "custom" && !targetCustomId) {
+      return res.status(400).json({ success: false, message: "Custom ID is required for custom announcements" });
+    }
 
     const announcement = await Announcement.create({
       title,
       content,
       targetType,
+      targetCustomId: targetType === "custom" ? targetCustomId : null,
       expiryDate,
     });
 
@@ -54,7 +60,7 @@ exports.createAnnouncement = async (req, res) => {
       include: [{
         model: Profile,
         as: 'profile',
-        attributes: ['verificationStatus']
+        attributes: ['verificationStatus', 'customId']
       }]
     };
 
@@ -76,8 +82,35 @@ exports.createAnnouncement = async (req, res) => {
           where: { verificationStatus: ['pending', 'rejected'] }
         }]
       });
+    } else if (targetType === 'premium') {
+      usersToNotify = await User.findAll({
+        ...queryOptions,
+        include: [
+          {
+            model: Profile,
+            as: 'profile'
+          },
+          {
+            model: Subscription,
+            as: 'subscriptions',
+            where: {
+              status: { [Op.in]: ["active", "trialing"] },
+              endDate: { [Op.gt]: new Date() }
+            }
+          }
+        ]
+      });
+    } else if (targetType === 'custom') {
+      usersToNotify = await User.findAll({
+        ...queryOptions,
+        include: [{
+          model: Profile,
+          as: 'profile',
+          where: { customId: targetCustomId }
+        }]
+      });
     } else {
-      // Default: 'all' or any other types not specifically matched
+      // Default: 'all'
       usersToNotify = await User.findAll(queryOptions);
     }
 

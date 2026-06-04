@@ -9,6 +9,7 @@ interface Announcement {
   title: string;
   content: string;
   targetType: string;
+  targetCustomId?: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -21,6 +22,7 @@ const AnnouncementsPage = () => {
     title: "",
     content: "",
     targetType: "all",
+    targetCustomId: "",
   });
 
   const fetchAnnouncements = async () => {
@@ -45,7 +47,7 @@ const AnnouncementsPage = () => {
       await api.post("/system/announcements", newAnnouncement);
       toast.success("Announcement sent successfully");
       setShowForm(false);
-      setNewAnnouncement({ title: "", content: "", targetType: "all" });
+      setNewAnnouncement({ title: "", content: "", targetType: "all", targetCustomId: "" });
       fetchAnnouncements();
     } catch (error: unknown) {
       toast.error(
@@ -163,8 +165,30 @@ const AnnouncementsPage = () => {
                   <option value="verified">Verified Only</option>
                   <option value="unverified">Unverified Only</option>
                   <option value="premium">Premium Users</option>
+                  <option value="custom">Particular User (Custom ID)</option>
                 </select>
               </div>
+
+              {newAnnouncement.targetType === "custom" && (
+                <div>
+                  <label className="block text-xs font-medium text-black tracking-widest mb-2">
+                    Target User Custom ID
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g., BG-99231"
+                    className="w-full bg-slate-50 border border-border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    value={newAnnouncement.targetCustomId}
+                    onChange={(e) =>
+                      setNewAnnouncement({
+                        ...newAnnouncement,
+                        targetCustomId: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -212,9 +236,9 @@ const AnnouncementsPage = () => {
                 >
                   {ann.isActive ? "Active" : "Expired"}
                 </span>
-                <span className="flex items-center gap-1 text-[10px] bg-slate-100 px-2 py-1 rounded-full font-medium text-black  tracking-widest">
+                <span className="flex items-center gap-1 text-[10px] bg-slate-100 px-2 py-1 rounded-full font-medium text-black tracking-widest">
                   <Users size={10} />
-                  Target: {ann.targetType}
+                  Target: {ann.targetType === "custom" ? `User (${ann.targetCustomId})` : ann.targetType}
                 </span>
               </div>
 
