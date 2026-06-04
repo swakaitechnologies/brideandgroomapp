@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
   // Permissions Modal styles
   permissionsOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -1248,7 +1248,7 @@ const styles = StyleSheet.create({
   // Celebration Onboarding styles
   celebrationOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
