@@ -49,6 +49,8 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activatedPlan, setActivatedPlan] = useState<string>('');
+  const [failure, setFailure] = useState(false);
+  const [failureReason, setFailureReason] = useState<string>('');
 
   // Coupon States
   const [couponCode, setCouponCode] = useState('');
@@ -173,22 +175,22 @@ export default function CheckoutScreen() {
         setActivatedPlan(planName);
         setSuccess(true);
       } else {
-        Alert.alert(
-          "Verification Failed",
-          verifyRes.data?.message || "Payment was received but verification failed. Please contact support.",
-        );
+        const verifyError = verifyRes.data?.message || "Payment verification failed. Please contact support.";
+        setFailureReason(verifyError);
+        setFailure(true);
       }
     } catch (err: any) {
       // Razorpay modal dismissed or payment failed
       if (err?.code === 'PAYMENT_CANCELLED' || err?.description?.includes('cancelled')) {
-        // User dismissed the modal — do nothing
-        console.log("Payment cancelled by user");
+        setFailureReason("Payment was cancelled by the user.");
+        setFailure(true);
       } else if (err?.code === 2) {
-        // User pressed back / dismissed modal
-        console.log("Payment modal dismissed");
+        setFailureReason("Payment modal was closed.");
+        setFailure(true);
       } else {
         const errorMsg = err?.description || err?.message || "Payment could not be completed. Please try again.";
-        Alert.alert("Payment Failed", errorMsg);
+        setFailureReason(errorMsg);
+        setFailure(true);
         console.error("Payment error:", err);
       }
     } finally {
@@ -244,6 +246,38 @@ export default function CheckoutScreen() {
               <Text style={styles.goHomeBtnText}>Go to Home</Text>
               <ArrowRight size={18} color="#FFF" />
             </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      ) : failure ? (
+        <View style={[styles.successContainer, { paddingTop: 20 }]}>
+          <LottieView
+            source={require('../../../assets/animations/8418934e-1153-11ee-b862-8f7bf804c03e (1).json')}
+            autoPlay
+            loop={false}
+            style={{ width: 160, height: 160, marginBottom: 20 }}
+          />
+          <Text style={[styles.successTitle, { color: '#C62828' }]}>Payment Failed</Text>
+          <Text style={[styles.successSub, { color: mutedText, textAlign: 'center', marginHorizontal: 20 }]}>
+            {failureReason || "We couldn't process your payment. Please try again."}
+          </Text>
+          <TouchableOpacity
+            style={[styles.goHomeBtn, { marginTop: 32 }]}
+            onPress={() => setFailure(false)}
+          >
+            <LinearGradient
+              colors={[accentColor, '#7B1FA2']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.goHomeBtnGradient}
+            >
+              <Text style={styles.goHomeBtnText}>Try Again</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginTop: 16, padding: 8 }}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] })}
+          >
+            <Text style={{ color: mutedText, fontSize: 14, ...fonts.semibold }}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       ) : (
