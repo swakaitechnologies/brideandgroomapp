@@ -54,10 +54,11 @@ export default function ChatsScreen() {
   const [activeMatches, setActiveMatches] = useState<any[]>([]);
   const [calls, setCalls] = useState<any[]>([]);
 
-  const themeBg = isDark ? "#0F0F0F" : "#F8F9FA";
+  const themeBg = isDark ? "#0F0F0F" : "#FDFBFF"; // Consistent off-white background
   const cardBg = isDark ? "#1E1E1E" : "#FFFFFF";
   const textColor = isDark ? "#F0F0F0" : "#1A1A1A";
   const mutedText = isDark ? "#A0A0A0" : "#6C757D";
+  const borderColor = isDark ? "#2C2C2E" : "rgba(59, 30, 84, 0.08)";
   const accentColor = palette.gold.main;
   const deepPurple = "#3B1E54";
 
@@ -144,11 +145,11 @@ export default function ChatsScreen() {
     fetchChatsData();
   };
 
-  const renderChatItem = ({ item }: { item: any }) => {
+  const renderChatItem = ({ item, isLast }: { item: any; isLast: boolean }) => {
     const isPhotoLocked = item.photosLocked && (item.photoVisibility === 'Verified' || item.photoVisibility === 'Selected');
     return (
       <TouchableOpacity 
-        style={[styles.chatCard, { backgroundColor: cardBg }]}
+        style={styles.chatRow}
         onPress={() => navigation.navigate("ChatDetail", { userId: item.id })}
         key={item.id}
       >
@@ -165,7 +166,7 @@ export default function ChatsScreen() {
           )}
           {item.online && <View style={styles.onlineDot} />}
         </View>
-        <View style={styles.chatInfo}>
+        <View style={[styles.chatInfo, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: borderColor }]}>
           <View style={styles.chatHeader}>
             <Text style={[styles.chatName, { color: textColor }]}>{item.name}</Text>
             <Text style={[styles.chatTime, { color: mutedText }]}>{item.time}</Text>
@@ -183,14 +184,16 @@ export default function ChatsScreen() {
     );
   };
 
-  const renderCallItem = ({ item }: { item: any }) => (
+  const renderCallItem = ({ item, isLast }: { item: any; isLast: boolean }) => (
     <TouchableOpacity 
-      style={[styles.chatCard, { backgroundColor: cardBg }]}
+      style={styles.chatRow}
       onPress={() => navigation.navigate("ChatDetail", { userId: item.id })}
       key={item.id}
     >
-      <Image source={{ uri: item.photo }} style={styles.chatAvatar} />
-      <View style={styles.chatInfo}>
+      <View style={styles.avatarContainer}>
+        <Image source={{ uri: item.photo }} style={styles.chatAvatar} />
+      </View>
+      <View style={[styles.chatInfo, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: borderColor }]}>
         <View style={styles.chatHeader}>
           <Text style={[styles.chatName, { color: textColor }]}>{item.name}</Text>
           <Text style={[styles.chatTime, { color: mutedText }]}>{item.time}</Text>
@@ -205,7 +208,7 @@ export default function ChatsScreen() {
         </View>
       </View>
       <TouchableOpacity style={styles.callBtn}>
-        {item.type === "video" ? <Video size={20} color={deepPurple} /> : <Phone size={20} color={deepPurple} />}
+        {item.type === "video" ? <Video size={18} color={deepPurple} /> : <Phone size={18} color={deepPurple} />}
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -234,56 +237,63 @@ export default function ChatsScreen() {
       )}
 
       <View style={styles.listSection}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <View key={i} style={[styles.chatCard, { backgroundColor: cardBg }]}>
-            <View style={styles.avatarContainer}>
-              <Skeleton width={50} height={50} borderRadius={25} />
-            </View>
-            <View style={styles.chatInfo}>
-              <View style={styles.chatHeader}>
-                <Skeleton width={120} height={14} />
-                <Skeleton width={40} height={10} />
+        <View style={[styles.flatListCard, { backgroundColor: cardBg }]}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={styles.chatRow}>
+              <View style={styles.avatarContainer}>
+                <Skeleton width={50} height={50} borderRadius={25} />
               </View>
-              <View style={[styles.chatFooter, { marginTop: 8 }]}>
-                <Skeleton width={180} height={12} />
+              <View style={[styles.chatInfo, i !== 4 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: borderColor }]}>
+                <View style={styles.chatHeader}>
+                  <Skeleton width={120} height={14} />
+                  <Skeleton width={40} height={10} />
+                </View>
+                <View style={[styles.chatFooter, { marginTop: 8 }]}>
+                  <Skeleton width={180} height={12} />
+                </View>
               </View>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeBg }} edges={["left", "right"]}>
-      {/* Search Bar Placeholder */}
+      {/* Search Bar Container */}
       <View style={[styles.searchContainer, { paddingTop: topPadding }]}>
-        <View style={[styles.searchBar, { backgroundColor: cardBg }]}>
-          <Search size={20} color={mutedText} />
+        <View style={[styles.searchBar, { backgroundColor: isDark ? '#1E1E1E' : 'rgba(59, 30, 84, 0.04)', borderColor: 'transparent' }]}>
+          <Search size={18} color={mutedText} />
           <Text style={[styles.searchText, { color: mutedText }]}>Search messages or calls...</Text>
         </View>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabContainer}>
-        {(["All", "Unread", "Calls"] as ChatTab[]).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            style={[
-              styles.tabItem,
-              activeTab === tab && { borderBottomColor: accentColor }
-            ]}
-          >
-            <Text style={[
-              styles.tabText,
-              { color: activeTab === tab ? deepPurple : mutedText },
-              activeTab === tab && { ...fonts.bold}
-            ]}>
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.chipContainer}>
+        {(["All", "Unread", "Calls"] as ChatTab[]).map((tab) => {
+          const isActive = activeTab === tab;
+          return (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              style={[
+                styles.filterChip,
+                isActive ? { backgroundColor: '#3B1E54' } : { backgroundColor: 'rgba(59, 30, 84, 0.04)' }
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { color: isActive ? palette.gold.main : mutedText, fontWeight: isActive ? "bold" : "600" }
+                ]}
+              >
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {loading && !refreshing ? (
@@ -330,25 +340,28 @@ export default function ChatsScreen() {
           )}
 
           <View style={styles.listSection}>
-            {activeTab === "Calls" ? (
-              calls.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Text style={{ color: mutedText }}>No calls logged</Text>
-                </View>
+            <View style={[styles.flatListCard, { backgroundColor: cardBg }]}>
+              {activeTab === "Calls" ? (
+                calls.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <Text style={{ color: mutedText }}>No calls logged</Text>
+                  </View>
+                ) : (
+                  calls.map((item, index) => renderCallItem({ item, isLast: index === calls.length - 1 }))
+                )
               ) : (
-                calls.map((item) => renderCallItem({ item }))
-              )
-            ) : (
-              chats.filter(c => activeTab === "Unread" ? c.unread > 0 : true).length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Text style={{ color: mutedText }}>No chats available</Text>
-                </View>
-              ) : (
-                chats
-                  .filter(c => activeTab === "Unread" ? c.unread > 0 : true)
-                  .map((item) => renderChatItem({ item }))
-              )
-            )}
+                (() => {
+                  const filteredChats = chats.filter(c => activeTab === "Unread" ? c.unread > 0 : true);
+                  return filteredChats.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <Text style={{ color: mutedText }}>No chats available</Text>
+                    </View>
+                  ) : (
+                    filteredChats.map((item, index) => renderChatItem({ item, isLast: index === filteredChats.length - 1 }))
+                  );
+                })()
+              )}
+            </View>
           </View>
         </ScrollView>
       )}
@@ -442,34 +455,35 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
   },
   searchContainer: {
-    padding: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 15,
     gap: 10,
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
   },
   searchText: {
     fontSize: 14,
   },
-  tabContainer: {
+  chipContainer: {
     flexDirection: "row",
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    paddingHorizontal: 20,
+    marginBottom: 15,
+    gap: 10,
   },
-  tabItem: {
-    paddingVertical: 12,
-    marginRight: 25,
-    borderBottomWidth: 3,
-    borderBottomColor: "transparent",
+  filterChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  tabText: {
-    fontSize: 15,
+  filterChipText: {
+    fontSize: 14,
     ...fonts.semibold,
   },
   activeUsersSection: {
@@ -520,12 +534,27 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 15,
   },
-  chatCard: {
+  flatListCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.08)",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
+  },
+  chatRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    borderRadius: 16,
-    marginBottom: 10,
+    paddingHorizontal: 16,
   },
   avatarContainer: {
     position: "relative",
@@ -549,6 +578,7 @@ const styles = StyleSheet.create({
   chatInfo: {
     flex: 1,
     marginLeft: 15,
+    paddingVertical: 14,
   },
   chatHeader: {
     flexDirection: "row",
