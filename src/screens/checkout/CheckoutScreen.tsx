@@ -188,10 +188,24 @@ export default function CheckoutScreen() {
         setFailureReason("Payment modal was closed.");
         setFailure(true);
       } else {
-        const errorMsg = err?.description || err?.message || "Payment could not be completed. Please try again.";
+        let errorMsg = "Payment could not be completed. Please try again.";
+        if (err?.description) {
+          try {
+            const parsed = JSON.parse(err.description);
+            if (parsed?.error?.description) {
+              errorMsg = parsed.error.description;
+            } else {
+              errorMsg = err.description;
+            }
+          } catch (e) {
+            errorMsg = err.description;
+          }
+        } else if (err?.message) {
+          errorMsg = err.message;
+        }
         setFailureReason(errorMsg);
         setFailure(true);
-        console.error("Payment error:", err);
+        console.warn("Payment error (handled):", err);
       }
     } finally {
       setLoading(false);
