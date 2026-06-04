@@ -283,27 +283,29 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
           contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header/Hero Card Skeleton */}
-          <View style={styles.heroContainer}>
-            <View style={[styles.heroCard, { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" }]}>
-              <View style={styles.heroHeader}>
-                <Skeleton width={80} height={80} borderRadius={40} />
-                <View style={[styles.heroInfo, { marginLeft: 15 }]}>
-                  <Skeleton width={100} height={14} style={{ marginBottom: 8 }} />
-                  <Skeleton width={160} height={20} style={{ marginBottom: 8 }} />
-                  <Skeleton width={120} height={14} />
-                </View>
-              </View>
-              <View style={[styles.heroStats, { marginTop: 25, justifyContent: 'space-around' }]}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} style={{ alignItems: 'center' }}>
-                    <Skeleton width={40} height={18} style={{ marginBottom: 6 }} />
-                    <Skeleton width={50} height={12} />
-                  </View>
-                ))}
-              </View>
-              <Skeleton width="100%" height={40} borderRadius={10} style={{ marginTop: 20 }} />
+          {/* Header/Hero Flat Skeleton */}
+          <View style={styles.headerFlat}>
+            <View style={styles.headerLeft}>
+              <Skeleton width={100} height={14} style={{ marginBottom: 8 }} />
+              <Skeleton width={180} height={22} style={{ marginBottom: 8 }} />
+              <Skeleton width={80} height={14} />
             </View>
+            <Skeleton width={70} height={70} borderRadius={35} />
+          </View>
+
+          {/* Quick Stats Panel Skeleton */}
+          <View style={[styles.statsPanel, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', marginVertical: 10 }]}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} style={{ alignItems: 'center', flex: 1 }}>
+                <Skeleton width={40} height={18} style={{ marginBottom: 6 }} />
+                <Skeleton width={60} height={10} />
+              </View>
+            ))}
+          </View>
+
+          {/* Premium Banner Skeleton */}
+          <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+            <Skeleton width="100%" height={60} borderRadius={16} />
           </View>
 
           {/* Banner Carousel Skeleton */}
@@ -385,152 +387,132 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
           />
         }
       >
-        {/* Hero Section: Premium Profile Card */}
-        <View style={styles.heroContainer}>
-          <View style={[styles.heroCard, { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" }]}>
-            <View style={styles.heroHeader}>
-              <TouchableOpacity
-                style={styles.heroAvatarContainer}
-                onPress={() => setIsDrawerOpen(true)}
-                activeOpacity={0.8}
-              >
-                <Image
-                  source={{
-                    uri: resolvePhotoUrl(
-                      userProfile?.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
-                      userProfile?.photos?.[0]?.url ||
-                      `https://api.dicebear.com/7.x/avataaars/png?seed=${user?.email || "default"}`
-                    )
-                  }}
-                  style={[
-                    styles.heroAvatar,
-                    subscription ? { borderColor: accentColor } : { borderColor: '#E0E0E0' }
-                  ]}
-                />
-                {subscription && (
-                  <View style={[styles.heroBadge, { backgroundColor: accentColor }]}>
-                    <Crown size={12} color={deepPurple} />
-                  </View>
-                )}
-              </TouchableOpacity>
-              <View style={styles.heroInfo}>
-                <Text style={[styles.heroWelcome, { color: mutedText }]}>
-                  {getGreeting()},
-                </Text>
-                <View style={styles.heroNameRow}>
-                  <Text style={[styles.heroName, { color: textColor }]} numberOfLines={1}>
-                    {userProfile?.firstName || user?.firstName || "Valued"} {userProfile?.lastName || user?.lastName || "Member"}
-                  </Text>
-                  {userProfile?.verificationStatus === "approved" && (
-                    <ShieldCheck size={18} color="#4CAF50" style={{ marginLeft: 6 }} />
-                  )}
-                  {userProfile?.isKycVerified && (
-                    <BadgeCheck size={18} color={accentColor} style={{ marginLeft: 4 }} />
-                  )}
-                </View>
-                <View style={styles.heroIdTag}>
-                  <Text style={[styles.heroIdText, { color: accentColor }]}>
-                    ID: {userProfile?.customId || "MEMBER-ID"}
-                  </Text>
-                </View>
-
-                {!userProfile?.isKycVerified && (
-                  <TouchableOpacity
-                    style={[styles.kycButton, { borderColor: accentColor + "40" }]}
-                    onPress={() => navigation.navigate("KYCVerification")}
-                  >
-                    {(kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending") ? (
-                      <Clock size={12} color="#EF6C00" />
-                    ) : (
-                      <AlertCircle size={12} color="#D32F2F" />
-                    )}
-                    <Text style={[styles.kycButtonText, { color: (kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending") ? "#EF6C00" : "#D32F2F" }]}>
-                      {(kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending") ? "KYC Pending Review" :
-                        (kycStatus?.status === "rejected" || kycStatus?.selfieStatus === "rejected") ? "KYC Rejected - Try Again" : "Verify KYC Now"}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TouchableOpacity
-                style={styles.editProfileBtn}
-                onPress={() => navigation.navigate("EditProfile")}
-              >
-                <Edit2 size={18} color={accentColor} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.heroStats}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: textColor }]}>
-                  {userProfile?.viewsCount || 0}
-                </Text>
-                <Text style={[styles.statLabel, { color: mutedText }]}>
-                  Views
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: textColor }]}>
-                  {userProfile?.interestsCount || 0}
-                </Text>
-                <Text style={[styles.statLabel, { color: mutedText }]}>
-                  Interests
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: textColor }]}>
-                  {userProfile?.likesCount || 0}
-                </Text>
-                <Text style={[styles.statLabel, { color: mutedText }]}>
-                  Likes
-                </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: textColor }]}>
-                  {profileCompletion}%
-                </Text>
-                <Text style={[styles.statLabel, { color: mutedText }]}>
-                  Complete
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.premiumBanner}
-              onPress={() => navigateToTab("Premium")}
-            >
-              <Zap size={16} color={deepPurple} />
-              <Text style={styles.premiumText}>
-                Get 3x more responses with Premium
+        {/* Welcome Header Section (Flat) */}
+        <View style={styles.headerFlat}>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.greetingText, { color: mutedText }]}>
+              {getGreeting()},
+            </Text>
+            <View style={styles.nameRow}>
+              <Text style={[styles.userNameText, { color: textColor }]} numberOfLines={1}>
+                {userProfile?.firstName || user?.firstName || "Valued"} {userProfile?.lastName || user?.lastName || "Member"}
               </Text>
-              <ArrowRight size={14} color={deepPurple} />
-            </TouchableOpacity>
-          </View>
-        </View>
+              {userProfile?.verificationStatus === "approved" && (
+                <ShieldCheck size={16} color="#4CAF50" style={{ marginLeft: 6 }} />
+              )}
+              {userProfile?.isKycVerified && (
+                <BadgeCheck size={16} color={accentColor} style={{ marginLeft: 4 }} />
+              )}
+            </View>
+            <View style={styles.idRow}>
+              <Text style={[styles.idText, { color: mutedText }]}>
+                ID: {userProfile?.customId || user?.customId || "MEMBER-ID"}
+              </Text>
+            </View>
 
-        {/* Profile Completion Nudge — only if < 80% */}
-        {profileCompletion < 80 && (
+            {!userProfile?.isKycVerified && (
+              <TouchableOpacity
+                style={[
+                  styles.kycFlatButton,
+                  {
+                    borderColor:
+                      kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending"
+                        ? "#EF6C00"
+                        : "#D32F2F",
+                  },
+                ]}
+                onPress={() => navigation.navigate("KYCVerification")}
+              >
+                {kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending" ? (
+                  <Clock size={11} color="#EF6C00" />
+                ) : (
+                  <AlertCircle size={11} color="#D32F2F" />
+                )}
+                <Text
+                  style={[
+                    styles.kycFlatButtonText,
+                    {
+                      color:
+                        kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending"
+                          ? "#EF6C00"
+                          : "#D32F2F",
+                    },
+                  ]}
+                >
+                  {kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending"
+                    ? "KYC Pending Review"
+                    : kycStatus?.status === "rejected" || kycStatus?.selfieStatus === "rejected"
+                    ? "KYC Rejected"
+                    : "Verify KYC Now"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <TouchableOpacity
-            style={[styles.completionCard, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}
+            style={styles.avatarWrapper}
             onPress={() => navigation.navigate("EditProfile")}
             activeOpacity={0.85}
           >
-            <ProgressRing progress={profileCompletion} />
-            <View style={styles.completionInfo}>
-              <Text style={[styles.completionTitle, { color: textColor }]}>
-                Complete your profile
-              </Text>
-              <Text style={[styles.completionSub, { color: mutedText }]}>
-                {profileCompletion < 40
-                  ? "Profiles with more details get 5× more views"
-                  : profileCompletion < 60
-                    ? "You're getting there! Add a few more details"
-                    : "Almost done — just a little more to go!"}
-              </Text>
+            <ProgressRing progress={profileCompletion} size={70} strokeWidth={3} />
+            <Image
+              source={{
+                uri: resolvePhotoUrl(
+                  userProfile?.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                  userProfile?.photos?.[0]?.url ||
+                  `https://api.dicebear.com/7.x/avataaars/png?seed=${user?.email || "default"}`
+                )
+              }}
+              style={styles.avatarImage}
+            />
+            <View style={styles.editPencilBadge}>
+              <Edit2 size={10} color="#FFFFFF" />
             </View>
-            <ChevronRight size={18} color={mutedText} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Dashboard Quick Stats */}
+        <View style={[styles.statsPanel, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}>
+          <TouchableOpacity style={styles.statBox} onPress={() => navigateToTab("Updates")}>
+            <Text style={[styles.statNum, { color: textColor }]}>{userProfile?.viewsCount || 0}</Text>
+            <Text style={[styles.statLabelText, { color: mutedText }]}>Profile Views</Text>
+          </TouchableOpacity>
+          <View style={styles.statVerticalDivider} />
+          <TouchableOpacity style={styles.statBox} onPress={() => navigateToTab("Updates")}>
+            <Text style={[styles.statNum, { color: textColor }]}>{userProfile?.interestsCount || 0}</Text>
+            <Text style={[styles.statLabelText, { color: mutedText }]}>Interests</Text>
+          </TouchableOpacity>
+          <View style={styles.statVerticalDivider} />
+          <TouchableOpacity style={styles.statBox} onPress={() => navigateToTab("Updates")}>
+            <Text style={[styles.statNum, { color: textColor }]}>{userProfile?.likesCount || 0}</Text>
+            <Text style={[styles.statLabelText, { color: mutedText }]}>Likes Received</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Premium Upgrade Nudge (Free users only) */}
+        {!subscription && (
+          <TouchableOpacity
+            style={styles.premiumNudgeCard}
+            onPress={() => navigateToTab("Premium")}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['#3B1E54', '#5A3280']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.premiumGradient}
+            >
+              <View style={styles.premiumNudgeLeft}>
+                <View style={styles.crownCircle}>
+                  <Crown size={16} color={palette.gold.main} fill={palette.gold.main} />
+                </View>
+                <View style={styles.premiumNudgeTextContainer}>
+                  <Text style={styles.premiumNudgeTitle}>Unlock Premium Access</Text>
+                  <Text style={styles.premiumNudgeSub}>Get up to 3x more views & direct contacts</Text>
+                </View>
+              </View>
+              <ChevronRight size={18} color="#FFFFFF" />
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
@@ -793,178 +775,168 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  heroContainer: {
+  headerFlat: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 15,
-    marginBottom: 20,
-  },
-  heroCard: {
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.05,
-        shadowRadius: 25,
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  heroHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  heroAvatarContainer: {
-    position: "relative",
-  },
-  heroAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: palette.gold.main,
-  },
-  heroBadge: {
-    position: "absolute",
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFF",
-  },
-  heroInfo: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  heroWelcome: {
-    fontSize: 12,
-    ...fonts.medium,
-  },
-  heroNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingRight: 10,
-  },
-  heroName: {
-    fontSize: 14,
-    ...fonts.bold,
-    maxWidth: "85%",
-  },
-  kycButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 8,
-    alignSelf: "flex-start",
-  },
-  kycButtonText: {
-    fontSize: 11,
-    ...fonts.semibold,
-  },
-  heroIdTag: {
-    backgroundColor: "rgba(212, 175, 55, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-    marginTop: 4,
-  },
-  heroIdText: {
-    fontSize: 10,
-    ...fonts.semibold,
-  },
-  editProfileBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(59, 30, 84, 0.03)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 20,
     marginTop: 10,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "rgba(59, 30, 84, 0.05)",
+    marginBottom: 16,
   },
-  statItem: {
+  headerLeft: {
     flex: 1,
-    alignItems: "center",
+    paddingRight: 16,
   },
-  statValue: {
-    fontSize: 16,
+  greetingText: {
+    fontSize: 13,
+    ...fonts.medium,
+    opacity: 0.6,
+  },
+  userNameText: {
+    fontSize: 20,
     ...fonts.bold,
   },
-  statLabel: {
-    fontSize: 10,
-    ...fonts.medium,
-    marginTop: 2,
-    lineHeight: 14,
-  },
-  statDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: "rgba(59, 30, 84, 0.1)",
-    alignSelf: "center",
-  },
-  premiumBanner: {
-    backgroundColor: palette.gold.main,
-    borderRadius: 15,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  premiumText: {
-    flex: 1,
-    color: "#3B1E54",
-    fontSize: 12,
-    ...fonts.semibold,
-    marginLeft: 10,
-  },
-
-  // Profile Completion Nudge
-  completionCard: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 20,
-    padding: 16,
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 2,
+  },
+  idRow: {
+    marginTop: 4,
+  },
+  idText: {
+    fontSize: 12,
+    ...fonts.semibold,
+  },
+  kycFlatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  kycFlatButtonText: {
+    fontSize: 10,
+    ...fonts.semibold,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    width: 76,
+    height: 76,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    position: 'absolute',
+  },
+  editPencilBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3B1E54',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  statsPanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginHorizontal: 20,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 30, 84, 0.05)',
     ...Platform.select({
-      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
-      android: { elevation: 2 },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 2,
+      },
     }),
   },
-  completionInfo: {
+  statBox: {
+    alignItems: 'center',
     flex: 1,
-    marginLeft: 14,
-    marginRight: 8,
   },
-  completionTitle: {
+  statNum: {
+    fontSize: 18,
+    ...fonts.bold,
+  },
+  statLabelText: {
+    fontSize: 10,
+    marginTop: 2,
+    ...fonts.semibold,
+  },
+  statVerticalDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(59, 30, 84, 0.08)',
+  },
+  premiumNudgeCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B1E54',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  premiumGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  premiumNudgeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  crownCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  premiumNudgeTextContainer: {
+    flex: 1,
+  },
+  premiumNudgeTitle: {
+    color: '#FFFFFF',
     fontSize: 14,
     ...fonts.bold,
   },
-  completionSub: {
+  premiumNudgeSub: {
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 11,
-    marginTop: 3,
-    lineHeight: 16,
+    marginTop: 2,
   },
 
   // Quick Actions
