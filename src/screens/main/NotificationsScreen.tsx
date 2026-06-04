@@ -287,9 +287,7 @@ export default function NotificationsScreen({ isTab = false, setActiveTab }: Not
           styles.notificationCard,
           {
             backgroundColor: cardBg,
-            borderLeftWidth: 5,
-            borderLeftColor: color,
-            borderColor: !item.isRead ? color + "40" : "rgba(232, 224, 240, 0.6)",
+            borderColor: !item.isRead ? color + "40" : "rgba(59, 30, 84, 0.06)",
           },
           !item.isRead && { backgroundColor: isDark ? "rgba(212, 175, 55, 0.05)" : bgColor },
         ]}
@@ -522,8 +520,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(232, 224, 240, 0.8)",
     backgroundColor: "transparent",
   },
   backButton: {
@@ -578,8 +574,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(232, 224, 240, 0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.06)",
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#3B1E54",
@@ -598,7 +595,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -652,11 +649,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   homeButton: {
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 30,
+    height: 46,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 20,
   },
   homeButtonText: {
     fontSize: 15,
@@ -664,15 +662,17 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(59, 30, 84, 0.4)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   modalContent: {
     width: width * 0.85,
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.1)",
     ...Platform.select({
       ios: {
         shadowColor: "#3B1E54",
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
   modalActionButton: {
     height: 48,
-    borderRadius: 14,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
@@ -741,8 +741,9 @@ const styles = StyleSheet.create({
   },
   modalCloseTextButton: {
     height: 48,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.1)",
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
