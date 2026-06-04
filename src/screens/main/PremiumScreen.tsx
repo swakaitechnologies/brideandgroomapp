@@ -359,7 +359,7 @@ export default function PremiumScreen() {
                     </View>
                   ))}
                 </View>
-                <Skeleton width="100%" height={48} borderRadius={15} />
+                <Skeleton width="100%" height={48} borderRadius={12} />
               </View>
             ))}
           </ScrollView>
@@ -435,12 +435,9 @@ export default function PremiumScreen() {
             </View>
           </View>
 
-          <View style={styles.supportOptionsList}>
+          <View style={styles.supportCardContainer}>
             <TouchableOpacity
-              style={[
-                styles.supportOptionCard,
-                { borderColor: isDark ? "#333" : "#F0F0F0" },
-              ]}
+              style={styles.supportRowItem}
               onPress={() => Linking.openURL("tel:+911234567890")}
             >
               <View
@@ -449,7 +446,7 @@ export default function PremiumScreen() {
                   { backgroundColor: "rgba(59, 30, 84, 0.1)" },
                 ]}
               >
-                <Phone size={20} color={deepPurple} />
+                <Phone size={18} color={deepPurple} />
               </View>
               <View style={styles.supportOptionText}>
                 <Text style={[styles.supportOptionLabel, { color: textColor }]}>
@@ -459,14 +456,13 @@ export default function PremiumScreen() {
                   Available 24/7 for premium users
                 </Text>
               </View>
-              <ChevronRight size={18} color={mutedText} />
+              <ChevronRight size={16} color={mutedText} />
             </TouchableOpacity>
 
+            <View style={styles.supportDivider} />
+
             <TouchableOpacity
-              style={[
-                styles.supportOptionCard,
-                { borderColor: isDark ? "#333" : "#F0F0F0" },
-              ]}
+              style={styles.supportRowItem}
               onPress={() => Linking.openURL("mailto:support@punarmilan.com")}
             >
               <View
@@ -475,7 +471,7 @@ export default function PremiumScreen() {
                   { backgroundColor: "rgba(212, 175, 55, 0.1)" },
                 ]}
               >
-                <Mail size={20} color={accentGold} />
+                <Mail size={18} color={accentGold} />
               </View>
               <View style={styles.supportOptionText}>
                 <Text style={[styles.supportOptionLabel, { color: textColor }]}>
@@ -485,14 +481,13 @@ export default function PremiumScreen() {
                   Response time: Less than 24 hours
                 </Text>
               </View>
-              <ChevronRight size={18} color={mutedText} />
+              <ChevronRight size={16} color={mutedText} />
             </TouchableOpacity>
 
+            <View style={styles.supportDivider} />
+
             <TouchableOpacity
-              style={[
-                styles.supportOptionCard,
-                { borderColor: isDark ? "#333" : "#F0F0F0" },
-              ]}
+              style={styles.supportRowItem}
             >
               <View
                 style={[
@@ -500,7 +495,7 @@ export default function PremiumScreen() {
                   { backgroundColor: "rgba(76, 175, 80, 0.1)" },
                 ]}
               >
-                <HelpCircle size={20} color="#4CAF50" />
+                <HelpCircle size={18} color="#4CAF50" />
               </View>
               <View style={styles.supportOptionText}>
                 <Text style={[styles.supportOptionLabel, { color: textColor }]}>
@@ -510,7 +505,7 @@ export default function PremiumScreen() {
                   Common questions & quick answers
                 </Text>
               </View>
-              <ChevronRight size={18} color={mutedText} />
+              <ChevronRight size={16} color={mutedText} />
             </TouchableOpacity>
           </View>
         </View>
@@ -540,13 +535,19 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   activeSubCard: {
-    borderRadius: 25,
+    borderRadius: 20,
     padding: 24,
-    elevation: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   activeSubHeader: {
     flexDirection: "row",
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 20,
+    borderRadius: 16,
     paddingVertical: 18,
     marginBottom: 20,
     borderWidth: 1,
@@ -653,8 +654,8 @@ const styles = StyleSheet.create({
   },
   planCard: {
     width: width * 0.75,
-    borderWidth: 1.5,
-    borderRadius: 25,
+    borderWidth: 1,
+    borderRadius: 20,
     padding: 25,
     marginRight: 20,
     overflow: "visible",
@@ -707,7 +708,7 @@ const styles = StyleSheet.create({
   discountLabel: {
     fontSize: 12,
     ...fonts.bold,
-    color: "#4CAF50",
+    color: "#2E7D32",
   },
   featureList: {
     gap: 12,
@@ -724,7 +725,7 @@ const styles = StyleSheet.create({
   },
   cardButton: {
     paddingVertical: 14,
-    borderRadius: 15,
+    borderRadius: 12,
     alignItems: "center",
   },
   cardButtonText: {
@@ -771,21 +772,28 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 18,
   },
-  supportOptionsList: {
-    gap: 12,
+  supportCardContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.06)",
+    overflow: "hidden",
   },
-  supportOptionCard: {
+  supportRowItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    borderWidth: 1,
-    borderRadius: 20,
+    padding: 16,
     gap: 15,
   },
+  supportDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(59, 30, 84, 0.06)",
+    marginLeft: 75,
+  },
   supportIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -805,8 +813,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 20,
-    paddingVertical: 10,
+    padding: 16,
     marginBottom: 20,
+    backgroundColor: "rgba(59, 30, 84, 0.03)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.05)",
     gap: 15,
   },
   moneyBackImage: {
