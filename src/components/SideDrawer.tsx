@@ -22,7 +22,8 @@ import {
   Settings, Shield, HelpCircle,
   Star, BadgeCheck, Copy, X,
   LogOut, Crown, Ticket, ChevronRight,
-  ShieldCheck, Edit3, Download, Share2, User
+  ShieldCheck, Edit3, Download, Share2, User,
+  FileText
 } from 'lucide-react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
@@ -435,8 +436,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               onPress={() => { onClose(); navigation.navigate('EditProfile'); }}
             >
               <Edit3 size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text 
-                numberOfLines={1} 
+              <Text
+                numberOfLines={1}
                 adjustsFontSizeToFit={true}
                 minimumFontScale={0.8}
                 style={[styles.headerBtnText, { color: textColor }]}
@@ -447,8 +448,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             <View style={[styles.headerDivider, { backgroundColor: borderColor }]} />
             <TouchableOpacity style={styles.headerBtn} onPress={handleDownloadProfile}>
               <Download size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text 
-                numberOfLines={1} 
+              <Text
+                numberOfLines={1}
                 adjustsFontSizeToFit={true}
                 minimumFontScale={0.8}
                 style={[styles.headerBtnText, { color: textColor }]}
@@ -459,8 +460,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             <View style={[styles.headerDivider, { backgroundColor: borderColor }]} />
             <TouchableOpacity style={styles.headerBtn} onPress={handleShareProfile}>
               <Share2 size={13} color={isDark ? palette.gold.main : palette.purple.deep} />
-              <Text 
-                numberOfLines={1} 
+              <Text
+                numberOfLines={1}
                 adjustsFontSizeToFit={true}
                 minimumFontScale={0.8}
                 style={[styles.headerBtnText, { color: textColor }]}
@@ -492,6 +493,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             <Text style={[styles.groupHeading, { color: mutedText }]}>Support & Feedback</Text>
             <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
             <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
+            <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
+            <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} />
           </View>
 
           {/* Section: Promotions */}
@@ -511,15 +514,6 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
           )}
 
           <View style={styles.footerInfo}>
-            <View style={styles.footerLinksRow}>
-              <TouchableOpacity onPress={() => { onClose(); navigation.navigate('TermsConditions'); }}>
-                <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline' }]}>Terms & Conditions</Text>
-              </TouchableOpacity>
-              <Text style={{ color: mutedText, marginHorizontal: 8, fontSize: 11 }}>|</Text>
-              <TouchableOpacity onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }}>
-                <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline' }]}>Privacy Policy</Text>
-              </TouchableOpacity>
-            </View>
             <Text style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
             <Text style={styles.versionText}>App Version: {appVersion}</Text>
           </View>
@@ -569,16 +563,16 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             </View>
             <Text style={styles.logoutModalTitle}>Confirm Logout</Text>
             <Text style={styles.logoutModalMessage}>Are you sure you want to sign out of your account?</Text>
-            
+
             <View style={styles.logoutActions}>
-              <TouchableOpacity 
-                style={styles.logoutCancelBtn} 
+              <TouchableOpacity
+                style={styles.logoutCancelBtn}
                 onPress={() => setLogoutModalVisible(false)}
               >
                 <Text style={styles.logoutCancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.logoutConfirmBtn} 
+              <TouchableOpacity
+                style={styles.logoutConfirmBtn}
                 onPress={executeLogout}
               >
                 <Text style={styles.logoutConfirmBtnText}>Logout</Text>
