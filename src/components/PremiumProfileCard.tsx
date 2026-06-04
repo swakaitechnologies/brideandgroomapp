@@ -19,13 +19,15 @@ interface PremiumProfileCardProps {
   onPress?: () => void;
   isDark?: boolean;
   style?: any;
+  layout?: 'vertical' | 'horizontal';
 }
 
 export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
   profile,
   onPress,
   isDark = false,
-  style
+  style,
+  layout = 'vertical'
 }) => {
   const navigation = useNavigation<any>();
   
@@ -67,10 +69,16 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
 
   const isPhotoLocked = profile.photosLocked && (profile.privacySettings?.photoVisibility === 'Verified' || profile.privacySettings?.photoVisibility === 'Selected');
 
+  const isHorizontal = layout === 'horizontal';
+  const cardStyle = isHorizontal ? styles.cardHorizontal : styles.cardVertical;
+  const imageContainerStyle = isHorizontal ? styles.imageContainerHorizontal : styles.imageContainerVertical;
+  const imageStyle = isHorizontal ? styles.imageHorizontal : styles.imageVertical;
+  const connectBtnStyle = isHorizontal ? styles.connectBtnHorizontal : styles.connectBtnVertical;
+
   return (
     <TouchableOpacity 
       style={[
-        styles.card, 
+        cardStyle, 
         { backgroundColor: cardBg, borderColor: premiumGold },
         style
       ]} 
@@ -78,10 +86,10 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
       activeOpacity={0.95}
     >
       {/* Top Section: Photo Container */}
-      <View style={styles.imageContainer}>
+      <View style={imageContainerStyle}>
         <Image
           source={{ uri: getPhotoUrl() }}
-          style={styles.image}
+          style={imageStyle}
           blurRadius={isPhotoLocked ? (Platform.OS === 'ios' ? 15 : 8) : undefined}
         />
         {isPhotoLocked && (
@@ -93,8 +101,8 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
           </View>
         )}
         
-        {/* Subtle shadow overlay at bottom of photo */}
-        <View style={styles.overlay} />
+        {/* Subtle shadow overlay at bottom of photo (vertical only) */}
+        {!isHorizontal && <View style={styles.overlay} />}
 
         {/* Premium Badge Floating on top-left */}
         <View style={[styles.premiumTag, { backgroundColor: premiumGold }]}>
@@ -162,7 +170,7 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
 
         {/* Premium View CTA Button */}
         <TouchableOpacity 
-          style={[styles.connectBtn, { backgroundColor: deepPurple }]}
+          style={[connectBtnStyle, { backgroundColor: deepPurple }]}
           onPress={(e) => {
             e.stopPropagation();
             if (onPress) {
@@ -181,7 +189,7 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: {
+  cardHorizontal: {
     flexDirection: 'row',
     width: 325, 
     height: 160,
@@ -193,12 +201,33 @@ const styles = StyleSheet.create({
       android: { elevation: 4 },
     }),
   },
-  imageContainer: {
+  cardVertical: {
+    flexDirection: 'column',
+    width: 220,
+    height: 310,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      android: { elevation: 4 },
+    }),
+  },
+  imageContainerHorizontal: {
     position: 'relative',
     width: 125,
     height: '100%',
   },
-  image: {
+  imageContainerVertical: {
+    position: 'relative',
+    width: '100%',
+    height: 140,
+  },
+  imageHorizontal: {
+    width: '100%',
+    height: '100%',
+  },
+  imageVertical: {
     width: '100%',
     height: '100%',
   },
@@ -281,7 +310,16 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
     flex: 1,
   },
-  connectBtn: {
+  connectBtnHorizontal: {
+    height: 32,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  connectBtnVertical: {
     height: 32,
     borderRadius: 8,
     flexDirection: 'row',

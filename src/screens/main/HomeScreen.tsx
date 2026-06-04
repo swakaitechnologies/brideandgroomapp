@@ -580,6 +580,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                   key={item.id}
                   profile={item}
                   isDark={isDark}
+                  layout="vertical"
                   onPress={() => navigation.navigate("ProfileDetail", { profile: item })}
                   style={{ marginRight: 16 }}
                 />
@@ -622,6 +623,8 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                     profile={item}
                     type="grid"
                     isDark={isDark}
+                    layout="vertical"
+                    style={{ width: (width - 50) / 2, marginBottom: 15 }}
                     onPress={() => navigation.navigate("ProfileDetail", { profile: item })}
                   />
                 ))}
@@ -1057,8 +1060,10 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
   },
   newProfilesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     paddingHorizontal: 20,
-    gap: 12,
+    justifyContent: "space-between",
   },
   loadMoreBtn: {
     flexDirection: "row",

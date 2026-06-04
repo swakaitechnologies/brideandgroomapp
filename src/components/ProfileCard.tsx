@@ -22,6 +22,7 @@ interface ProfileCardProps {
   type?: 'premium' | 'grid' | 'visitor';
   isDark?: boolean;
   style?: any;
+  layout?: 'vertical' | 'horizontal';
 }
 
 export const ProfileCard: React.FC<ProfileCardProps> = ({ 
@@ -29,7 +30,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   onPress, 
   type = 'grid',
   isDark = false,
-  style
+  style,
+  layout = 'horizontal'
 }) => {
   const navigation = useNavigation<any>();
   const cardBg = isDark ? '#1E1E1E' : '#FFFFFF';
@@ -87,20 +89,32 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
     );
   }
 
+  const isHorizontal = layout === 'horizontal';
+  const cardStyle = type === 'premium' 
+    ? (isHorizontal ? styles.premiumCardHorizontal : styles.premiumCardVertical) 
+    : (isHorizontal ? styles.gridCardHorizontal : styles.gridCardVertical);
+  
+  const imageContainerStyle = isHorizontal ? styles.imageContainerHorizontal : styles.imageContainerVertical;
+  const imageStyle = type === 'premium'
+    ? (isHorizontal ? styles.premiumImageHorizontal : styles.premiumImageVertical)
+    : (isHorizontal ? styles.gridImageHorizontal : styles.gridImageVertical);
+
+  const connectBtnStyle = isHorizontal ? styles.connectBtnHorizontal : styles.connectBtnVertical;
+
   return (
     <TouchableOpacity 
       style={[
-        type === 'premium' ? styles.premiumCard : styles.gridCard, 
+        cardStyle, 
         { backgroundColor: cardBg },
         style
       ]} 
       onPress={onPress}
       activeOpacity={0.9}
     >
-      <View style={styles.imageContainer}>
+      <View style={imageContainerStyle}>
         <Image
           source={{ uri: getPhotoUrl() }}
-          style={type === 'premium' ? styles.premiumImage : styles.gridImage}
+          style={imageStyle}
           blurRadius={isPhotoLocked ? (Platform.OS === 'ios' ? 15 : 8) : undefined}
         />
         {isPhotoLocked && (
@@ -121,7 +135,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           <Heart size={20} color={isPremium ? accentColor : '#FFF'} fill={isPremium ? 'transparent' : 'rgba(0,0,0,0.2)'} />
         </TouchableOpacity>
       </View>
-
+ 
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={[styles.nameText, { color: textColor }]} numberOfLines={1}>
@@ -129,7 +143,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           </Text>
           {isPremium && <Star size={14} color={accentColor} fill={accentColor} />}
         </View>
-
+ 
         <View style={styles.detailsGrid}>
           <View style={styles.detailItem}>
             <User size={12} color={mutedText} />
@@ -158,9 +172,9 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             </Text>
           </View>
         </View>
-
+ 
         <TouchableOpacity 
-          style={[styles.connectBtn, { backgroundColor: deepPurple }]}
+          style={[connectBtnStyle, { backgroundColor: deepPurple }]}
           onPress={(e) => {
             e.stopPropagation();
             if (onPress) {
@@ -179,7 +193,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  premiumCard: {
+  premiumCardHorizontal: {
     flexDirection: 'row',
     width: 325,
     height: 160,
@@ -193,7 +207,21 @@ const styles = StyleSheet.create({
       android: { elevation: 4 },
     }),
   },
-  gridCard: {
+  premiumCardVertical: {
+    flexDirection: 'column',
+    width: width * 0.85,
+    height: 360,
+    borderRadius: 24,
+    marginRight: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 15 },
+      android: { elevation: 4 },
+    }),
+  },
+  gridCardHorizontal: {
     flexDirection: 'row',
     width: '100%',
     height: 160,
@@ -207,18 +235,43 @@ const styles = StyleSheet.create({
       android: { elevation: 2 },
     }),
   },
-  imageContainer: {
+  gridCardVertical: {
+    flexDirection: 'column',
+    height: 320,
+    borderRadius: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F1F1',
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
+      android: { elevation: 2 },
+    }),
+  },
+  imageContainerHorizontal: {
     position: 'relative',
     width: 125,
     height: '100%',
   },
-  premiumImage: {
+  imageContainerVertical: {
+    position: 'relative',
+    width: '100%',
+  },
+  premiumImageHorizontal: {
     width: '100%',
     height: '100%',
   },
-  gridImage: {
+  premiumImageVertical: {
+    width: '100%',
+    height: 180,
+  },
+  gridImageHorizontal: {
     width: '100%',
     height: '100%',
+  },
+  gridImageVertical: {
+    width: '100%',
+    height: 140,
   },
   premiumTag: {
     position: 'absolute',
@@ -278,7 +331,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     ...fonts.medium,
   },
-  connectBtn: {
+  connectBtnHorizontal: {
     height: 32,
     borderRadius: 8,
     flexDirection: 'row',
@@ -286,6 +339,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginTop: 6,
+  },
+  connectBtnVertical: {
+    height: 38,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
   },
   connectBtnText: {
     fontSize: 10.5,

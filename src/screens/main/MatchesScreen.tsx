@@ -509,6 +509,7 @@ export default function MatchesScreen() {
             <ProfileCard
               profile={item}
               type="grid"
+              layout="horizontal"
               onPress={() => handleViewProfile(item)}
             />
           )}
