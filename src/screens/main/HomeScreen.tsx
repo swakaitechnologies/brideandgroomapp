@@ -854,8 +854,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     marginHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(59, 30, 84, 0.05)',
     ...Platform.select({
@@ -875,17 +875,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statNum: {
-    fontSize: 18,
+    fontSize: 15,
     ...fonts.bold,
   },
   statLabelText: {
-    fontSize: 10,
+    fontSize: 9,
     marginTop: 2,
     ...fonts.semibold,
   },
   statVerticalDivider: {
     width: 1,
-    height: 24,
+    height: 16,
     backgroundColor: 'rgba(59, 30, 84, 0.08)',
   },
   premiumNudgeCard: {
