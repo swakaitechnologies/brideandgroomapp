@@ -185,6 +185,25 @@ class PushNotificationModule(reactContext: ReactApplicationContext) :
         }
     }
 
+    @ReactMethod
+    fun createNotificationChannel(channelId: String, channelName: String, description: String, promise: Promise) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val importance = android.app.NotificationManager.IMPORTANCE_HIGH
+                val channel = android.app.NotificationChannel(channelId, channelName, importance).apply {
+                    this.description = description
+                }
+                val notificationManager = reactApplicationContext.getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                notificationManager.createNotificationChannel(channel)
+                Log.i(TAG, "Notification channel created: $channelId")
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create notification channel", e)
+            promise.reject("CHANNEL_ERROR", e.message, e)
+        }
+    }
+
     override fun onActivityResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?) {
         // No-op
     }

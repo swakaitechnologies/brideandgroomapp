@@ -1,5 +1,6 @@
 import { NativeModules, Platform, DeviceEventEmitter } from 'react-native';
 import { saveFcmToken } from './api';
+import { showToast } from '../utils/toast';
 
 const { PushNotificationModule } = NativeModules;
 
@@ -21,6 +22,14 @@ export async function setupPushNotifications() {
   }
 
   try {
+    // Create the default notification channel for Android 8.0+
+    await PushNotificationModule.createNotificationChannel(
+      'default',
+      'Default',
+      'Used for general app alerts, messages, and matches.'
+    );
+    console.log('[PUSH] Default notification channel registered.');
+
     const hasPermission = await PushNotificationModule.hasPermission();
     if (hasPermission) {
       console.log('[PUSH] Notification permissions already granted.');
@@ -95,6 +104,16 @@ export function setupNotificationListeners(navigationRef: any) {
   }
 
   try {
+    // Handle foreground received notifications
+    const fgSubscription = DeviceEventEmitter.addListener('onNotificationReceived', (remoteMessage: any) => {
+      console.log('[PUSH] Foreground notification received event:', remoteMessage);
+      if (remoteMessage.notification) {
+        showToast(remoteMessage.notification.body, remoteMessage.notification.title);
+      } else if (remoteMessage.data && remoteMessage.data.message) {
+        showToast(remoteMessage.data.message, remoteMessage.data.title || "Notification");
+      }
+    });
+
     // Handle notification click when app is running (foreground or background listener)
     const subscription = DeviceEventEmitter.addListener('onNotificationOpenedApp', (remoteMessage: any) => {
       console.log('[PUSH] App opened from background state by notification event:', remoteMessage);
@@ -118,6 +137,7 @@ export function setupNotificationListeners(navigationRef: any) {
 
     return () => {
       subscription.remove();
+      fgSubscription.remove();
     };
   } catch (error: any) {
     console.warn('[PUSH] Error setting up notification listeners:', error.message);
