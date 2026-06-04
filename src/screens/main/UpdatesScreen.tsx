@@ -474,8 +474,8 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
 
           {/* Card Action Buttons */}
           <View style={styles.cardActions}>
-            <Skeleton width="48%" height={36} borderRadius={18} />
-            <Skeleton width="48%" height={36} borderRadius={18} />
+            <Skeleton width="48%" height={38} borderRadius={10} />
+            <Skeleton width="48%" height={38} borderRadius={10} />
           </View>
         </View>
       ))}
@@ -512,7 +512,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
                   {tab}
                 </Text>
                 {badgeCount > 0 && (
-                  <View style={styles.badge}>
+                  <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
                     <Text style={styles.badgeText}>{badgeCount}</Text>
                   </View>
                 )}
@@ -606,7 +606,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
             style={[styles.subTabItem, moreSubTab === "viewed" && styles.subTabItemActive]}
             onPress={() => setMoreSubTab("viewed")}
           >
-            <Eye size={12} color={moreSubTab === "viewed" ? palette.gold.main : "#3B1E54"} />
+            <Eye size={12} color={moreSubTab === "viewed" ? palette.gold.main : "#7E6B8F"} />
             <Text style={[styles.subTabLabel, moreSubTab === "viewed" && styles.subTabLabelActive]}>
               Viewed ({viewedProfiles.length})
             </Text>
@@ -617,7 +617,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
             style={[styles.subTabItem, moreSubTab === "visitors" && styles.subTabItemActive]}
             onPress={() => setMoreSubTab("visitors")}
           >
-            <UserCheck size={12} color={moreSubTab === "visitors" ? palette.gold.main : "#3B1E54"} />
+            <UserCheck size={12} color={moreSubTab === "visitors" ? palette.gold.main : "#7E6B8F"} />
             <Text style={[styles.subTabLabel, moreSubTab === "visitors" && styles.subTabLabelActive]}>
               Visitors ({viewedYou.length})
             </Text>
@@ -628,7 +628,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
             style={[styles.subTabItem, moreSubTab === "photoRequests" && styles.subTabItemActive]}
             onPress={() => setMoreSubTab("photoRequests")}
           >
-            <ImageIcon size={12} color={moreSubTab === "photoRequests" ? palette.gold.main : "#3B1E54"} />
+            <ImageIcon size={12} color={moreSubTab === "photoRequests" ? palette.gold.main : "#7E6B8F"} />
             <Text style={[styles.subTabLabel, moreSubTab === "photoRequests" && styles.subTabLabelActive]}>
               Photo Request ({photoRequests.length})
             </Text>
@@ -639,7 +639,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
             style={[styles.subTabItem, moreSubTab === "deleted" && styles.subTabItemActive]}
             onPress={() => setMoreSubTab("deleted")}
           >
-            <UserX size={12} color={moreSubTab === "deleted" ? palette.gold.main : "#3B1E54"} />
+            <UserX size={12} color={moreSubTab === "deleted" ? palette.gold.main : "#7E6B8F"} />
             <Text style={[styles.subTabLabel, moreSubTab === "deleted" && styles.subTabLabelActive]}>
               Declined ({deletedRequests.length})
             </Text>
@@ -835,7 +835,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
                         }
                         activeOpacity={0.7}
                       >
-                        <MessageSquare size={14} color="#FFFFFF" />
+                        <MessageSquare size={14} color="#D4AF37" />
                         <Text style={styles.primaryBtnText}>Chat Now</Text>
                       </TouchableOpacity>
                     </>
@@ -861,7 +861,7 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
                         }
                         activeOpacity={0.7}
                       >
-                        <MessageSquare size={14} color="#FFFFFF" />
+                        <MessageSquare size={14} color="#D4AF37" />
                         <Text style={styles.primaryBtnText}>Message</Text>
                       </TouchableOpacity>
                     </>
@@ -1017,13 +1017,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#F5F0FA",
-    borderWidth: 1,
-    borderColor: "rgba(232, 224, 240, 0.8)",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
   },
   tabButtonActive: {
     backgroundColor: "#3B1E54",
-    borderColor: "#3B1E54",
   },
   tabButtonText: {
     fontSize: 13,
@@ -1031,17 +1028,22 @@ const styles = StyleSheet.create({
     color: "#7E6B8F",
   },
   tabButtonTextActive: {
-    color: "#FFFFFF",
+    color: "#D4AF37",
   },
   badge: {
     marginLeft: 6,
-    backgroundColor: palette.gold.main,
     borderRadius: 9,
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     minWidth: 18,
     justifyContent: "center",
     alignItems: "center",
+  },
+  badgeActive: {
+    backgroundColor: palette.gold.main,
+  },
+  badgeInactive: {
+    backgroundColor: "rgba(59, 30, 84, 0.08)",
   },
   badgeText: {
     color: "#3B1E54",
@@ -1055,11 +1057,9 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: "#F0EBF5",
+    backgroundColor: "rgba(59, 30, 84, 0.05)",
     borderRadius: 14,
     padding: 3.5,
-    borderWidth: 1,
-    borderColor: "rgba(232, 224, 240, 0.8)",
   },
   segmentButton: {
     flex: 1,
@@ -1129,9 +1129,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: "rgba(232, 224, 240, 0.8)",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.06)",
     padding: 16,
     ...Platform.select({
       ios: {
@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
     }),
   },
   cardPremium: {
-    borderColor: "rgba(212, 175, 55, 0.4)", // Gold outline
+    borderColor: "#D4AF37",
   },
   cardHeader: {
     flexDirection: "row",
@@ -1240,17 +1240,17 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   declineBtn: {
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: "#F44336",
+    backgroundColor: "rgba(211, 47, 47, 0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(211, 47, 47, 0.15)",
   },
   declineBtnText: {
     fontSize: 12,
     ...fonts.bold,
-    color: "#F44336",
+    color: "#D32F2F",
   },
   acceptBtn: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#2E7D32",
   },
   acceptBtnText: {
     fontSize: 12,
@@ -1259,8 +1259,8 @@ const styles = StyleSheet.create({
   },
   outlineBtn: {
     backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: "rgba(59, 30, 84, 0.4)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.1)",
   },
   outlineBtnText: {
     fontSize: 12,
@@ -1273,7 +1273,7 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontSize: 12,
     ...fonts.bold,
-    color: "#FFFFFF",
+    color: "#D4AF37",
   },
   deletedPill: {
     flex: 1,
@@ -1300,7 +1300,7 @@ const styles = StyleSheet.create({
   subTabItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F5F0FA",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
@@ -1312,9 +1312,9 @@ const styles = StyleSheet.create({
   subTabLabel: {
     fontSize: 11,
     ...fonts.semibold,
-    color: "#3B1E54",
+    color: "#7E6B8F",
   },
   subTabLabelActive: {
-    color: "#FFFFFF",
+    color: "#D4AF37",
   },
 });
