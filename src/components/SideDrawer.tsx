@@ -842,13 +842,15 @@ const styles = StyleSheet.create({
   },
   footerInfo: {
     padding: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
     alignItems: 'center',
   },
   footerLinksRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   footerLink: {
     fontSize: 11,
@@ -857,7 +859,7 @@ const styles = StyleSheet.create({
   copyrightText: {
     fontSize: 10,
     color: palette.neutral.grey,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   versionText: {
     fontSize: 10,
