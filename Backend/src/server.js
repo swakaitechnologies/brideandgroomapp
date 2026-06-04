@@ -21,10 +21,12 @@ const startServer = async () => {
   const missingEnv = [];
   if (!process.env.JWT_SECRET) missingEnv.push("JWT_SECRET");
   if (!process.env.REFRESH_TOKEN_SECRET) missingEnv.push("REFRESH_TOKEN_SECRET");
-  if (!process.env.DB_NAME) missingEnv.push("DB_NAME");
-  if (!process.env.DB_USER) missingEnv.push("DB_USER");
-  if (!process.env.DB_PASSWORD) missingEnv.push("DB_PASSWORD");
-  if (!process.env.DB_HOST) missingEnv.push("DB_HOST");
+  if (!process.env.DATABASE_URL) {
+    if (!process.env.DB_NAME) missingEnv.push("DB_NAME");
+    if (!process.env.DB_USER) missingEnv.push("DB_USER");
+    if (!process.env.DB_PASSWORD) missingEnv.push("DB_PASSWORD");
+    if (!process.env.DB_HOST) missingEnv.push("DB_HOST");
+  }
 
   if (missingEnv.length > 0) {
     logger.error(

@@ -12,14 +12,12 @@ const devFormat = printf(({ level, message, timestamp, ...metadata }) => {
   return msg;
 });
 
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
-  format: combine(
-    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-    process.env.NODE_ENV === "production" ? json() : combine(colorize(), align(), devFormat)
-  ),
-  transports: [
-    new winston.transports.Console(),
+const transports = [
+  new winston.transports.Console(),
+];
+
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  transports.push(
     // File transport for errors in production
     new winston.transports.File({
       filename: path.join(__dirname, "../../logs/error.log"),
@@ -32,8 +30,17 @@ const logger = winston.createLogger({
       filename: path.join(__dirname, "../../logs/combined.log"),
       maxsize: 10485760, // 10MB
       maxFiles: 5,
-    }),
-  ],
+    })
+  );
+}
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || "info",
+  format: combine(
+    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    process.env.NODE_ENV === "production" ? json() : combine(colorize(), align(), devFormat)
+  ),
+  transports: transports,
 });
 
 module.exports = logger;

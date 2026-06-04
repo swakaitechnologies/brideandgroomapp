@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Production URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_ADMIN_API_URL || "https://brideandgroomapp-b6zs.onrender.com/api/admin",
+  baseURL: import.meta.env.VITE_ADMIN_API_URL || "https://3m30rsqcgj.execute-api.us-east-1.amazonaws.com/api/admin",
   withCredentials: true,
 });
 

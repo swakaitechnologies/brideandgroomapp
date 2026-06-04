@@ -19,11 +19,10 @@ const startServer = async () => {
   // Required Environment Variables Check
   const requiredEnv = [
     "ADMIN_JWT_SECRET",
-    "DB_NAME",
-    "DB_USER",
-    "DB_PASSWORD",
-    "DB_HOST",
   ];
+  if (!process.env.DATABASE_URL) {
+    requiredEnv.push("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST");
+  }
   const missingEnv = requiredEnv.filter((env) => !process.env[env]);
 
   if (missingEnv.length > 0) {

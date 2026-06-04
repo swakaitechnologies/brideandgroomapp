@@ -53,6 +53,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ProfileCard } from "../../components/ProfileCard";
 import PermissionsModal from "../../components/PermissionsModal";
 import SideDrawer from "../../components/SideDrawer";
+import { Skeleton } from "../../components/Skeleton";
 import Svg, { Circle } from "react-native-svg";
 import { PremiumProfileCard } from "../../components/PremiumProfileCard";
 import { fonts } from "@/src/theme";
@@ -241,9 +242,88 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
   if (loading && !refreshing) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: themeBg }]}>
-        <ActivityIndicator size="large" color={accentColor} />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeBg }} edges={["left", "right"]}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingTop: topPadding, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header/Hero Card Skeleton */}
+          <View style={styles.heroContainer}>
+            <View style={[styles.heroCard, { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" }]}>
+              <View style={styles.heroHeader}>
+                <Skeleton width={80} height={80} borderRadius={40} />
+                <View style={[styles.heroInfo, { marginLeft: 15 }]}>
+                  <Skeleton width={100} height={14} style={{ marginBottom: 8 }} />
+                  <Skeleton width={160} height={20} style={{ marginBottom: 8 }} />
+                  <Skeleton width={120} height={14} />
+                </View>
+              </View>
+              <View style={[styles.heroStats, { marginTop: 25, justifyContent: 'space-around' }]}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <View key={i} style={{ alignItems: 'center' }}>
+                    <Skeleton width={40} height={18} style={{ marginBottom: 6 }} />
+                    <Skeleton width={50} height={12} />
+                  </View>
+                ))}
+              </View>
+              <Skeleton width="100%" height={40} borderRadius={10} style={{ marginTop: 20 }} />
+            </View>
+          </View>
+
+          {/* Banner Carousel Skeleton */}
+          <View style={[styles.bannerContainer, { marginHorizontal: 20, marginVertical: 10 }]}>
+            <Skeleton width="100%" height={120} borderRadius={16} />
+          </View>
+
+          {/* Section: Premium Picks Skeleton */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ gap: 6 }}>
+                <Skeleton width={120} height={20} />
+                <Skeleton width={200} height={12} />
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={{ marginRight: 16, width: 220, height: 280, borderRadius: 16, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', padding: 12, borderColor: isDark ? '#2C2C2E' : '#E5E5EA', borderWidth: 1 }}>
+                  <Skeleton width="100%" height={160} borderRadius={12} style={{ marginBottom: 12 }} />
+                  <Skeleton width={120} height={16} style={{ marginBottom: 8 }} />
+                  <Skeleton width={150} height={12} style={{ marginBottom: 8 }} />
+                  <Skeleton width={80} height={12} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Section: New Arrivals Skeleton */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ gap: 6 }}>
+                <Skeleton width={110} height={20} />
+                <Skeleton width={160} height={12} />
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={{ marginRight: 16, width: 160, height: 220, borderRadius: 16, backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF', padding: 12, borderColor: isDark ? '#2C2C2E' : '#E5E5EA', borderWidth: 1 }}>
+                  <Skeleton width="100%" height={120} borderRadius={12} style={{ marginBottom: 12 }} />
+                  <Skeleton width={100} height={14} style={{ marginBottom: 6 }} />
+                  <Skeleton width={80} height={10} />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 

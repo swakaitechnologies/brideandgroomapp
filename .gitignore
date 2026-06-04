@@ -84,3 +84,6 @@ firebase-service-account.json
 
 # Temporary scripts
 scratch/
+
+# Serverless packaging
+**/.serverless/

@@ -5,7 +5,6 @@ import {
   UserPlus,
   Eye,
   Activity,
-  Loader2,
   ShieldAlert,
   RefreshCw,
 } from "lucide-react";
@@ -14,6 +13,7 @@ import { Link } from "react-router-dom";
 import { fetchDashboardStats } from "../../store/slices/dashboardSlice";
 import { RootState, AppDispatch } from "../../store";
 import { cn } from "../../lib/utils";
+import { Skeleton } from "../../components/ui/skeleton";
 
 interface StatCardProps {
   title: string;
@@ -53,6 +53,22 @@ const StatCard = ({ title, value, change, icon: Icon, color }: StatCardProps) =>
   </motion.div>
 );
 
+const StatCardSkeleton = () => (
+  <div className="bg-white p-8 rounded-[2.5rem] border border-border shadow-soft">
+    <div className="flex justify-between items-start">
+      <div className="flex-1 mr-4 space-y-3">
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <Skeleton className="w-14 h-14 rounded-2xl" />
+    </div>
+    <div className="mt-8 flex items-center gap-3">
+      <Skeleton className="h-6 w-14 rounded-full" />
+      <Skeleton className="h-3 w-16" />
+    </div>
+  </div>
+);
+
 const DashboardPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { stats, loading, error } = useSelector(
@@ -62,14 +78,6 @@ const DashboardPage = () => {
   useEffect(() => {
     dispatch(fetchDashboardStats());
   }, [dispatch]);
-
-  if (loading && !stats) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-12 h-12 animate-spin text-primary opacity-20" />
-      </div>
-    );
-  }
 
   const statItems = [
     {
@@ -173,9 +181,9 @@ const DashboardPage = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {statItems.map((stat, i) => (
-          <StatCard key={i} {...stat} />
-        ))}
+        {loading && !stats
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : statItems.map((stat, i) => <StatCard key={i} {...stat} />)}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -203,56 +211,73 @@ const DashboardPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Link
-              to="/dashboard/verification"
-              className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-primary/50 transition-all hover:bg-white hover:shadow-elevated group"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-primary/10 group-hover:text-primary transition-all mb-8">
-                <Users size={20} />
-              </div>
-              <div>
-                <h4 className="text-3xl font-medium text-foreground mb-1">
-                  {stats?.moderation?.pendingProfiles || 0}
-                </h4>
-                <p className="text-[9px] font-medium  tracking-widest text-black">
-                  Profiles Pending
-                </p>
-              </div>
-            </Link>
+            {loading && !stats ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50"
+                >
+                  <Skeleton className="w-12 h-12 rounded-2xl mb-8" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-8 w-12" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <>
+                <Link
+                  to="/dashboard/verification"
+                  className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-primary/50 transition-all hover:bg-white hover:shadow-elevated group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-primary/10 group-hover:text-primary transition-all mb-8">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-3xl font-medium text-foreground mb-1">
+                      {stats?.moderation?.pendingProfiles || 0}
+                    </h4>
+                    <p className="text-[9px] font-medium  tracking-widest text-black">
+                      Profiles Pending
+                    </p>
+                  </div>
+                </Link>
 
-            <Link
-              to="/dashboard/verification"
-              className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-primary/50 transition-all hover:bg-white hover:shadow-elevated group"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-primary/10 group-hover:text-primary transition-all mb-8">
-                <Eye size={20} />
-              </div>
-              <div>
-                <h4 className="text-3xl font-medium text-foreground mb-1">
-                  {stats?.moderation?.pendingPhotos || 0}
-                </h4>
-                <p className="text-[9px] font-medium  tracking-widest text-black">
-                  Pending Photos
-                </p>
-              </div>
-            </Link>
+                <Link
+                  to="/dashboard/verification"
+                  className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-primary/50 transition-all hover:bg-white hover:shadow-elevated group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-primary/10 group-hover:text-primary transition-all mb-8">
+                    <Eye size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-3xl font-medium text-foreground mb-1">
+                      {stats?.moderation?.pendingPhotos || 0}
+                    </h4>
+                    <p className="text-[9px] font-medium  tracking-widest text-black">
+                      Pending Photos
+                    </p>
+                  </div>
+                </Link>
 
-            <Link
-              to="/dashboard/reports"
-              className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-red-500/50 transition-all hover:bg-white hover:shadow-elevated group"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-red-500/10 group-hover:text-red-500 transition-all mb-8">
-                <ShieldAlert size={20} />
-              </div>
-              <div>
-                <h4 className="text-3xl font-medium text-foreground mb-1">
-                  {stats?.moderation?.pendingReports || 0}
-                </h4>
-                <p className="text-[9px] font-medium  tracking-widest text-red-500/60">
-                  Unresolved Issues
-                </p>
-              </div>
-            </Link>
+                <Link
+                  to="/dashboard/reports"
+                  className="flex flex-col justify-between p-8 bg-muted/20 rounded-[2.5rem] border border-border/50 hover:border-red-500/50 transition-all hover:bg-white hover:shadow-elevated group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black group-hover:bg-red-500/10 group-hover:text-red-500 transition-all mb-8">
+                    <ShieldAlert size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-3xl font-medium text-foreground mb-1">
+                      {stats?.moderation?.pendingReports || 0}
+                    </h4>
+                    <p className="text-[9px] font-medium  tracking-widest text-red-500/60">
+                      Unresolved Issues
+                    </p>
+                  </div>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 

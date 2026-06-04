@@ -18,12 +18,14 @@ provider:
     DB_DIALECT: ${env:DB_DIALECT, 'postgres'}
     DATABASE_URL: ${env:DATABASE_URL, ''}
     REDIS_URL: ${env:REDIS_URL, ''}
+    BACKEND_URL: ${env:BACKEND_URL, ''}
     INTERNAL_API_SECRET: ${env:INTERNAL_API_SECRET, ''}
     APP_AWS_ACCESS_KEY_ID: ${env:AWS_ACCESS_KEY_ID, ''}
     APP_AWS_SECRET_ACCESS_KEY: ${env:AWS_SECRET_ACCESS_KEY, ''}
     APP_AWS_REGION: ${env:AWS_REGION, 'us-east-1'}
     AWS_BUCKET: ${env:AWS_BUCKET, ''}
     FIREBASE_SERVICE_ACCOUNT: ${env:FIREBASE_SERVICE_ACCOUNT, ''}
+    ENCRYPTION_KEY: ${env:ENCRYPTION_KEY, ''}
 
 package:
   patterns:

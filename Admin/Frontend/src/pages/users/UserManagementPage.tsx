@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   UserPlus,
   ArrowRight,
   RefreshCw,
@@ -22,6 +21,7 @@ import { fetchRecentRegistrations } from "../../store/slices/dashboardSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "../../lib/utils";
+import { Skeleton } from "../../components/ui/skeleton";
 
 const UserManagementPage = () => {
   const navigate = useNavigate();
@@ -206,15 +206,40 @@ const UserManagementPage = () => {
             </thead>
             <tbody className="divide-y divide-border/60">
               {loading && users.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-black"
-                  >
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    Loading users...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-border/60">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="w-12 h-12 rounded-2xl" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-48" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-3.5 w-16" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-3.5 w-14" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-3.5 w-20" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="w-8 h-8 rounded-lg" />
+                        <Skeleton className="w-8 h-8 rounded-lg" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : users.length === 0 ? (
                 <tr>
                   <td
