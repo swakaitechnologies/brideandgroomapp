@@ -511,12 +511,15 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
           )}
 
           <View style={styles.footerInfo}>
-            <TouchableOpacity onPress={() => { onClose(); navigation.navigate('TermsConditions'); }}>
-              <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline', marginBottom: 8 }]}>Terms & Conditions</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }}>
-              <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline', marginBottom: 12 }]}>Privacy Policy</Text>
-            </TouchableOpacity>
+            <View style={styles.footerLinksRow}>
+              <TouchableOpacity onPress={() => { onClose(); navigation.navigate('TermsConditions'); }}>
+                <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline' }]}>Terms & Conditions</Text>
+              </TouchableOpacity>
+              <Text style={{ color: mutedText, marginHorizontal: 8, fontSize: 11 }}>|</Text>
+              <TouchableOpacity onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }}>
+                <Text style={[styles.footerLink, { color: mutedText, textDecorationLine: 'underline' }]}>Privacy Policy</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
             <Text style={styles.versionText}>App Version: {appVersion}</Text>
           </View>
@@ -847,11 +850,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexWrap: 'wrap',
     marginBottom: 16,
+    paddingHorizontal: 12,
   },
   footerLink: {
     fontSize: 11,
     color: palette.purple.muted,
+    paddingVertical: 4,
+    lineHeight: 16,
   },
   copyrightText: {
     fontSize: 10,
