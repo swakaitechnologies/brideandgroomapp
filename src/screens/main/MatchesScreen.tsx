@@ -47,11 +47,14 @@ export default function MatchesScreen() {
   const isDark = false;
   const topPadding = insets.top + 80;
   
+  const themeBg = isDark ? "#0F0F0F" : "#FDFBFF"; // Consistent off-white background
+  const cardBg = isDark ? "#1E1E1E" : "#FFFFFF";
+  const textColor = isDark ? "#F0F0F0" : "#1A1A1A";
+  const mutedText = isDark ? "#A0A0A0" : "#8E8E93";
+  const borderColor = isDark ? "#2C2C2E" : "rgba(59, 30, 84, 0.08)";
   const accentColor = palette.gold.main;
   const deepPurple = "#3B1E54";
-  const textColor = "#1A1A1A";
-  const mutedText = "#7E6B8F";
-  const lightBg = "#F8F7FA";
+  const softPurple = "rgba(59, 30, 84, 0.04)";
 
   // Data States
   const [loading, setLoading] = useState(true);
@@ -344,25 +347,26 @@ export default function MatchesScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <View style={styles.searchInner}>
-        <Search size={18} color="#9E9E9E" style={styles.searchIcon} />
+      <View style={[styles.searchInner, { backgroundColor: softPurple }]}>
+        <Search size={18} color={mutedText} style={styles.searchIcon} />
         <TextInput
           placeholder="Search matches by name..."
-          placeholderTextColor="#9E9E9E"
-          style={styles.searchInput}
+          placeholderTextColor={mutedText}
+          style={[styles.searchInput, { color: textColor }]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           clearButtonMode="while-editing"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
-            <X size={16} color="#9E9E9E" />
+            <X size={16} color={mutedText} />
           </TouchableOpacity>
         )}
       </View>
       <TouchableOpacity
         style={[
           styles.filterIconBtn,
+          { backgroundColor: softPurple },
           activeTab === "daily" && { opacity: 0.4 }
         ]}
         disabled={activeTab === "daily"}
@@ -475,7 +479,7 @@ export default function MatchesScreen() {
 
   return (
     <SafeAreaView 
-      style={[styles.safeArea, { backgroundColor: "#FFFFFF", paddingTop: topPadding }]} 
+      style={[styles.safeArea, { backgroundColor: themeBg, paddingTop: topPadding }]} 
       edges={["left", "right"]}
     >
       {renderHeader()}
@@ -681,7 +685,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 15,
-    backgroundColor: "#F3F0F7",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -707,7 +711,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F0F7",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     borderRadius: 15,
     paddingHorizontal: 15,
     height: 48,
@@ -736,7 +740,7 @@ const styles = StyleSheet.create({
   tabItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F0F7",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     paddingHorizontal: 16,
     borderRadius: 20,
     gap: 6,
@@ -748,10 +752,10 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 13,
     ...fonts.semibold,
-    color: "#3B1E54",
+    color: "#7E6B8F",
   },
   tabLabelActive: {
-    color: "#FFFFFF",
+    color: "#D4AF37",
   },
   tabBadge: {
     paddingHorizontal: 6,
@@ -765,12 +769,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#D4AF37",
   },
   tabBadgeInactive: {
-    backgroundColor: "#3B1E54",
+    backgroundColor: "rgba(59, 30, 84, 0.08)",
   },
   tabBadgeText: {
     fontSize: 9,
     ...fonts.bold,
-    color: "#FFFFFF",
+    color: "#3B1E54",
   },
   tabBadgeTextActive: {
     color: "#3B1E54",
@@ -785,7 +789,7 @@ const styles = StyleSheet.create({
   subTabItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F0F7",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
@@ -797,7 +801,7 @@ const styles = StyleSheet.create({
   subTabLabel: {
     fontSize: 11,
     ...fonts.semibold,
-    color: "#3B1E54",
+    color: "#7E6B8F",
   },
   subTabLabelActive: {
     color: "#FFFFFF",
@@ -821,6 +825,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#7E6B8F",
     ...fonts.medium,
+    paddingVertical: 8,
   },
   emptyContainer: {
     flex: 1,
@@ -872,7 +877,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F0F7",
+    borderBottomColor: "rgba(59, 30, 84, 0.08)",
   },
   modalTitle: {
     fontSize: 18,
@@ -906,7 +911,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#F3F0F7",
+    backgroundColor: "rgba(59, 30, 84, 0.04)",
     borderWidth: 1,
     borderColor: "transparent",
   },
@@ -923,7 +928,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: "#F3F0F7",
+    borderTopColor: "rgba(59, 30, 84, 0.08)",
     gap: 12,
   },
   resetModalBtn: {
