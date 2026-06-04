@@ -541,9 +541,6 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
       >
         <View style={styles.logoutModalOverlay}>
           <View style={styles.logoutModalContent}>
-            <View style={styles.logoutIconWrapper}>
-              <LogOut size={24} color="#FF3B30" />
-            </View>
             <Text style={styles.logoutModalTitle}>Confirm Logout</Text>
             <Text style={styles.logoutModalMessage}>Are you sure you want to sign out of your account?</Text>
 
@@ -853,74 +850,70 @@ const styles = StyleSheet.create({
   },
   logoutModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoutModalContent: {
-    width: '85%',
+    width: 280,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-  },
-  logoutIconWrapper: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFEBEE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   logoutModalTitle: {
     fontSize: 18,
-    ...fonts.semibold,
-    color: '#1A1A1A',
+    ...fonts.bold,
+    color: '#3B1E54', // Theme deep purple
     marginBottom: 8,
+    textAlign: 'center',
   },
   logoutModalMessage: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 20,
   },
   logoutActions: {
     flexDirection: 'row',
     width: '100%',
-    gap: 12,
+    gap: 10,
   },
   logoutCancelBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#F5F5F5',
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F2F5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoutCancelBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     ...fonts.semibold,
     color: '#666666',
   },
   logoutConfirmBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#FF3B30',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoutConfirmBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     ...fonts.semibold,
     color: '#FFFFFF',
   },
