@@ -18,7 +18,6 @@ import BannerManagementPage from "./pages/banners/BannerManagementPage";
 import AuditLogsPage from "./pages/logs/AuditLogsPage";
 import ProfileAuditPage from "./pages/moderation/ProfileAuditPage";
 import SettingsPage from "./pages/settings/SettingsPage";
-import OtaUpdatesPage from "./pages/ota/OtaUpdatesPage";
 import AdminsPage from "./pages/admins/AdminsPage";
 import UserRequestsPage from "./pages/moderation/UserRequestsPage";
 import SuccessStoriesPage from "./pages/moderation/SuccessStoriesPage";
@@ -187,14 +186,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/dashboard/ota"
-          element={
-            <ProtectedRoute allowedRoles={["superadmin"]}>
-              <OtaUpdatesPage />
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/dashboard/settings"
           element={

@@ -25,7 +25,6 @@ const CallHistory = require("./CallHistory");
 const ContactFilter = require("./ContactFilter");
 const Coupon = require("./Coupon");
 const Like = require("./Like");
-const OtaUpdate = require("./OtaUpdate");
 
 // User <-> Profile
 User.hasOne(Profile, {
@@ -239,7 +238,6 @@ module.exports = {
   PhotoRequest,
   CallHistory,
   Coupon,
-  OtaUpdate,
   ContactFilter,
   WebSocketConnection: require("./WebSocketConnection"),
 };

@@ -17,7 +17,6 @@ import {
   Activity,
   CreditCard,
   Image as ImageIcon,
-  Cpu,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -114,12 +113,6 @@ const SIDEBAR_ITEMS = [
     path: "/dashboard/logs",
     label: "Audit Logs",
     icon: FileText,
-    roles: ["superadmin"],
-  },
-  {
-    path: "/dashboard/ota",
-    label: "OTA Updates",
-    icon: Cpu,
     roles: ["superadmin"],
   },
   {

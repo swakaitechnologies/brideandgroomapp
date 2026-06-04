@@ -10,7 +10,6 @@ import { secureStorage } from './src/services/secureStorage';
 import OfflineOverlay from './src/components/OfflineOverlay';
 import Toast, { ToastConfig } from 'react-native-toast-message';
 import { ShieldCheck, Zap, Info, AlertTriangle } from 'lucide-react-native';
-import { DEFAULT_BUNDLE_VERSION } from './src/services/otaService';
 
 
 // Screens
@@ -90,7 +89,7 @@ function App() {
         Toast.show({
           type: 'info',
           text1: 'Bride & Groom Matchmaking',
-          text2: `Running latest version: ${DEFAULT_BUNDLE_VERSION}`,
+          text2: 'Running latest version: 1.1.0',
           position: 'top',
           visibilityTime: 4000,
         });

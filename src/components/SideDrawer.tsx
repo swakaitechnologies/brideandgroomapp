@@ -30,7 +30,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { logout } from '../store/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getCurrentBundleVersion } from '../services/otaService';
 import { secureStorage } from '../services/secureStorage';
 import { API_BASE_URL, getActivePromoBanner, getMySubscription } from '../services/api';
 import ReactNativeBlobUtil from 'react-native-blob-util';
@@ -55,7 +54,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
   const [promoCoupon, setPromoCoupon] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-  const [appVersion, setAppVersion] = useState('1.0.5');
+  const [appVersion, setAppVersion] = useState('1.1.0');
 
   useEffect(() => {
     if (isOpen) {
@@ -89,15 +88,6 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
       };
       fetchSubscription();
 
-      const fetchVersion = async () => {
-        try {
-          const version = await getCurrentBundleVersion();
-          setAppVersion(version);
-        } catch (error) {
-          console.warn("Failed to fetch version in side drawer:", error);
-        }
-      };
-      fetchVersion();
     }
   }, [isOpen]);
 

@@ -200,7 +200,6 @@ app.use(
   require("./routes/contactRequestRoutes"),
 );
 app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/ota", require("./routes/otaRoutes"));
 app.use("/api/messages", interactionLimiter, require("./routes/messageRoutes"));
 app.use("/api/block", require("./routes/blockRoutes"));
 app.use("/api/reports", reportLimiter, require("./routes/reportRoutes"));
