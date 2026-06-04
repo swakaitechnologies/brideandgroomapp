@@ -18,6 +18,7 @@ import { register } from "@/src/store/authSlice";
 import { RootState, AppDispatch } from "@/src/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   User,
   Mail,
@@ -167,6 +168,11 @@ export default function RegisterScreen() {
       register({ ...formData, agreedToTerms, is18Plus: currentAge >= 18 })
     );
     if (register.fulfilled.match(result)) {
+      try {
+        await AsyncStorage.setItem("isNewRegistration", "true");
+      } catch (err) {
+        console.log("Error setting registration flag:", err);
+      }
       navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
     }
   };

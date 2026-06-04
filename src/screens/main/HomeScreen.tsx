@@ -19,6 +19,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { palette } from "../../theme/colors";
+import LottieView from "lottie-react-native";
+import LinearGradient from "react-native-linear-gradient";
 import {
   Plus,
   Edit2,
@@ -141,6 +143,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
   const [banners, setBanners] = useState<any[]>([]);
   const [kycStatus, setKycStatus] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // Theme-aware colors
   const themeBg = isDark ? "#0F0F0F" : "#FFFFFF";
@@ -233,6 +236,22 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
     }, 1000);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  // Check if first-time registration to show celebration onboarding modal
+  useEffect(() => {
+    const checkRegistrationCelebration = async () => {
+      try {
+        const isNewReg = await AsyncStorage.getItem("isNewRegistration");
+        if (isNewReg === "true") {
+          setShowCelebration(true);
+          await AsyncStorage.removeItem("isNewRegistration");
+        }
+      } catch (err) {
+        console.warn("Error reading registration flag:", err);
+      }
+    };
+    checkRegistrationCelebration();
   }, []);
 
   const onRefresh = () => {
@@ -713,6 +732,41 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
         onClose={() => setIsDrawerOpen(false)}
         setActiveTab={setActiveTab}
       />
+
+      {/* First-time Registration Celebration Modal */}
+      <Modal
+        visible={showCelebration}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.celebrationOverlay}>
+          <View style={styles.celebrationCard}>
+            <LottieView
+              source={require('../../../assets/animations/c22b3edc-116e-11ee-b29e-6b53b36a56ea.json')}
+              autoPlay
+              loop={false}
+              style={styles.celebrationLottie}
+            />
+            <Text style={styles.celebrationTitle}>Welcome to Bride & Groom! 🎉</Text>
+            <Text style={styles.celebrationSub}>
+              We are thrilled to help you find your perfect companion. Let's begin this beautiful journey together!
+            </Text>
+            <TouchableOpacity
+              style={styles.celebrationBtn}
+              onPress={() => setShowCelebration(false)}
+            >
+              <LinearGradient
+                colors={[deepPurple, '#7B1FA2']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.celebrationBtnGradient}
+              >
+                <Text style={styles.celebrationBtnText}>Get Started</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1203,6 +1257,64 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     color: palette.purple.deep,
+    ...fonts.semibold,
+  },
+  // Celebration Onboarding styles
+  celebrationOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 1000,
+  },
+  celebrationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    width: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  celebrationLottie: {
+    width: 200,
+    height: 200,
+    marginBottom: 10,
+  },
+  celebrationTitle: {
+    fontSize: 22,
+    ...fonts.bold,
+    color: '#3B1E54',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  celebrationSub: {
+    fontSize: 14,
+    ...fonts.medium,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  celebrationBtn: {
+    height: 50,
+    borderRadius: 14,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  celebrationBtnGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  celebrationBtnText: {
+    color: '#FFF',
+    fontSize: 15,
     ...fonts.semibold,
   },
 });
