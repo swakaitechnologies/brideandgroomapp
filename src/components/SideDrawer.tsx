@@ -15,6 +15,7 @@ import {
   Linking,
   Modal,
   Easing,
+  Clipboard,
 } from 'react-native';
 import {
   Heart, Mail, MessageSquare,
@@ -31,12 +32,20 @@ import { logout } from '../store/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../services/secureStorage';
-import { API_BASE_URL, getActivePromoBanner, getMySubscription } from '../services/api';
+import { API_BASE_URL, getActivePromoBanner, getMySubscription, getProfile, resolvePhotoUrl } from '../services/api';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { fonts } from "@/src/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.85; // Standard 85% width
+
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  if (hour < 21) return "Good Evening";
+  return "Good Night";
+};
 
 interface SideDrawerProps {
   isOpen: boolean;
@@ -53,6 +62,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
 
   const [promoCoupon, setPromoCoupon] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [appVersion, setAppVersion] = useState('1.1.0');
 
@@ -88,6 +98,20 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
       };
       fetchSubscription();
 
+      const fetchProfile = async () => {
+        try {
+          const res = await getProfile();
+          if (res.data?.success && res.data?.data) {
+            setProfileData(res.data.data);
+          } else {
+            setProfileData(null);
+          }
+        } catch (error) {
+          console.warn("Failed to fetch profile in side drawer:", error);
+          setProfileData(null);
+        }
+      };
+      fetchProfile();
     }
   }, [isOpen]);
 
@@ -146,9 +170,11 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
   }, [isOpen]);
 
   const copyToClipboard = () => {
-    const id = user?.customId || 'N/A';
-    // Native Alert showing the ID or simple message since expo-clipboard is not installed
-    Alert.alert("Custom ID", `${id}\n(Successfully copied to clipboard)`);
+    const id = profileData?.customId || user?.customId || 'N/A';
+    if (id !== 'N/A') {
+      Clipboard.setString(id);
+      Alert.alert("Custom ID", `${id}\n(Successfully copied to clipboard)`);
+    }
   };
 
   const handleDownloadProfile = async () => {
@@ -314,7 +340,43 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               <X size={24} color={textColor} />
             </TouchableOpacity>
           </View>
-          {/* Profile info section removed as requested */}
+
+          {/* Personalized profile header */}
+          <View style={styles.profileSection}>
+            <Image
+              source={{
+                uri: resolvePhotoUrl(
+                  profileData?.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                  profileData?.photos?.[0]?.url ||
+                  `https://api.dicebear.com/7.x/avataaars/png?seed=${user?.email || "default"}`
+                )
+              }}
+              style={[
+                styles.avatar,
+                subscription ? { borderColor: palette.gold.main } : { borderColor: '#E0E0E0' }
+              ]}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={[styles.greetingText, { color: mutedText }]}>
+                {getGreeting()},
+              </Text>
+              <View style={styles.nameRow}>
+                <Text style={[styles.userName, { color: textColor }]} numberOfLines={1}>
+                  {profileData?.firstName || user?.firstName || "Valued"} {profileData?.lastName || user?.lastName || "Member"}
+                </Text>
+                {profileData?.verificationStatus === "approved" && (
+                  <ShieldCheck size={16} color="#4CAF50" style={{ marginLeft: 6 }} />
+                )}
+                {profileData?.isKycVerified && (
+                  <BadgeCheck size={16} color={palette.gold.main} style={{ marginLeft: 4 }} />
+                )}
+              </View>
+              <TouchableOpacity onPress={copyToClipboard} style={styles.idBadge}>
+                <Text style={styles.idText}>ID: {profileData?.customId || user?.customId || "MEMBER"}</Text>
+                <Copy size={11} color={palette.purple.deep} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Plan Status Card */}
           <View style={[styles.planCard, { backgroundColor: isDark ? '#1E1E1E' : '#F9F7FF', borderColor: borderColor }]}>
@@ -410,17 +472,27 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={[styles.divider, { backgroundColor: borderColor }]} />
+          {/* Category Group 1: Preferences & Matches */}
+          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
+            <Text style={[styles.groupHeading, { color: mutedText }]}>Preferences & Matches</Text>
+            <MenuItem icon={Settings} label="Partner Preference" onPress={() => { onClose(); navigation.navigate('PartnerPreference'); }} />
+            <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} />
+          </View>
 
-          {/* Section: Options & Settings */}
-          <Text style={[styles.sectionLabel, { color: mutedText }]}>Options & Settings</Text>
-          <MenuItem icon={Settings} label="Partner Preference" onPress={() => { onClose(); navigation.navigate('PartnerPreference'); }} />
-          <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} />
-          <MenuItem icon={ShieldCheck} label="KYC Verification" onPress={() => { onClose(); navigation.navigate('KYCVerification'); }} />
-          <MenuItem icon={User} label="Account Setting" onPress={() => { onClose(); navigation.navigate('AccountSetting'); }} />
-          <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
-          <MenuItem icon={ShieldCheck} label="Be Safe Online" onPress={() => { onClose(); navigation.navigate('Safety'); }} />
-          <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
+          {/* Category Group 2: Verification & Settings */}
+          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
+            <Text style={[styles.groupHeading, { color: mutedText }]}>Verification & Settings</Text>
+            <MenuItem icon={ShieldCheck} label="KYC Verification" onPress={() => { onClose(); navigation.navigate('KYCVerification'); }} />
+            <MenuItem icon={User} label="Account Setting" onPress={() => { onClose(); navigation.navigate('AccountSetting'); }} />
+            <MenuItem icon={ShieldCheck} label="Be Safe Online" onPress={() => { onClose(); navigation.navigate('Safety'); }} />
+          </View>
+
+          {/* Category Group 3: Support & Feedback */}
+          <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
+            <Text style={[styles.groupHeading, { color: mutedText }]}>Support & Feedback</Text>
+            <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
+            <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
+          </View>
 
           {/* Section: Promotions */}
           {promoCoupon && (
@@ -574,26 +646,75 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
+    marginTop: 15,
+    marginBottom: 5,
+    paddingHorizontal: 4,
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
     borderWidth: 2,
-    borderColor: palette.gold.main,
   },
   profileInfo: {
     marginLeft: 15,
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: 12,
+    ...fonts.semibold,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 2,
   },
   userName: {
     fontSize: 18,
-    ...fonts.semibold,
+    ...fonts.bold,
+  },
+  idBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+  },
+  idText: {
+    fontSize: 11,
+    ...fonts.bold,
     color: palette.purple.deep,
+  },
+  menuGroupCard: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B1E54',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 1.5,
+      },
+    }),
+  },
+  groupHeading: {
+    fontSize: 11,
+    ...fonts.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    opacity: 0.7,
   },
   idRow: {
     flexDirection: 'row',
