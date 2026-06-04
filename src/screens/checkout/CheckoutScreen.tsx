@@ -235,7 +235,7 @@ export default function CheckoutScreen() {
       {success ? (
         <View style={[styles.successContainer, { paddingTop: 20 }]}>
           <LottieView
-            source={require('../../../assets/animations/c22b3edc-116e-11ee-b29e-6b53b36a56ea.json')}
+            source={require('../../../assets/animations/7ae221e8-1183-11ee-a1e0-f351111eea7f.json')}
             autoPlay
             loop={false}
             style={{ width: 160, height: 160, marginBottom: 20 }}
