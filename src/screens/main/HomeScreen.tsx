@@ -970,6 +970,7 @@ const styles = StyleSheet.create({
 
   // Banner
   bannerContainer: {
+    marginTop: 24,
     marginBottom: 30,
   },
   bannerItem: {
