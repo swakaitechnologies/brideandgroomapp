@@ -1092,12 +1092,16 @@ export default function ProfileDetailScreen() {
           {loading || !profileFetched ? (
             <ActivityIndicator color={accentGold} size="small" />
           ) : (
-            <Text style={styles.connectFooterText}>
+            <Text 
+              style={styles.connectFooterText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {(currentProfile?.areMatched || currentProfile?.interestStatus === 'accepted')
-                ? 'INTEREST ACCEPTED' 
+                ? 'ACCEPTED' 
                 : currentProfile?.hasSentInterest 
-                  ? 'INTEREST EXPRESSED' 
-                  : 'SEND INTEREST'}
+                  ? 'SENT' 
+                  : 'INTEREST'}
             </Text>
           )}
         </TouchableOpacity>
@@ -1495,9 +1499,9 @@ const styles = StyleSheet.create({
   },
   connectFooterText: {
     color: '#D4AF37',
-    fontSize: 14,
+    fontSize: 11,
     ...fonts.bold,
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
   toastContainer: {
     position: 'absolute',
