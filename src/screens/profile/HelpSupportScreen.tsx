@@ -141,6 +141,15 @@ export default function HelpSupportScreen() {
   const [reportsLoading, setReportsLoading] = useState(false);
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
+  // Report details popup modal state
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+
+  const handleOpenReportDetails = (report: any) => {
+    setSelectedReport(report);
+    setReportModalVisible(true);
+  };
+
   // Custom Alert State
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -901,7 +910,7 @@ export default function HelpSupportScreen() {
                     <TouchableOpacity
                       style={styles.ticketCard}
                       activeOpacity={0.8}
-                      onPress={() => setExpandedReportId(isReportExpanded ? null : item.id.toString())}
+                      onPress={() => handleOpenReportDetails(item)}
                     >
                       <View style={styles.ticketHeader}>
                         <View style={{ flex: 1, marginRight: 10 }}>
@@ -1074,6 +1083,143 @@ export default function HelpSupportScreen() {
                 }}
               >
                 <Text style={styles.alertBtnTextPrimary}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Report Details Modal Popup */}
+      <Modal
+        visible={reportModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => { setReportModalVisible(false); setSelectedReport(null); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '85%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report Details</Text>
+              <TouchableOpacity onPress={() => { setReportModalVisible(false); setSelectedReport(null); }}>
+                <X size={20} color={palette.purple.deep} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedReport && (
+              <ScrollView contentContainerStyle={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {/* Reported Member info */}
+                <View style={styles.modalReportedSection}>
+                  <Text style={styles.modalSectionLabel}>Reported User</Text>
+                  <Text style={styles.modalReportedName}>
+                    {selectedReport.reportedUser?.profile
+                      ? `${selectedReport.reportedUser.profile.firstName || ''} ${selectedReport.reportedUser.profile.lastName || ''}`.trim()
+                      : (selectedReport.reportedUser ? `${selectedReport.reportedUser.firstName || ''} ${selectedReport.reportedUser.lastName || ''}`.trim() : 'Unknown Member')}
+                  </Text>
+                  <Text style={styles.modalReportedId}>
+                    {selectedReport.reportedUser?.profile?.customId || `ID: ${selectedReport.reportedId}`}
+                  </Text>
+                  <Text style={styles.modalReportedDate}>
+                    Submitted on: {formatDate(selectedReport.createdAt)}
+                  </Text>
+                </View>
+
+                {/* Status Badge & Reason */}
+                <View style={styles.modalRowContainer}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.modalSectionLabel}>Status</Text>
+                    <View style={[
+                      styles.statusBadge,
+                      selectedReport.status === 'reviewed' && styles.badgeReviewed,
+                      selectedReport.status === 'resolved' && styles.badgeResolved,
+                      selectedReport.status === 'dismissed' && styles.badgeDismissed,
+                      selectedReport.status === 'urgent_review' && styles.badgeUrgent,
+                      selectedReport.status === 'pending' && styles.badgePending,
+                      { alignSelf: 'flex-start', marginTop: 4 }
+                    ]}>
+                      <Text style={styles.statusBadgeText}>
+                        {selectedReport.status === 'urgent_review' ? 'Urgent Review' : selectedReport.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ flex: 1.2 }}>
+                    <Text style={styles.modalSectionLabel}>Violation Reason</Text>
+                    <Text style={styles.modalReasonText}>{selectedReport.reason}</Text>
+                  </View>
+                </View>
+
+                {/* Description */}
+                <View style={styles.modalDetailSection}>
+                  <Text style={styles.modalSectionLabel}>Description Notes</Text>
+                  <View style={styles.modalDescCard}>
+                    <Text style={styles.modalDescContent}>
+                      {selectedReport.description || "No additional description details provided."}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Proof Attachments */}
+                {selectedReport.proofUrls && selectedReport.proofUrls.length > 0 && (
+                  <View style={styles.modalDetailSection}>
+                    <Text style={styles.modalSectionLabel}>Submitted Proofs ({selectedReport.proofUrls.length})</Text>
+                    {selectedReport.proofUrls.map((url: string, pIdx: number) => {
+                      const isImg = isImageFile(url) || url.includes('.webp') || url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png');
+                      const fileName = url.split('/').pop()?.split('?')[0] || `proof_${pIdx + 1}`;
+                      return (
+                        <TouchableOpacity
+                          key={pIdx}
+                          style={[styles.attachmentLinkRow, { marginTop: 8 }]}
+                          onPress={() => handleViewAttachment(url)}
+                        >
+                          {isImg ? (
+                            <ImageIcon size={14} color={palette.gold.main} />
+                          ) : (
+                            <FileText size={14} color={palette.gold.main} />
+                          )}
+                          <Text style={styles.attachmentLinkText} numberOfLines={1}>
+                            {fileName}
+                          </Text>
+                          <ExternalLink size={12} color={palette.purple.muted} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {/* Admin Feedback */}
+                <View style={styles.modalDetailSection}>
+                  <Text style={styles.modalSectionLabel}>Admin Action & Feedback</Text>
+                  <View style={[
+                    styles.adminResponseCard, 
+                    { 
+                      borderColor: selectedReport.actionTaken ? 'rgba(76, 175, 80, 0.2)' : palette.purple.border,
+                      backgroundColor: selectedReport.actionTaken ? '#F0F8F0' : '#FAF9FC',
+                      marginTop: 8
+                    }
+                  ]}>
+                    <View style={styles.adminResponseHeader}>
+                      {selectedReport.actionTaken ? (
+                        <CheckCircle size={14} color="#4CAF50" />
+                      ) : (
+                        <AlertCircle size={14} color={palette.purple.muted} />
+                      )}
+                      <Text style={[styles.adminResponseLabel, { color: selectedReport.actionTaken ? '#4CAF50' : palette.purple.muted }]}>
+                        {selectedReport.actionTaken ? 'Resolution Comment' : 'Under Review'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.adminResponseText, { color: selectedReport.actionTaken ? '#2E7D32' : palette.purple.muted }]}>
+                      {selectedReport.actionTaken || "This report is currently pending review by our administration safety team."}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+            )}
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.submitBtn, { marginTop: 0, width: '100%' }]}
+                onPress={() => { setReportModalVisible(false); setSelectedReport(null); }}
+              >
+                <Text style={styles.submitBtnText}>Close Details</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1785,5 +1931,74 @@ const styles = StyleSheet.create({
     color: palette.purple.muted,
     marginBottom: 4,
     marginTop: 8,
+  },
+  modalReportedSection: {
+    backgroundColor: '#FAF9FC',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: palette.purple.border,
+  },
+  modalSectionLabel: {
+    fontSize: 11,
+    color: palette.purple.muted,
+    ...fonts.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  modalReportedName: {
+    fontSize: 16,
+    ...fonts.bold,
+    color: palette.purple.deep,
+  },
+  modalReportedId: {
+    fontSize: 13,
+    ...fonts.semibold,
+    color: palette.gold.main,
+    marginTop: 2,
+  },
+  modalReportedDate: {
+    fontSize: 11,
+    color: palette.purple.muted,
+    marginTop: 6,
+  },
+  modalRowContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    gap: 15,
+  },
+  modalReasonText: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: palette.purple.deep,
+    marginTop: 4,
+  },
+  modalDetailSection: {
+    marginBottom: 20,
+  },
+  modalDescCard: {
+    backgroundColor: '#FAF9FC',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: palette.purple.border,
+    marginTop: 6,
+  },
+  modalDescContent: {
+    fontSize: 13,
+    color: palette.purple.deep,
+    lineHeight: 19,
+  },
+  modalScroll: {
+    paddingBottom: 20,
+  },
+  modalFooter: {
+    borderTopWidth: 1,
+    borderTopColor: palette.purple.border,
+    paddingTop: 15,
+    marginTop: 10,
+    width: '100%',
   },
 });

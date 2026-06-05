@@ -1,7 +1,6 @@
-const Interest = require("../models/Interest");
-const Profile = require("../models/Profile");
-const Photo = require("../models/Photo");
+const { Interest, Profile, Photo, User, Block } = require("../models/associations");
 const { sendNotification } = require("../utils/notificationHelper");
+const { Op } = require("sequelize");
 
 exports.sendInterest = async (req, res) => {
   try {
@@ -117,8 +116,21 @@ exports.getInterests = async (req, res) => {
     const otherIds = results.map((i) =>
       type === "sent" ? i.receiverId : i.senderId,
     );
+
+    // Fetch block records to filter out blocked users
+    const blocks = await Block.findAll({
+      where: {
+        [Op.or]: [
+          { blockerId: userId },
+          { blockedId: userId }
+        ]
+      }
+    });
+    const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+    const filteredOtherIds = otherIds.filter(id => !blockedIds.includes(id));
+
     const profiles = await Profile.findAll({
-      where: { userId: otherIds },
+      where: { userId: filteredOtherIds },
       attributes: [
         "firstName",
         "lastName",

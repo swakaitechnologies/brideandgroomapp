@@ -1,4 +1,5 @@
-const { Like, Profile, Photo, User } = require("../models/associations");
+const { Like, Profile, Photo, User, Block } = require("../models/associations");
+const { Op } = require("sequelize");
 
 exports.toggleLike = async (req, res) => {
   console.log(`[DEBUG] Attempting Like Toggle. Body:`, req.body);
@@ -52,6 +53,18 @@ exports.getLikes = async (req, res) => {
       });
       otherIds = likes.map(l => l.likedId);
     }
+
+    // Fetch block records to filter out blocked users
+    const blocks = await Block.findAll({
+      where: {
+        [Op.or]: [
+          { blockerId: userId },
+          { blockedId: userId }
+        ]
+      }
+    });
+    const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+    otherIds = otherIds.filter(id => !blockedIds.includes(id));
 
 
     const profiles = await Profile.findAll({

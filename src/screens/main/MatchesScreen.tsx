@@ -36,6 +36,7 @@ import {
   Info,
   BadgeCheck,
   Briefcase,
+  Ban,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import api, { resolvePhotoUrl } from "../../services/api";
@@ -402,6 +403,8 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
   ).current;
 
   const renderTopCard = (profile: any) => {
+    const isBlocked = !!profile.isBlockedByMe;
+
     const rotate = position.x.interpolate({
       inputRange: [-width / 2, 0, width / 2],
       outputRange: ["-10deg", "0deg", "10deg"],
@@ -434,7 +437,7 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
       <Animated.View
         key={profile.id || profile.userId}
         style={[styles.card, animatedCardStyles]}
-        {...panResponder.panHandlers}
+        {...(isBlocked ? {} : panResponder.panHandlers)}
       >
         {resolvedPhoto ? (
           <Image source={{ uri: resolvedPhoto }} style={styles.cardImage} />
@@ -509,6 +512,33 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
             </TouchableOpacity>
           </View>
         </View>
+
+        {isBlocked && (
+          <View style={StyleSheet.absoluteFill}>
+            <View style={styles.blockedCardOverlayContainer}>
+              <View style={styles.blockedIconContainer}>
+                <Ban size={40} color="#FF3B30" />
+              </View>
+              <Text style={styles.blockedCardTitle}>Profile Blocked</Text>
+              <Text style={styles.blockedCardText}>This user is blocked by you.</Text>
+              <TouchableOpacity
+                style={styles.manageBlocksBtn}
+                onPress={() => navigation.navigate("AccountSetting")}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.manageBlocksBtnText}>Manage Blocked Profiles</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.blockedSkipBtn}
+                onPress={() => forceSwipe("left")}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.blockedSkipBtnText}>Skip Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </Animated.View>
     );
   };
@@ -765,14 +795,31 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
               colors={[deepPurple]}
             />
           }
-          renderItem={({ item }) => (
-            <ProfileCard
-              profile={item}
-              type="grid"
-              layout="horizontal"
-              onPress={() => handleViewProfile(item)}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item.isBlockedByMe) {
+              return (
+                <View style={styles.blockedProfileCardGrid}>
+                  <View style={styles.blockedProfileGridOverlay}>
+                    <Text style={styles.blockedProfileGridText}>This user is blocked by you.</Text>
+                    <TouchableOpacity 
+                      onPress={() => navigation.navigate("AccountSetting")}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.blockedProfileGridLink}>Manage Blocked Profiles</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }
+            return (
+              <ProfileCard
+                profile={item}
+                type="grid"
+                layout="horizontal"
+                onPress={() => handleViewProfile(item)}
+              />
+            );
+          }}
         />
       )}
 
@@ -1386,5 +1433,87 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
+  },
+  blockedCardOverlayContainer: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15, 10, 25, 0.92)",
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    zIndex: 1000,
+  },
+  blockedIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255, 59, 48, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  blockedCardTitle: {
+    fontSize: 20,
+    ...fonts.bold,
+    color: "#FFFFFF",
+    marginBottom: 8,
+  },
+  blockedCardText: {
+    fontSize: 14,
+    color: "#BCA6CC",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  manageBlocksBtn: {
+    backgroundColor: "#D4AF37",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    width: "85%",
+    alignItems: "center",
+  },
+  manageBlocksBtnText: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: "#3B1E54",
+  },
+  blockedSkipBtn: {
+    paddingVertical: 10,
+  },
+  blockedSkipBtnText: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: "#FFFFFF",
+    opacity: 0.8,
+  },
+  blockedProfileCardGrid: {
+    backgroundColor: "#FDFBFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.2)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 100,
+  },
+  blockedProfileGridOverlay: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockedProfileGridText: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: "#3B1E54",
+    marginBottom: 4,
+  },
+  blockedProfileGridLink: {
+    fontSize: 13,
+    ...fonts.bold,
+    color: "#D4AF37",
+    textDecorationLine: "underline",
   },
 });

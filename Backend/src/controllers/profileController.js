@@ -468,16 +468,36 @@ exports.getAllProfiles = async (req, res) => {
     }
 
     // Check for Premium status once for the whole list
-    const { Subscription, Interest } = require("../models/associations");
+    const { Subscription, Interest, Block } = require("../models/associations");
     const sub = await Subscription.findOne({
       where: { userId, status: "active", endDate: { [Op.gt]: new Date() } }
     });
     const viewerIsPremium = !!sub;
 
+    // Fetch block records
+    const blockedByRecords = await Block.findAll({
+      where: { blockedId: userId },
+      attributes: ["blockerId"]
+    });
+    const blockedByUserIds = blockedByRecords.map(r => r.blockerId);
+
+    const blockedRecords = await Block.findAll({
+      where: { blockerId: userId },
+      attributes: ["blockedId"]
+    });
+    const blockedUserIds = blockedRecords.map(r => r.blockedId);
+
+    const userExcludeFilter = {
+      [Op.ne]: userId
+    };
+    if (blockedByUserIds.length > 0) {
+      userExcludeFilter[Op.notIn] = blockedByUserIds;
+    }
+
     // 2. Fetch matches based on gender filter and excluding self
     const profiles = await Profile.findAll({
       where: {
-        userId: { [Op.ne]: userId },
+        userId: userExcludeFilter,
         verificationStatus: "approved", // Only approved profiles
         ...genderFilter,
       },
@@ -571,6 +591,7 @@ exports.getAllProfiles = async (req, res) => {
           );
           pJson.isPremium = !!activeSub;
           pJson.accountType = activeSub ? "Premium" : "Free";
+          pJson.isBlockedByMe = blockedUserIds.includes(p.userId);
         }
         return pJson;
       });
@@ -661,6 +682,24 @@ exports.getProfileById = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Profile not found" });
+    }
+
+    // Check block relations
+    if (viewerId && viewerId !== profile.userId) {
+      const { Block: BlockModel } = require("../models/associations");
+      const blockExists = await BlockModel.findOne({
+        where: {
+          [Op.or]: [
+            { blockerId: viewerId, blockedId: profile.userId },
+            { blockerId: profile.userId, blockedId: viewerId }
+          ]
+        }
+      });
+      if (blockExists) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Profile not found" });
+      }
     }
 
     // 3. Check if deactivated (Privacy Logic must be applied post-cache)

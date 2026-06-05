@@ -1,7 +1,5 @@
-const Shortlist = require("../models/Shortlist");
-const Profile = require("../models/Profile");
-const Photo = require("../models/Photo");
-const User = require("../models/User");
+const { Shortlist, Profile, Photo, User, Block } = require("../models/associations");
+const { Op } = require("sequelize");
 
 exports.toggleShortlist = async (req, res) => {
   console.log(`[DEBUG] Attempting Shortlist Toggle. Body:`, req.body);
@@ -40,8 +38,20 @@ exports.getShortlisted = async (req, res) => {
 
     const shortlistedIds = shortlists.map(s => s.shortlistedId);
 
+    // Fetch block records to filter out blocked users
+    const blocks = await Block.findAll({
+      where: {
+        [Op.or]: [
+          { blockerId: userId },
+          { blockedId: userId }
+        ]
+      }
+    });
+    const blockedIds = blocks.map(b => b.blockerId === userId ? b.blockedId : b.blockerId);
+    const filteredShortlistedIds = shortlistedIds.filter(id => !blockedIds.includes(id));
+
     const profiles = await Profile.findAll({
-      where: { userId: shortlistedIds },
+      where: { userId: filteredShortlistedIds },
       include: [
         { model: Photo, as: "photos" },
         { model: User, as: "user", attributes: ["isOnline", "lastSeen"] }

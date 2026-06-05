@@ -30,7 +30,8 @@ export default function SearchProfilesScreen() {
     try {
       const res = await api.get("/profile/all");
       if (res.data?.success && res.data?.data) {
-        setAllProfiles(res.data.data);
+        const filtered = (res.data.data || []).filter((p: any) => !p.isBlockedByMe);
+        setAllProfiles(filtered);
       }
     } catch (error) {
       console.error("Search Profiles Fetch Error:", error);
