@@ -111,6 +111,7 @@ if (useS3) {
 
 const resolvePresignedUrl = (presignedUrl) => {
   if (!presignedUrl) return presignedUrl;
+  if (useS3) return presignedUrl;
   const publicUrl = process.env.MINIO_PUBLIC_URL;
   if (publicUrl) {
     try {
