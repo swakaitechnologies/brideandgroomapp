@@ -26,6 +26,10 @@ const feedbackBucketName = useS3
   ? (process.env.AWS_FEEDBACK_BUCKET || "user-feedback-989346120215-ap-south-1-an")
   : (process.env.MINIO_FEEDBACK_BUCKET || "user-feedback");
 
+const reportBucketName = useS3
+  ? (process.env.AWS_REPORT_BUCKET || "reports-989346120215-ap-south-1-an")
+  : (process.env.MINIO_REPORT_BUCKET || "report-bucket");
+
 if (useS3) {
   console.log("Admin Backend: Initializing AWS S3 Client...");
   const s3 = new S3Client({
@@ -105,4 +109,4 @@ if (useS3) {
   });
 }
 
-module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, useS3 };
+module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, reportBucketName, useS3 };

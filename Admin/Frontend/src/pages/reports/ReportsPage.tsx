@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle, ShieldAlert, Image as ImageIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle, ShieldAlert, Image as ImageIcon, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import api from "../../lib/api";
@@ -12,6 +12,7 @@ interface Report {
   status: string;
   actionTaken: string;
   reportImage: string;
+  proofUrls?: string[];
   createdAt: string;
   reporter: {
     firstName: string;
@@ -144,23 +145,48 @@ const ReportsPage = () => {
                     "{report.description || "No detailed description provided."}"
                   </p>
 
-                  {report.reportImage && (
+                  {report.proofUrls && report.proofUrls.length > 0 && (
                     <div className="mb-6">
-                      <p className="text-[10px] font-medium text-black  tracking-widest mb-2 flex items-center gap-1">
-                        <ImageIcon size={12} /> Proof
+                      <p className="text-[10px] font-medium text-black tracking-widest mb-3 flex items-center gap-1">
+                        <ImageIcon size={12} /> Submitted Proofs ({report.proofUrls.length})
                       </p>
-                      <div className="relative group/img max-w-sm">
-                        <img
-                          src={report.reportImage}
-                          alt="Report Proof"
-                          className="rounded-2xl border border-border shadow-sm max-h-48 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
-                          onClick={() => window.open(report.reportImage, '_blank')}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none">
-                          <span className="bg-black/50 text-white text-[10px] font-medium px-3 py-1 rounded-full backdrop-blur-sm">
-                            Click to expand
-                          </span>
-                        </div>
+                      <div className="flex flex-wrap gap-4">
+                        {report.proofUrls.map((url, index) => {
+                          const isPdf = url.toLowerCase().split('?')[0].endsWith('.pdf');
+                          return (
+                            <div key={index} className="relative group/img">
+                              {isPdf ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2.5 px-4 py-3 bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 rounded-2xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+                                >
+                                  <FileText size={18} className="text-red-500" />
+                                  <span className="text-xs font-semibold">View PDF Proof {index + 1}</span>
+                                  <ExternalLink size={12} className="text-red-400" />
+                                </a>
+                              ) : (
+                                <div className="relative cursor-zoom-in max-w-[200px]">
+                                  <img
+                                    src={url}
+                                    alt={`Proof ${index + 1}`}
+                                    className="rounded-2xl border border-border shadow-sm max-h-32 object-cover hover:opacity-90 transition-opacity"
+                                    onClick={() => window.open(url, '_blank')}
+                                  />
+                                  <div 
+                                    className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black/25 rounded-2xl transition-opacity"
+                                    onClick={() => window.open(url, '_blank')}
+                                  >
+                                    <span className="bg-black/60 text-white text-[9px] font-semibold px-2 py-1 rounded-full backdrop-blur-sm flex items-center gap-1">
+                                      <ExternalLink size={10} /> Expand
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

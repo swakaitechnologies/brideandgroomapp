@@ -40,6 +40,7 @@ import {
   Users,
   Heart,
   Eye,
+  Ban,
 } from "lucide-react-native";
 import {
   getDailyPicks,
@@ -575,16 +576,36 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 20 }}
             >
-              {premiumMatches.map((item: any) => (
-                <PremiumProfileCard
-                  key={item.id}
-                  profile={item}
-                  isDark={isDark}
-                  layout="vertical"
-                  onPress={() => navigation.navigate("ProfileDetail", { profile: item })}
-                  style={{ marginRight: 16 }}
-                />
-              ))}
+              {premiumMatches.map((item: any) => {
+                const isBlocked = !!item.isBlockedByMe;
+                return (
+                  <View key={item.id} style={{ position: "relative", marginRight: 16 }}>
+                    <PremiumProfileCard
+                      profile={item}
+                      isDark={isDark}
+                      layout="vertical"
+                      onPress={() => {
+                        if (!isBlocked) {
+                          navigation.navigate("ProfileDetail", { profile: item });
+                        }
+                      }}
+                      style={{ marginRight: 0 }}
+                    />
+                    {isBlocked && (
+                      <View style={[styles.homeBlockedOverlay, { borderRadius: 24 }]}>
+                        <Ban size={20} color="#FF3B30" />
+                        <Text style={styles.homeBlockedText}>Blocked Profile</Text>
+                        <TouchableOpacity 
+                          onPress={() => navigation.navigate("AccountSetting")}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.homeBlockedLink}>Manage Blocks</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </ScrollView>
           ) : (
             <View style={[styles.emptyStateCard, { backgroundColor: isDark ? '#1E1E1E' : '#FAFAFA' }]}>
@@ -617,17 +638,37 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
           {newMatches.length > 0 ? (
             <>
               <View style={styles.newProfilesGrid}>
-                {newMatches.slice(0, 4).map((item: any) => (
-                  <ProfileCard
-                    key={item.id}
-                    profile={item}
-                    type="grid"
-                    isDark={isDark}
-                    layout="vertical"
-                    style={{ width: (width - 50) / 2, marginBottom: 15 }}
-                    onPress={() => navigation.navigate("ProfileDetail", { profile: item })}
-                  />
-                ))}
+                {newMatches.slice(0, 4).map((item: any) => {
+                  const isBlocked = !!item.isBlockedByMe;
+                  return (
+                    <View key={item.id} style={{ position: "relative", width: (width - 50) / 2, marginBottom: 15 }}>
+                      <ProfileCard
+                        profile={item}
+                        type="grid"
+                        isDark={isDark}
+                        layout="vertical"
+                        style={{ width: "100%", marginBottom: 0 }}
+                        onPress={() => {
+                          if (!isBlocked) {
+                            navigation.navigate("ProfileDetail", { profile: item });
+                          }
+                        }}
+                      />
+                      {isBlocked && (
+                        <View style={[styles.homeBlockedOverlay, { borderRadius: 20 }]}>
+                          <Ban size={20} color="#FF3B30" />
+                          <Text style={styles.homeBlockedText}>Blocked Profile</Text>
+                          <TouchableOpacity 
+                            onPress={() => navigation.navigate("AccountSetting")}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.homeBlockedLink}>Manage Blocks</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
               <TouchableOpacity
                 style={styles.loadMoreBtn}
@@ -1304,5 +1345,28 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     ...fonts.semibold,
+  },
+  homeBlockedOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15, 10, 25, 0.88)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    zIndex: 10,
+  },
+  homeBlockedText: {
+    fontSize: 11,
+    ...fonts.semibold,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  homeBlockedLink: {
+    fontSize: 10,
+    ...fonts.bold,
+    color: "#D4AF37",
+    textDecorationLine: "underline",
+    textAlign: "center",
   },
 });

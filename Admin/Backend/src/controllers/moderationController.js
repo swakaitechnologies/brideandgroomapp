@@ -110,7 +110,42 @@ exports.getAllReports = async (req, res) => {
       ],
       order: [["createdAt", "DESC"]],
     });
-    res.json({ success: true, data: reports });
+
+    const { minioClient, reportBucketName } = require("../config/minio");
+    const results = [];
+
+    for (const report of reports) {
+      const reportData = report.toJSON();
+      reportData.proofUrls = [];
+
+      if (report.reportImage) {
+        try {
+          let filePaths = [];
+          try {
+            filePaths = JSON.parse(report.reportImage);
+          } catch (e) {
+            filePaths = [report.reportImage];
+          }
+
+          if (Array.isArray(filePaths)) {
+            for (const path of filePaths) {
+              if (!path) continue;
+              const presignedUrl = await minioClient.presignedGetObject(
+                reportBucketName,
+                path,
+                3600
+              );
+              reportData.proofUrls.push(presignedUrl);
+            }
+          }
+        } catch (err) {
+          console.error("Presigned URL generation error for report proofs:", err);
+        }
+      }
+      results.push(reportData);
+    }
+
+    res.json({ success: true, data: results });
   } catch (error) {
     res.status(500).json({ success: false, message: "Error fetching reports" });
   }
