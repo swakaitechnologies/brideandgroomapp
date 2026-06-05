@@ -457,28 +457,6 @@ export default function ProfileDetailScreen() {
         <TouchableOpacity style={styles.actionIcon} onPress={handleShareProfile}>
           <Share2 size={24} color="#FFF" />
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionIcon, !profileFetched && { opacity: 0.5 }]} 
-          onPress={handleToggleShortlist}
-          disabled={!profileFetched}
-        >
-          <Heart
-            size={24}
-            color={currentProfile?.isShortlisted ? "#FF3B30" : "#FFF"}
-            fill={currentProfile?.isShortlisted ? "#FF3B30" : "none"}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionIcon, !profileFetched && { opacity: 0.5 }]} 
-          onPress={handleToggleLike}
-          disabled={!profileFetched}
-        >
-          <ThumbsUp
-            size={24}
-            color={currentProfile?.isLiked ? palette.gold.main : "#FFF"}
-            fill={currentProfile?.isLiked ? palette.gold.main : "none"}
-          />
-        </TouchableOpacity>
       </View>
 
       <Animated.ScrollView
@@ -1009,6 +987,7 @@ export default function ProfileDetailScreen() {
           },
         ]}
       >
+        {/* Chat / Message Button */}
         <TouchableOpacity
           style={[styles.msgButton, { borderColor: deepPurple }]}
           onPress={() => {
@@ -1021,6 +1000,48 @@ export default function ProfileDetailScreen() {
           }}
         >
           <MessageCircle size={20} color={deepPurple} />
+        </TouchableOpacity>
+
+        {/* Like Button */}
+        <TouchableOpacity
+          style={[
+            styles.msgButton,
+            {
+              borderColor: currentProfile?.isLiked ? accentGold : deepPurple,
+              backgroundColor: currentProfile?.isLiked ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+            },
+            !profileFetched && { opacity: 0.5 }
+          ]}
+          onPress={handleToggleLike}
+          disabled={!profileFetched}
+          activeOpacity={0.7}
+        >
+          <ThumbsUp
+            size={20}
+            color={currentProfile?.isLiked ? accentGold : deepPurple}
+            fill={currentProfile?.isLiked ? accentGold : 'none'}
+          />
+        </TouchableOpacity>
+
+        {/* Shortlist Button */}
+        <TouchableOpacity
+          style={[
+            styles.msgButton,
+            {
+              borderColor: currentProfile?.isShortlisted ? '#FF3B30' : deepPurple,
+              backgroundColor: currentProfile?.isShortlisted ? 'rgba(255, 59, 48, 0.08)' : 'transparent',
+            },
+            !profileFetched && { opacity: 0.5 }
+          ]}
+          onPress={handleToggleShortlist}
+          disabled={!profileFetched}
+          activeOpacity={0.7}
+        >
+          <Heart
+            size={20}
+            color={currentProfile?.isShortlisted ? '#FF3B30' : deepPurple}
+            fill={currentProfile?.isShortlisted ? '#FF3B30' : 'none'}
+          />
         </TouchableOpacity>
 
         {/* Report / Flag Button */}
@@ -1451,8 +1472,8 @@ const styles = StyleSheet.create({
     right: 20,
     flexDirection: 'row',
     paddingVertical: 10,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: 10,
+    gap: 8,
     borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'space-between',
