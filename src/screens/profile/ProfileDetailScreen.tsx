@@ -1587,7 +1587,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -1595,7 +1595,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     maxHeight: '90%',
   },
   modalHeader: {
@@ -1614,7 +1615,7 @@ const styles = StyleSheet.create({
   },
   modalScroll: {
     flexGrow: 1,
-    paddingBottom: 30,
+    paddingBottom: 10,
   },
   reasonLabel: {
     fontSize: 14,
