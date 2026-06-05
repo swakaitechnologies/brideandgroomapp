@@ -457,6 +457,9 @@ export default function ProfileDetailScreen() {
         <TouchableOpacity style={styles.actionIcon} onPress={handleShareProfile}>
           <Share2 size={24} color="#FFF" />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.actionIcon} onPress={() => setShowReportModal(true)}>
+          <Flag size={22} color="#FF3B30" />
+        </TouchableOpacity>
       </View>
 
       <Animated.ScrollView
@@ -1044,14 +1047,7 @@ export default function ProfileDetailScreen() {
           />
         </TouchableOpacity>
 
-        {/* Report / Flag Button */}
-        <TouchableOpacity
-          style={[styles.msgButton, { borderColor: '#FF3B30', backgroundColor: 'rgba(255, 59, 48, 0.05)' }]}
-          onPress={() => setShowReportModal(true)}
-          activeOpacity={0.7}
-        >
-          <Flag size={20} color="#FF3B30" />
-        </TouchableOpacity>
+
         <TouchableOpacity
           style={[
             styles.connectFooterBtn, 
