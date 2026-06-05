@@ -1,4 +1,4 @@
-const { Request, User, Profile, Photo, SuccessStory, KYC, Notification } = require("../models/associations");
+const { Request, User, Profile, Photo, SuccessStory, KYC, Notification, Report } = require("../models/associations");
 const { calculateTrustScore } = require("../utils/trustScore");
 const { sequelize } = require("../config/database");
 const { redisClient } = require("../config/redis");
@@ -264,5 +264,114 @@ exports.verifyKYC = async (req, res) => {
         await transaction.rollback();
         console.error("VERIFY KYC ERROR:", error);
         res.status(500).json({ success: false, message: "Error updating KYC verification status" });
+    }
+};
+
+exports.getReports = async (req, res) => {
+    try {
+        const reports = await Report.findAll({
+            include: [
+                {
+                    model: User,
+                    as: "reporter",
+                    attributes: ["id", "firstName", "lastName", "email"],
+                    include: [{ model: Profile, as: "profile", attributes: ["customId"] }]
+                },
+                {
+                    model: User,
+                    as: "reportedUser",
+                    attributes: ["id", "firstName", "lastName", "email", "isBlocked"],
+                    include: [{ model: Profile, as: "profile", attributes: ["customId"] }]
+                }
+            ],
+            order: [["createdAt", "DESC"]]
+        });
+
+        const { minioClient, reportBucketName } = require("../config/minio");
+        const results = [];
+
+        for (const report of reports) {
+            const reportData = report.toJSON();
+            reportData.proofUrls = [];
+
+            if (report.reportImage) {
+                try {
+                    let filePaths = [];
+                    try {
+                        filePaths = JSON.parse(report.reportImage);
+                    } catch (e) {
+                        filePaths = [report.reportImage];
+                    }
+
+                    if (Array.isArray(filePaths)) {
+                        for (const path of filePaths) {
+                            if (!path) continue;
+                            const presignedUrl = await minioClient.presignedGetObject(
+                                reportBucketName,
+                                path,
+                                3600
+                            );
+                            reportData.proofUrls.push(presignedUrl);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Presigned URL generation error for report proofs:", err);
+                }
+            }
+            results.push(reportData);
+        }
+
+        res.json({ success: true, data: results });
+    } catch (error) {
+        console.error("GET REPORTS ERROR:", error);
+        res.status(500).json({ success: false, message: "Error fetching user reports" });
+    }
+};
+
+exports.processReport = async (req, res) => {
+    const { id } = req.params;
+    const { status, actionTaken, violationReason, suspendUser } = req.body;
+
+    if (status && !["pending", "reviewed", "resolved", "dismissed"].includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid report status" });
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+        const report = await Report.findByPk(id);
+        if (!report) {
+            await transaction.rollback();
+            return res.status(404).json({ success: false, message: "Report record not found" });
+        }
+
+        if (status) report.status = status;
+        if (actionTaken) report.actionTaken = actionTaken;
+        if (violationReason) report.violationReason = violationReason;
+        report.adminId = req.userId;
+
+        await report.save({ transaction });
+
+        if (suspendUser && report.reportedType === "user") {
+            await User.update(
+                { isBlocked: true },
+                { where: { id: report.reportedId }, transaction }
+            );
+
+            await invalidateProfileCache(report.reportedId);
+
+            await sendNotification({
+                receiverId: report.reportedId,
+                type: "block",
+                message: `Your account has been suspended by administration. Reason: ${violationReason || "Community guideline violations."}`,
+            });
+        }
+
+        await transaction.commit();
+
+        res.json({ success: true, message: "Report processed successfully", data: report });
+    } catch (error) {
+        await transaction.rollback();
+        console.error("PROCESS REPORT ERROR:", error);
+        res.status(500).json({ success: false, message: "Error updating report auditing details" });
     }
 };

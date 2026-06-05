@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -12,7 +12,10 @@ import {
   ScrollView,
   Dimensions,
   Platform,
-  Alert
+  Alert,
+  PanResponder,
+  Animated,
+  Image,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -29,19 +32,25 @@ import {
   User, 
   X,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  Info,
+  BadgeCheck,
+  Briefcase,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
-import api from "../../services/api";
+import api, { resolvePhotoUrl } from "../../services/api";
+import { showToast } from "../../utils/toast";
 import { ProfileCard } from "../../components/ProfileCard";
 import { fonts } from "@/src/theme";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+const CARD_HEIGHT = height * 0.68;
+const CARD_WIDTH = width * 0.88;
 
 const RELIGIONS = ["All", "Hindu", "Muslim", "Christian", "Sikh", "Jain", "Buddhist", "Others"];
 const MARITAL_STATUSES = ["All", "Never Married", "Divorced", "Widowed", "Awaiting Divorce"];
 
-export default function MatchesScreen() {
+export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (subTab: string) => void }) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const isDark = false;
@@ -66,7 +75,10 @@ export default function MatchesScreen() {
   
   // Navigation & Query States
   const [activeTab, setActiveTab] = useState<"new" | "daily" | "premium" | "my" | "near">("new");
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // Swipe Deck States & Physics
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const position = useRef(new Animated.ValueXY()).current;
   
   // Filter States
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -155,8 +167,14 @@ export default function MatchesScreen() {
     }
   }, [allProfiles, loadDailyPicks]);
 
+  useEffect(() => {
+    setCurrentIndex(0);
+    onSubTabChange?.(activeTab);
+  }, [activeTab, onSubTabChange]);
+
   const onRefresh = async () => {
     setRefreshing(true);
+    setCurrentIndex(0);
     try {
       await AsyncStorage.removeItem("dailyMatches_profiles");
       await AsyncStorage.removeItem("dailyMatches_timestamp");
@@ -181,6 +199,8 @@ export default function MatchesScreen() {
 
     navigation.navigate("ProfileDetail", { profile });
   };
+
+
 
   // Advanced Location-based Matching
   const nearMeProfiles = useMemo(() => {
@@ -273,16 +293,6 @@ export default function MatchesScreen() {
   const filteredProfiles = useMemo(() => {
     let result = [...activeTabProfiles];
 
-    // Search Query
-    if (searchQuery.trim().length > 0) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(p => {
-        const first = (p.firstName || "").toLowerCase();
-        const last = (p.lastName || "").toLowerCase();
-        return first.includes(q) || last.includes(q);
-      });
-    }
-
     // Advanced Filters (Disabled when Daily Matches is active)
     if (activeTab !== "daily") {
       if (religionFilter !== "all") {
@@ -314,7 +324,6 @@ export default function MatchesScreen() {
     return result;
   }, [
     activeTabProfiles,
-    searchQuery,
     activeTab,
     religionFilter,
     maritalStatusFilter,
@@ -323,6 +332,267 @@ export default function MatchesScreen() {
     languageFilter,
     professionFilter
   ]);
+
+  const handleSwipeRight = useCallback(async (profile: any) => {
+    const receiverId = profile.userId || profile.id;
+    if (!receiverId) return;
+    try {
+      const res = await api.post('/interests', { receiverId });
+      if (res.data?.success) {
+        showToast("Interest Sent successfully! 💖");
+      } else {
+        showToast(res.data?.message || "Failed to send interest.");
+      }
+    } catch (err: any) {
+      console.warn("Failed to send interest via swipe:", err);
+      showToast("Failed to send interest.");
+    }
+  }, []);
+
+  const handleSwipeLeft = useCallback((profile: any) => {
+    // Optional skip logging
+  }, []);
+
+  const onSwipeComplete = useCallback((direction: "right" | "left") => {
+    const item = filteredProfiles[currentIndex];
+    if (item) {
+      if (direction === "right") {
+        handleSwipeRight(item);
+      } else {
+        handleSwipeLeft(item);
+      }
+    }
+    position.setValue({ x: 0, y: 0 });
+    setCurrentIndex((prev) => prev + 1);
+  }, [filteredProfiles, currentIndex, position, handleSwipeRight, handleSwipeLeft]);
+
+  const forceSwipe = useCallback((direction: "right" | "left") => {
+    const x = direction === "right" ? width + 100 : -width - 100;
+    Animated.timing(position, {
+      toValue: { x, y: 0 },
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => onSwipeComplete(direction));
+  }, [position, onSwipeComplete]);
+
+  const resetPosition = useCallback(() => {
+    Animated.spring(position, {
+      toValue: { x: 0, y: 0 },
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  }, [position]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (event, gesture) => {
+        position.setValue({ x: gesture.dx, y: gesture.dy });
+      },
+      onPanResponderRelease: (event, gesture) => {
+        if (gesture.dx > 120) {
+          forceSwipe("right");
+        } else if (gesture.dx < -120) {
+          forceSwipe("left");
+        } else {
+          resetPosition();
+        }
+      },
+    })
+  ).current;
+
+  const renderTopCard = (profile: any) => {
+    const rotate = position.x.interpolate({
+      inputRange: [-width / 2, 0, width / 2],
+      outputRange: ["-10deg", "0deg", "10deg"],
+      extrapolate: "clamp",
+    });
+
+    const likeOpacity = position.x.interpolate({
+      inputRange: [0, 100],
+      outputRange: [0, 1],
+      extrapolate: "clamp",
+    });
+
+    const nopeOpacity = position.x.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [1, 0],
+      extrapolate: "clamp",
+    });
+
+    const animatedCardStyles = {
+      transform: [
+        { rotate },
+        ...position.getTranslateTransform(),
+      ],
+    };
+
+    const photoUrl = profile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url || profile.photos?.[0]?.url;
+    const resolvedPhoto = photoUrl ? resolvePhotoUrl(photoUrl) : null;
+
+    return (
+      <Animated.View
+        key={profile.id || profile.userId}
+        style={[styles.card, animatedCardStyles]}
+        {...panResponder.panHandlers}
+      >
+        {resolvedPhoto ? (
+          <Image source={{ uri: resolvedPhoto }} style={styles.cardImage} />
+        ) : (
+          <View style={styles.cardImagePlaceholder}>
+            <User size={80} color="rgba(255, 255, 255, 0.4)" />
+          </View>
+        )}
+
+        <Animated.View style={[styles.indicatorContainer, styles.likeIndicator, { opacity: likeOpacity }]}>
+          <Text style={styles.indicatorTextLike}>LIKE</Text>
+        </Animated.View>
+
+        <Animated.View style={[styles.indicatorContainer, styles.nopeIndicator, { opacity: nopeOpacity }]}>
+          <Text style={styles.indicatorTextNope}>NOPE</Text>
+        </Animated.View>
+
+        <View style={styles.cardInfo}>
+          <View style={styles.cardInfoNameRow}>
+            <Text style={styles.cardInfoName}>
+              {profile.firstName} {profile.lastName}, {profile.age || "26"}
+            </Text>
+            {profile.isKycVerified && (
+              <BadgeCheck size={18} color={accentColor} style={{ marginLeft: 6 }} />
+            )}
+          </View>
+
+          <View style={styles.cardInfoDetailRow}>
+            <Briefcase size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Text style={styles.cardInfoDetailText}>
+              {profile.profession || "Profession"}{profile.highestDegree ? ` • ${profile.highestDegree}` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.cardInfoDetailRow}>
+            <Sparkles size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Text style={styles.cardInfoDetailText}>
+              {(profile.religion || profile.caste) ? `${profile.religion || ""}${profile.caste ? `, ${profile.caste}` : ""}` : "Not Specified"}{profile.motherTongue ? ` • ${profile.motherTongue}` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.cardInfoDetailRow}>
+            <MapPin size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Text style={styles.cardInfoDetailText}>
+              {(profile.city || profile.state) ? `${profile.city}, ${profile.state}` : "Location not set"}
+            </Text>
+          </View>
+
+          <View style={styles.cardOverlayButtons}>
+            <TouchableOpacity
+              style={[styles.cardCompactBtn, styles.skipBtn]}
+              onPress={() => forceSwipe("left")}
+              activeOpacity={0.8}
+            >
+              <X size={22} color="#FF3B30" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardCompactBtn, styles.infoBtn]}
+              onPress={() => handleViewProfile(profile)}
+              activeOpacity={0.8}
+            >
+              <Info size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardCompactBtn, styles.likeBtn]}
+              onPress={() => forceSwipe("right")}
+              activeOpacity={0.8}
+            >
+              <Heart size={22} color="#4CAF50" fill="#4CAF50" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  };
+
+  const renderBackCard = (profile: any) => {
+    const photoUrl = profile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url || profile.photos?.[0]?.url;
+    const resolvedPhoto = photoUrl ? resolvePhotoUrl(photoUrl) : null;
+
+    return (
+      <View
+        key={profile.id || profile.userId}
+        style={[styles.card, styles.backCard]}
+      >
+        {resolvedPhoto ? (
+          <Image source={{ uri: resolvedPhoto }} style={styles.cardImage} />
+        ) : (
+          <View style={styles.cardImagePlaceholder}>
+            <User size={80} color="rgba(255, 255, 255, 0.4)" />
+          </View>
+        )}
+
+        <View style={styles.cardInfo}>
+          <View style={styles.cardInfoNameRow}>
+            <Text style={styles.cardInfoName}>
+              {profile.firstName} {profile.lastName}, {profile.age || "26"}
+            </Text>
+          </View>
+
+          <View style={styles.cardInfoDetailRow}>
+            <Briefcase size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Text style={styles.cardInfoDetailText}>
+              {profile.profession || "Profession"}{profile.highestDegree ? ` • ${profile.highestDegree}` : ""}
+            </Text>
+          </View>
+
+          <View style={styles.cardInfoDetailRow}>
+            <MapPin size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Text style={styles.cardInfoDetailText}>
+              {(profile.city || profile.state) ? `${profile.city}, ${profile.state}` : "Location"}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderCardStack = () => {
+    if (currentIndex >= filteredProfiles.length) {
+      return (
+        <View style={styles.deckEmptyState}>
+          <Heart size={54} color="#E0E0E0" />
+          <Text style={styles.emptyTitle}>End of Recommendations</Text>
+          <Text style={styles.emptyText}>
+            You have viewed all daily recommendations. Check back tomorrow for more matches!
+          </Text>
+          <TouchableOpacity
+            style={[styles.resetBtn, { backgroundColor: deepPurple, marginTop: 20 }]}
+            onPress={onRefresh}
+          >
+            <Text style={[styles.resetBtnText, { color: accentColor }]}>Refresh Daily Matches</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.deckContainer}>
+        {filteredProfiles
+          .map((profile, index) => {
+            if (index < currentIndex) {
+              return null;
+            }
+            if (index === currentIndex) {
+              return renderTopCard(profile);
+            }
+            if (index === currentIndex + 1) {
+              return renderBackCard(profile);
+            }
+            return null;
+          })
+          .reverse()}
+      </View>
+    );
+  };
 
   const handleResetFilters = () => {
     setReligionFilter("all");
@@ -345,112 +615,102 @@ export default function MatchesScreen() {
     return count;
   }, [religionFilter, maritalStatusFilter, casteFilter, educationFilter, languageFilter, professionFilter]);
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={[styles.searchInner, { backgroundColor: softPurple }]}>
-        <Search size={18} color={mutedText} style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search matches by name..."
-          placeholderTextColor={mutedText}
-          style={[styles.searchInput, { color: textColor }]}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          clearButtonMode="while-editing"
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearSearchBtn}>
-            <X size={16} color={mutedText} />
+  const renderTabsBar = () => {
+    return (
+      <View style={styles.tabsRowContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScrollContent}
+          style={styles.tabsScrollView}
+        >
+          {/* Tab 1: New Arrival */}
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === "new" && styles.tabItemActive]}
+            onPress={() => setActiveTab("new")}
+          >
+            <Sparkles size={12} color={activeTab === "new" ? accentColor : deepPurple} />
+            <Text style={[styles.tabLabel, activeTab === "new" && styles.tabLabelActive]}>New Arrival</Text>
+            <View style={[styles.tabBadge, activeTab === "new" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
+              <Text style={[styles.tabBadgeText, activeTab === "new" && styles.tabBadgeTextActive]}>{tabCounts.new}</Text>
+            </View>
           </TouchableOpacity>
+
+          {/* Tab 2: Daily Matches */}
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === "daily" && styles.tabItemActive]}
+            onPress={() => setActiveTab("daily")}
+          >
+            <Heart size={12} color={activeTab === "daily" ? accentColor : deepPurple} />
+            <Text style={[styles.tabLabel, activeTab === "daily" && styles.tabLabelActive]}>Daily Matches</Text>
+            <View style={[styles.tabBadge, activeTab === "daily" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
+              <Text style={[styles.tabBadgeText, activeTab === "daily" && styles.tabBadgeTextActive]}>{tabCounts.daily}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tab 3: Premium */}
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === "premium" && styles.tabItemActive]}
+            onPress={() => setActiveTab("premium")}
+          >
+            <Crown size={12} color={activeTab === "premium" ? accentColor : deepPurple} />
+            <Text style={[styles.tabLabel, activeTab === "premium" && styles.tabLabelActive]}>Premium</Text>
+            <View style={[styles.tabBadge, activeTab === "premium" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
+              <Text style={[styles.tabBadgeText, activeTab === "premium" && styles.tabBadgeTextActive]}>{tabCounts.premium}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tab 4: My Matches */}
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === "my" && styles.tabItemActive]}
+            onPress={() => setActiveTab("my")}
+          >
+            <User size={12} color={activeTab === "my" ? accentColor : deepPurple} />
+            <Text style={[styles.tabLabel, activeTab === "my" && styles.tabLabelActive]}>My Matches</Text>
+            <View style={[styles.tabBadge, activeTab === "my" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
+              <Text style={[styles.tabBadgeText, activeTab === "my" && styles.tabBadgeTextActive]}>{tabCounts.my}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Tab 5: Near Me */}
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === "near" && styles.tabItemActive]}
+            onPress={() => setActiveTab("near")}
+          >
+            <MapPin size={12} color={activeTab === "near" ? accentColor : deepPurple} />
+            <Text style={[styles.tabLabel, activeTab === "near" && styles.tabLabelActive]}>Near Me</Text>
+            <View style={[styles.tabBadge, activeTab === "near" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
+              <Text style={[styles.tabBadgeText, activeTab === "near" && styles.tabBadgeTextActive]}>{tabCounts.near}</Text>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {activeTab === "daily" ? (
+          filteredProfiles.length > 0 && currentIndex < filteredProfiles.length && (
+            <View style={styles.deckProgressBadge}>
+              <Text style={styles.deckProgressBadgeText}>
+                {currentIndex + 1}/{filteredProfiles.length}
+              </Text>
+            </View>
+          )
+        ) : (
+          <View style={styles.tabsActions}>
+            <TouchableOpacity
+              style={[styles.compactActionBtn, { backgroundColor: softPurple }]}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <SlidersHorizontal size={16} color={deepPurple} />
+              {activeFiltersCount > 0 && (
+                <View style={styles.filterBadgeCompact}>
+                  <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
       </View>
-      <TouchableOpacity
-        style={[
-          styles.filterIconBtn,
-          { backgroundColor: softPurple },
-          activeTab === "daily" && { opacity: 0.4 }
-        ]}
-        disabled={activeTab === "daily"}
-        onPress={() => setFilterModalVisible(true)}
-      >
-        <SlidersHorizontal size={22} color={deepPurple} />
-        {activeTab !== "daily" && activeFiltersCount > 0 && (
-          <View style={styles.filterBadge}>
-            <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderTabsBar = () => (
-    <View style={styles.tabsContainer}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabsScrollContent}
-      >
-        {/* Tab 1: New Arrival */}
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === "new" && styles.tabItemActive]}
-          onPress={() => { setActiveTab("new"); setSearchQuery(""); }}
-        >
-          <Sparkles size={14} color={activeTab === "new" ? accentColor : deepPurple} />
-          <Text style={[styles.tabLabel, activeTab === "new" && styles.tabLabelActive]}>New Arrival</Text>
-          <View style={[styles.tabBadge, activeTab === "new" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-            <Text style={[styles.tabBadgeText, activeTab === "new" && styles.tabBadgeTextActive]}>{tabCounts.new}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Tab 2: Daily Matches */}
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === "daily" && styles.tabItemActive]}
-          onPress={() => { setActiveTab("daily"); setSearchQuery(""); }}
-        >
-          <Heart size={14} color={activeTab === "daily" ? accentColor : deepPurple} />
-          <Text style={[styles.tabLabel, activeTab === "daily" && styles.tabLabelActive]}>Daily Matches</Text>
-          <View style={[styles.tabBadge, activeTab === "daily" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-            <Text style={[styles.tabBadgeText, activeTab === "daily" && styles.tabBadgeTextActive]}>{tabCounts.daily}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Tab 3: Premium */}
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === "premium" && styles.tabItemActive]}
-          onPress={() => { setActiveTab("premium"); setSearchQuery(""); }}
-        >
-          <Crown size={14} color={activeTab === "premium" ? accentColor : deepPurple} />
-          <Text style={[styles.tabLabel, activeTab === "premium" && styles.tabLabelActive]}>Premium</Text>
-          <View style={[styles.tabBadge, activeTab === "premium" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-            <Text style={[styles.tabBadgeText, activeTab === "premium" && styles.tabBadgeTextActive]}>{tabCounts.premium}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Tab 3: My Matches */}
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === "my" && styles.tabItemActive]}
-          onPress={() => { setActiveTab("my"); setSearchQuery(""); }}
-        >
-          <User size={14} color={activeTab === "my" ? accentColor : deepPurple} />
-          <Text style={[styles.tabLabel, activeTab === "my" && styles.tabLabelActive]}>My Matches</Text>
-          <View style={[styles.tabBadge, activeTab === "my" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-            <Text style={[styles.tabBadgeText, activeTab === "my" && styles.tabBadgeTextActive]}>{tabCounts.my}</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Tab 4: Near Me */}
-        <TouchableOpacity
-          style={[styles.tabItem, activeTab === "near" && styles.tabItemActive]}
-          onPress={() => { setActiveTab("near"); setSearchQuery(""); }}
-        >
-          <MapPin size={14} color={activeTab === "near" ? accentColor : deepPurple} />
-          <Text style={[styles.tabLabel, activeTab === "near" && styles.tabLabelActive]}>Near Me</Text>
-          <View style={[styles.tabBadge, activeTab === "near" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
-            <Text style={[styles.tabBadgeText, activeTab === "near" && styles.tabBadgeTextActive]}>{tabCounts.near}</Text>
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
-  );
+    );
+  };
 
   const renderMoreSubTabs = () => {
     return null;
@@ -461,17 +721,14 @@ export default function MatchesScreen() {
       <Heart size={54} color="#E0E0E0" />
       <Text style={styles.emptyTitle}>No Profiles Found</Text>
       <Text style={styles.emptyText}>
-        We couldn't find any matches matching your criteria in this section. Try adjusting your search query or filters.
+        We couldn't find any matches matching your criteria in this section. Try adjusting your filters.
       </Text>
-      {(religionFilter !== "all" || maritalStatusFilter !== "all" || casteFilter !== "all" || educationFilter !== "all" || languageFilter !== "all" || professionFilter !== "all" || searchQuery.length > 0) && (
+      {(religionFilter !== "all" || maritalStatusFilter !== "all" || casteFilter !== "all" || educationFilter !== "all" || languageFilter !== "all" || professionFilter !== "all") && (
         <TouchableOpacity
           style={[styles.resetBtn, { backgroundColor: deepPurple }]}
-          onPress={() => {
-            setSearchQuery("");
-            handleResetFilters();
-          }}
+          onPress={handleResetFilters}
         >
-          <Text style={[styles.resetBtnText, { color: accentColor }]}>Clear Search & Filters</Text>
+          <Text style={[styles.resetBtnText, { color: accentColor }]}>Clear Filters</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -482,7 +739,6 @@ export default function MatchesScreen() {
       style={[styles.safeArea, { backgroundColor: themeBg, paddingTop: topPadding }]} 
       edges={["left", "right"]}
     >
-      {renderHeader()}
       {renderTabsBar()}
       {renderMoreSubTabs()}
 
@@ -490,6 +746,10 @@ export default function MatchesScreen() {
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={deepPurple} />
           <Text style={styles.loadingText}>Searching matches...</Text>
+        </View>
+      ) : activeTab === "daily" ? (
+        <View style={[styles.deckTabContainer, { paddingBottom: insets.bottom + 20 }]}>
+          {renderCardStack()}
         </View>
       ) : (
         <FlatList
@@ -672,69 +932,88 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  header: {
+  tabsRowContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 15,
-    gap: 10,
+    paddingHorizontal: 16,
+    marginVertical: 10,
+    height: 40,
   },
-  filterIconBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 15,
-    backgroundColor: "rgba(59, 30, 84, 0.04)",
+  tabsScrollView: {
+    flex: 1,
+  },
+  tabsScrollContent: {
+    gap: 8,
+    alignItems: "center",
+  },
+  tabsActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginLeft: 8,
+  },
+  compactActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  filterBadge: {
+  filterBadgeCompact: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     backgroundColor: "#D4AF37",
-    borderRadius: 9,
-    width: 18,
-    height: 18,
+    borderRadius: 7,
+    width: 14,
+    height: 14,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: "#FFFFFF",
   },
   filterBadgeText: {
     color: "#3B1E54",
-    fontSize: 9,
+    fontSize: 8,
+    ...fonts.bold,
+  },
+  deckProgressBadge: {
+    backgroundColor: "rgba(59, 30, 84, 0.08)",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginLeft: 8,
+    alignSelf: "center",
+  },
+  deckProgressBadgeText: {
+    fontSize: 11,
+    color: "#3B1E54",
     ...fonts.semibold,
   },
-  searchInner: {
-    flex: 1,
+  searchHeaderRow: {
+    paddingHorizontal: 16,
+    marginVertical: 10,
+    height: 40,
+    justifyContent: "center",
+  },
+  searchInnerCompact: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(59, 30, 84, 0.04)",
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    height: 48,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 36,
   },
-  searchIcon: {
-    marginRight: 10,
+  searchIconCompact: {
+    marginRight: 6,
   },
-  searchInput: {
+  searchInputCompact: {
     flex: 1,
-    fontSize: 14,
-    color: "#1A1A1A",
+    fontSize: 13,
     ...fonts.medium,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
-  clearSearchBtn: {
+  clearSearchBtnCompact: {
     padding: 4,
-  },
-  tabsContainer: {
-    marginBottom: 15,
-  },
-  tabsScrollContent: {
-    paddingHorizontal: 20,
-    gap: 10,
-    height: 40,
   },
   tabItem: {
     flexDirection: "row",
@@ -954,5 +1233,158 @@ const styles = StyleSheet.create({
   applyModalBtnText: {
     fontSize: 14,
     ...fonts.semibold,
+  },
+  deckTabContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 15,
+  },
+  deckContainer: {
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    position: "absolute",
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.12)",
+    backgroundColor: "#1F0A33",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
+    overflow: "hidden",
+  },
+  backCard: {
+    transform: [{ scale: 0.95 }, { translateY: 15 }],
+    opacity: 0.9,
+    zIndex: -1,
+  },
+  cardImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  cardImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#2E114D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  indicatorContainer: {
+    position: "absolute",
+    top: 35,
+    borderWidth: 4,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    zIndex: 100,
+  },
+  likeIndicator: {
+    left: 35,
+    borderColor: "#4CAF50",
+    transform: [{ rotate: "-15deg" }],
+  },
+  nopeIndicator: {
+    right: 35,
+    borderColor: "#FF3B30",
+    transform: [{ rotate: "15deg" }],
+  },
+  indicatorTextLike: {
+    color: "#4CAF50",
+    fontSize: 28,
+    ...fonts.bold,
+  },
+  indicatorTextNope: {
+    color: "#FF3B30",
+    fontSize: 28,
+    ...fonts.bold,
+  },
+  cardInfo: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  cardInfoNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  cardInfoName: {
+    fontSize: 20,
+    ...fonts.bold,
+    color: "#FFFFFF",
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 3.5,
+  },
+  cardInfoDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  cardInfoDetailText: {
+    fontSize: 13,
+    color: "#FFFFFF",
+    ...fonts.medium,
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 3.5,
+  },
+  cardOverlayButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+    marginTop: 15,
+    width: "100%",
+  },
+  cardCompactBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  skipBtn: {
+    borderWidth: 1,
+    borderColor: "rgba(255, 59, 48, 0.15)",
+  },
+  infoBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+  },
+  likeBtn: {
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.15)",
+  },
+  deckEmptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 30,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
   },
 });

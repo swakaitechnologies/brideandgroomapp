@@ -11,6 +11,10 @@ router.get("/requests", adminController.getAllRequests);
 router.patch("/requests/:id", adminController.processRequest);
 router.get("/audit-profiles", adminController.getAuditProfiles);
 
+// Reports management
+router.get("/reports", adminController.getReports);
+router.patch("/reports/:id", adminController.processReport);
+
 // Success Stories
 router.get("/stories", adminController.getAllSuccessStories);
 router.patch("/stories/:id", adminController.updateSuccessStoryStatus);

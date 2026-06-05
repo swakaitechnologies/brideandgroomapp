@@ -114,6 +114,19 @@ const connectDB = async () => {
     const queryInterface = sequelize.getQueryInterface();
     const dialect = sequelize.getDialect();
 
+    // Programmatically ensure reportImage column in Reports table is TEXT type to store multiple proof URLs (JSON array)
+    try {
+      if (dialect === "mysql") {
+        await sequelize.query("ALTER TABLE Reports MODIFY COLUMN reportImage TEXT");
+        console.log("✅ Updated 'reportImage' column in Reports table to TEXT successfully.");
+      } else if (dialect === "postgres") {
+        await sequelize.query("ALTER TABLE \"Reports\" ALTER COLUMN \"reportImage\" TYPE TEXT");
+        console.log("✅ Updated 'reportImage' column in Reports table to TEXT successfully.");
+      }
+    } catch (reportColError) {
+      console.error("Error updating reportImage column in Reports:", reportColError);
+    }
+
     // Helper to ensure a column exists
     const ensureColumn = async (tableName, columnName, columnDefinition) => {
       try {

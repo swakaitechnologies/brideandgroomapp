@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar, useColorScheme, View, ActivityIndicator, StyleSheet, Text as RNText } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Provider } from 'react-redux';
 import { store } from './src/store';
@@ -10,6 +10,8 @@ import { secureStorage } from './src/services/secureStorage';
 import OfflineOverlay from './src/components/OfflineOverlay';
 import Toast, { ToastConfig } from 'react-native-toast-message';
 import { ShieldCheck, Zap, Info, AlertTriangle } from 'lucide-react-native';
+
+export const navigationRef = createNavigationContainerRef();
 
 
 // Screens
@@ -41,6 +43,7 @@ import RefundPolicyScreen from './src/screens/core/RefundPolicyScreen';
 import SplashScreen from './src/screens/core/SplashScreen';
 import IncomingCallScreen from './src/screens/main/IncomingCallScreen';
 import VideoCallScreen from './src/screens/main/VideoCallScreen';
+import SearchProfilesScreen from './src/screens/main/SearchProfilesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -107,7 +110,7 @@ function App() {
       <SafeAreaProvider>
         <OfflineOverlay />
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-        <NavigationContainer linking={linking}>
+        <NavigationContainer ref={navigationRef} linking={linking}>
           <Stack.Navigator 
             initialRouteName={initialRoute}
             screenOptions={{
@@ -136,6 +139,7 @@ function App() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="IncomingCall" component={IncomingCallScreen} />
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />
+            <Stack.Screen name="SearchProfiles" component={SearchProfilesScreen} />
             <Stack.Screen name="Modal" component={ModalScreen} />
             <Stack.Screen name="NotFound" component={NotFoundScreen} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />

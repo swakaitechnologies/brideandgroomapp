@@ -12,6 +12,7 @@ import {
   Dimensions,
   Image,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import {
   PhoneOff,
@@ -27,8 +28,10 @@ import { useSelector as useAppSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { useWebRTC } from "../../hooks/useWebRTC";
 import { resolvePhotoUrl, cancelCall, endCall as endCallApi } from "../../services/api";
+import { secureStorage } from "../../services/secureStorage";
 import { palette } from "../../theme/colors";
 import { fonts } from "@/src/theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,9 +42,24 @@ interface Props {
 
 export default function VideoCallScreen({ route, navigation }: Props) {
   const { roomId, userId, callerName, callerPhoto, callType } = route.params;
+  const insets = useSafeAreaInsets();
 
   const auth = useAppSelector((state: RootState) => state.auth) as any;
   const myUserId = auth?.user?.id || userId;
+
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const storedToken = await secureStorage.getItem('token');
+        setToken(storedToken);
+      } catch (err) {
+        console.warn("Failed to retrieve token for WebRTC connection:", err);
+      }
+    };
+    fetchToken();
+  }, []);
 
   const {
     localStream,
@@ -57,7 +75,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
     toggleMute,
     toggleVideo,
     switchCamera,
-  } = useWebRTC({ roomId, userId: myUserId, callType });
+  } = useWebRTC({ roomId, userId: myUserId, callType, token });
 
   const [duration, setDuration] = useState(0);
   const isCallEndedRef = useRef(false);
@@ -115,14 +133,21 @@ export default function VideoCallScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       {/* Remote Video Stream Viewport */}
       {isVideoCall && isCallActive && isConnected && remoteStream && !peerVideoOff ? (
-        <RTCView
-          streamURL={remoteStream.toURL()}
-          style={styles.remoteVideo}
-          objectFit="cover"
-        />
+        <View style={styles.videoWrapper}>
+          <RTCView
+            streamURL={remoteStream.toURL()}
+            style={styles.remoteVideo}
+            objectFit="cover"
+          />
+        </View>
       ) : (
         // Fallback layout (Audio Call, connecting, or remote video disabled)
         <View style={styles.fallbackContainer}>
+          {/* Subtle concentric vector background circles to simulate audio waves */}
+          <View style={styles.soundWaveCircle3} />
+          <View style={styles.soundWaveCircle2} />
+          <View style={styles.soundWaveCircle1} />
+
           <View style={styles.avatarWrapper}>
             {resolvedPhoto ? (
               <Image source={{ uri: resolvedPhoto }} style={styles.largeAvatar} />
@@ -132,35 +157,62 @@ export default function VideoCallScreen({ route, navigation }: Props) {
               </View>
             )}
           </View>
-          <Text style={styles.callerName}>{callerName}</Text>
-          <Text style={styles.callStatus}>
-            {!isCallActive
-              ? "Call Ended"
-              : !isConnected
-              ? "Connecting..."
-              : peerVideoOff
-              ? "Camera paused by peer"
-              : "Voice Connected"}
-          </Text>
+          
+          <Text style={styles.callerName}>{callerName || "Bride & Groom Member"}</Text>
+          
+          <View style={styles.statusBadge}>
+            <Text style={styles.callStatus}>
+              {!isCallActive
+                ? "Call Ended"
+                : !isConnected
+                ? "Connecting..."
+                : peerVideoOff
+                ? "Camera paused by partner"
+                : "Voice Connected"}
+            </Text>
+          </View>
+
+          {/* Fallback Screen Encryption Badge */}
+          <View style={styles.fallbackEncryptedBadge}>
+            <Text style={styles.fallbackEncryptedText}>🔒 End-to-End Encrypted Match Call</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Camera Off Overlay (When video is active but partner paused camera) */}
+      {isVideoCall && isCallActive && isConnected && peerVideoOff && (
+        <View style={styles.peerCameraOffOverlay}>
+          <VideoOff size={40} color="rgba(255, 255, 255, 0.4)" style={styles.overlayIcon} />
+          <Text style={styles.peerCameraOffText}>{callerName}'s camera is paused</Text>
         </View>
       )}
 
       {/* Top Header Overlay info */}
-      {isCallActive && isConnected && (
+      {isCallActive && (
         <View style={styles.topHeader}>
-          <Text style={styles.timerText}>{formatDuration(duration)}</Text>
-          {peerMuted && (
-            <View style={styles.peerStatusBadge}>
-              <MicOff size={12} color="#FFF" />
-              <Text style={styles.peerStatusText}>Peer Muted</Text>
+          <View style={styles.headerLeft}>
+            <View style={styles.secureHeaderBadge}>
+              <Text style={styles.secureHeaderText}>🔒 SECURE</Text>
             </View>
-          )}
+            {isConnected && (
+              <Text style={styles.timerText}>{formatDuration(duration)}</Text>
+            )}
+          </View>
+
+          <View style={styles.headerRight}>
+            {peerMuted && (
+              <View style={styles.peerStatusBadge}>
+                <MicOff size={12} color="#FFF" />
+                <Text style={styles.peerStatusText}>Partner Muted</Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
       {/* Local PIP Video view (floating on top right/bottom right) */}
       {isVideoCall && isCallActive && isConnected && localStream && !isVideoOff && (
-        <View style={styles.localPipBox}>
+        <View style={[styles.localPipBox, { bottom: Math.max(insets.bottom, 20) + 96 }]}>
           <RTCView
             streamURL={localStream.toURL()}
             style={styles.localVideo}
@@ -171,17 +223,18 @@ export default function VideoCallScreen({ route, navigation }: Props) {
       )}
 
       {/* Bottom controls panel */}
-      <View style={styles.controlsContainer}>
+      <View style={[styles.controlsContainer, { bottom: Math.max(insets.bottom, 20) + 12 }]}>
         {/* Toggle Mute microphone */}
         <TouchableOpacity
           style={[styles.controlBtn, isMuted && styles.controlBtnActive]}
           onPress={toggleMute}
           disabled={!isConnected}
+          activeOpacity={0.8}
         >
           {isMuted ? (
-            <MicOff size={24} color="#FFF" />
+            <MicOff size={22} color="#FFF" />
           ) : (
-            <Mic size={24} color="rgba(255, 255, 255, 0.8)" />
+            <Mic size={22} color="rgba(255, 255, 255, 0.8)" />
           )}
         </TouchableOpacity>
 
@@ -191,11 +244,12 @@ export default function VideoCallScreen({ route, navigation }: Props) {
             style={[styles.controlBtn, isVideoOff && styles.controlBtnActive]}
             onPress={toggleVideo}
             disabled={!isConnected}
+            activeOpacity={0.8}
           >
             {isVideoOff ? (
-              <VideoOff size={24} color="#FFF" />
+              <VideoOff size={22} color="#FFF" />
             ) : (
-              <Camera size={24} color="rgba(255, 255, 255, 0.8)" />
+              <Camera size={22} color="rgba(255, 255, 255, 0.8)" />
             )}
           </TouchableOpacity>
         )}
@@ -206,8 +260,9 @@ export default function VideoCallScreen({ route, navigation }: Props) {
             style={styles.controlBtn}
             onPress={switchCamera}
             disabled={!isConnected}
+            activeOpacity={0.8}
           >
-            <RefreshCw size={24} color="rgba(255, 255, 255, 0.8)" />
+            <RefreshCw size={22} color="rgba(255, 255, 255, 0.8)" />
           </TouchableOpacity>
         )}
 
@@ -217,7 +272,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
           onPress={handleHangUp}
           activeOpacity={0.8}
         >
-          <PhoneOff size={28} color="#FFF" />
+          <PhoneOff size={24} color="#FFF" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -227,7 +282,11 @@ export default function VideoCallScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#150824",
+    backgroundColor: "#120520",
+  },
+  videoWrapper: {
+    flex: 1,
+    backgroundColor: "#000",
   },
   remoteVideo: {
     position: "absolute",
@@ -244,23 +303,49 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingBottom: 100,
+    backgroundColor: "#120520",
+  },
+  soundWaveCircle1: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderWidth: 1,
+    borderColor: "rgba(214, 175, 55, 0.12)",
+  },
+  soundWaveCircle2: {
+    position: "absolute",
+    width: 310,
+    height: 310,
+    borderRadius: 155,
+    borderWidth: 1,
+    borderColor: "rgba(214, 175, 55, 0.06)",
+  },
+  soundWaveCircle3: {
+    position: "absolute",
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    borderWidth: 1,
+    borderColor: "rgba(214, 175, 55, 0.03)",
   },
   avatarWrapper: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     borderWidth: 3,
     borderColor: palette.gold.main,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E1A47",
-    marginBottom: 25,
-    elevation: 8,
+    backgroundColor: "#1F0A33",
+    marginBottom: 24,
     shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 2,
   },
   largeAvatar: {
     width: "100%",
@@ -272,24 +357,72 @@ const styles = StyleSheet.create({
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E1A47",
+    backgroundColor: "#1F0A33",
   },
   callerName: {
-    fontSize: 24,
+    fontSize: 26,
     ...fonts.bold,
     color: "#FFF",
     textAlign: "center",
     marginBottom: 10,
+    zIndex: 2,
+    letterSpacing: 0.5,
+  },
+  statusBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(214, 175, 55, 0.15)",
+    zIndex: 2,
   },
   callStatus: {
-    fontSize: 15,
+    fontSize: 13,
     color: palette.gold.main,
     ...fonts.semibold,
     letterSpacing: 0.5,
   },
+  fallbackEncryptedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(52, 199, 89, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.2)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 24,
+    zIndex: 2,
+  },
+  fallbackEncryptedText: {
+    fontSize: 11,
+    color: "#34C759",
+    ...fonts.semibold,
+    letterSpacing: 0.2,
+  },
+  peerCameraOffOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#120520",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
+  },
+  overlayIcon: {
+    marginBottom: 12,
+  },
+  peerCameraOffText: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.6)",
+    ...fonts.medium,
+  },
   topHeader: {
     position: "absolute",
-    top: 50,
+    top: Platform.OS === "ios" ? 50 : 25,
     left: 20,
     right: 20,
     flexDirection: "row",
@@ -297,22 +430,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 10,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerRight: {
+    alignItems: "flex-end",
+  },
   timerText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#FFF",
     ...fonts.bold,
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  secureHeaderBadge: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.3)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  secureHeaderText: {
+    color: "#34C759",
+    fontSize: 10,
+    ...fonts.bold,
+    letterSpacing: 0.5,
   },
   peerStatusBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(255, 77, 77, 0.8)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    backgroundColor: "#FF4D4D",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
   peerStatusText: {
     color: "#FFF",
@@ -321,17 +478,20 @@ const styles = StyleSheet.create({
   },
   localPipBox: {
     position: "absolute",
-    bottom: 120,
     right: 20,
-    width: 105,
+    width: 100,
     height: 145,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: palette.gold.main,
     overflow: "hidden",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: "#1D0D2E",
     zIndex: 5,
-    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
   },
   localVideo: {
     width: "100%",
@@ -339,45 +499,49 @@ const styles = StyleSheet.create({
   },
   controlsContainer: {
     position: "absolute",
-    bottom: 30,
     left: 20,
     right: 20,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(37, 18, 54, 0.85)",
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#1F0A33",
     borderWidth: 1.5,
-    borderColor: "rgba(212, 175, 55, 0.15)",
+    borderColor: "rgba(214, 175, 55, 0.25)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     paddingHorizontal: 20,
     zIndex: 10,
-    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
   },
   controlBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
   controlBtnActive: {
-    backgroundColor: palette.purple.deep,
-    borderWidth: 1,
-    borderColor: palette.gold.main,
+    backgroundColor: "#FF4D4D",
+    borderColor: "#FF4D4D",
   },
   hangUpBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: palette.status.error,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: palette.status.error,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

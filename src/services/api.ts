@@ -1,6 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeModules, Platform } from 'react-native';
 import { secureStorage } from './secureStorage';
+import { store } from '../store';
+import { logout } from '../store/authSlice';
+import { navigationRef } from '../../App';
 
 const LOCAL_IP = '192.168.1.2';
 
@@ -49,7 +52,25 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
         ...options.headers,
       },
     });
-    const data = await response.json() as any;
+
+    if (response.status === 401) {
+      console.warn(`[API Authorization Check] 401 Unauthorized for ${endpoint}. Session revoked.`);
+      store.dispatch(logout());
+      if (navigationRef.isReady()) {
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: 'Welcome' }],
+        });
+      }
+    }
+
+    let data: any = {};
+    try {
+      data = await response.json();
+    } catch (jsonErr) {
+      // Ignore JSON parse errors for non-JSON or empty bodies
+    }
+
     return { data: { success: response.ok, ...data } };
   } catch (error: any) {
     console.warn(`API Error for ${endpoint}:`, error.message);
@@ -854,6 +875,54 @@ export const deleteFeedbackQuery = async (feedbackId: string) => {
     });
   } catch (error) {
     console.error("deleteFeedbackQuery error:", error);
+    throw error;
+  }
+};
+
+// Submit user report with multiple proof documents
+export const submitReport = async (
+  reportedId: string,
+  reportedType: string,
+  reason: string,
+  description?: string,
+  files?: Array<{ uri: string; type: string; name: string }>
+) => {
+  try {
+    const formData = new FormData();
+    formData.append('reportedId', reportedId);
+    formData.append('reportedType', reportedType);
+    formData.append('reason', reason);
+    if (description) {
+      formData.append('description', description);
+    }
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('proofs', {
+          uri: file.uri,
+          type: file.type,
+          name: file.name,
+        } as any);
+      });
+    }
+    return await apiRequest('/reports', {
+      method: 'POST',
+      body: formData,
+    });
+  } catch (error) {
+    console.error("submitReport error:", error);
+    throw error;
+  }
+};
+
+// Block a user
+export const blockUser = async (blockedId: string, reason?: string) => {
+  try {
+    return await apiRequest('/block/block', {
+      method: 'POST',
+      body: JSON.stringify({ blockedId, reason }),
+    });
+  } catch (error) {
+    console.error("blockUser error:", error);
     throw error;
   }
 };

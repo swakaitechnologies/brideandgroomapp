@@ -34,6 +34,8 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
   const pulse1 = useRef(new Animated.Value(1)).current;
   const pulse2 = useRef(new Animated.Value(1)).current;
   const pulse3 = useRef(new Animated.Value(1)).current;
+  
+  const acceptScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     // Vibrate on incoming call: pattern [delay, vibrate, sleep, vibrate] with loop=true
@@ -61,6 +63,22 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
     createPulse(pulse2, 600);
     createPulse(pulse3, 1200);
 
+    // Accept button gentle pulsing scale
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(acceptScale, {
+          toValue: 1.08,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(acceptScale, {
+          toValue: 1.0,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     // Check if caller hung up/cancelled call
     const statusInterval = setInterval(async () => {
       try {
@@ -79,7 +97,7 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
       Vibration.cancel();
       clearInterval(statusInterval);
     };
-  }, [pulse1, pulse2, pulse3, roomId, navigation]);
+  }, [pulse1, pulse2, pulse3, acceptScale, roomId, navigation]);
 
   const handleAccept = async () => {
     Vibration.cancel();
@@ -111,7 +129,7 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
 
   return (
     <LinearGradient
-      colors={[palette.purple.deep, "#251236", "#150824"]}
+      colors={[palette.purple.deep, "#1F0A33", "#0E031A"]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safe}>
@@ -123,7 +141,7 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
             <Phone size={16} color={palette.gold.main} />
           )}
           <Text style={styles.typeText}>
-            Incoming {callType === "video" ? "Video" : "Voice"} Call
+            INCOMING {callType === "video" ? "VIDEO" : "VOICE"} CALL
           </Text>
         </View>
 
@@ -146,8 +164,16 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        <Text style={styles.callerName}>{callerName || "Bride & Groom Member"}</Text>
-        <Text style={styles.callerSub}>Is calling you</Text>
+        {/* Caller Info & Security Badge */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.callerName}>{callerName || "Bride & Groom Member"}</Text>
+          <Text style={styles.callerSub}>Is calling you</Text>
+          
+          {/* Security Trust Badge */}
+          <View style={styles.secureBadge}>
+            <Text style={styles.secureBadgeText}>🔒 End-to-End Encrypted & Private</Text>
+          </View>
+        </View>
 
         {/* Decline / Accept Action Controls */}
         <View style={styles.actionRow}>
@@ -165,17 +191,19 @@ export default function IncomingCallScreen({ route, navigation }: Props) {
 
           {/* Accept */}
           <View style={styles.actionItem}>
-            <TouchableOpacity
-              style={styles.acceptBtn}
-              onPress={handleAccept}
-              activeOpacity={0.8}
-            >
-              {callType === "video" ? (
-                <Video size={28} color="#FFF" />
-              ) : (
-                <Phone size={28} color="#FFF" />
-              )}
-            </TouchableOpacity>
+            <Animated.View style={{ transform: [{ scale: acceptScale }] }}>
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={handleAccept}
+                activeOpacity={0.8}
+              >
+                {callType === "video" ? (
+                  <Video size={28} color="#FFF" />
+                ) : (
+                  <Phone size={28} color="#FFF" />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
             <Text style={styles.actionLabel}>Accept</Text>
           </View>
         </View>
@@ -192,62 +220,63 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 50,
+    paddingVertical: 40,
   },
   typeBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.2)",
+    borderColor: "rgba(212, 175, 55, 0.15)",
     marginTop: 20,
   },
   typeText: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#FFF",
-    ...fonts.semibold,
-    letterSpacing: 0.5,
+    ...fonts.bold,
+    letterSpacing: 1.0,
   },
   avatarSection: {
     alignItems: "center",
     justifyContent: "center",
-    height: 250,
+    height: 220,
   },
   pulse: {
     position: "absolute",
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: "rgba(212, 175, 55, 0.12)",
+    borderWidth: 1.5,
+    backgroundColor: "transparent",
   },
   pulse1: {
-    backgroundColor: "rgba(212, 175, 55, 0.15)",
+    borderColor: "rgba(212, 175, 55, 0.35)",
   },
   pulse2: {
-    backgroundColor: "rgba(212, 175, 55, 0.08)",
+    borderColor: "rgba(212, 175, 55, 0.18)",
   },
   pulse3: {
-    backgroundColor: "rgba(212, 175, 55, 0.04)",
+    borderColor: "rgba(212, 175, 55, 0.08)",
   },
   avatarCircle: {
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: "#2E1A47",
+    backgroundColor: "#1F0A33",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
     borderColor: palette.gold.main,
     overflow: "hidden",
-    elevation: 8,
     shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowRadius: 10,
+    elevation: 8,
   },
   avatarImage: {
     width: "100%",
@@ -258,7 +287,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E1A47",
+    backgroundColor: "#1F0A33",
     width: "100%",
     height: "100%",
   },
@@ -267,20 +296,42 @@ const styles = StyleSheet.create({
     ...fonts.bold,
     color: "#FFF",
   },
+  infoContainer: {
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 24,
+  },
   callerName: {
     fontSize: 28,
     ...fonts.bold,
     color: "#FFF",
     textAlign: "center",
     letterSpacing: 0.5,
+    marginBottom: 6,
   },
   callerSub: {
-    fontSize: 15,
-    color: palette.purple.muted,
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.5)",
     ...fonts.semibold,
     textTransform: "uppercase",
     letterSpacing: 1.5,
-    marginTop: -20,
+  },
+  secureBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(52, 199, 89, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(52, 199, 89, 0.2)",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 20,
+  },
+  secureBadgeText: {
+    fontSize: 11,
+    color: "#34C759",
+    ...fonts.semibold,
+    letterSpacing: 0.2,
   },
   actionRow: {
     flexDirection: "row",
@@ -290,33 +341,33 @@ const styles = StyleSheet.create({
   },
   actionItem: {
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   declineBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: palette.status.error,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: palette.status.error,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   acceptBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: "#34C759",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#34C759",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   actionLabel: {
     fontSize: 13,

@@ -11,6 +11,10 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
+  Switch,
+  Modal,
+  TextInput,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useProfileSocket } from '../../hooks/useProfileSocket';
@@ -31,6 +35,10 @@ import {
   MessageCircle,
   Zap,
   ThumbsUp,
+  Flag,
+  X,
+  FileText,
+  Plus,
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { palette } from '../../theme/colors';
@@ -42,9 +50,13 @@ import {
   sendInterest,
   toggleShortlist,
   toggleLike,
+  submitReport,
+  blockUser,
 } from '../../services/api';
 import { showToast } from '../../utils/toast';
 import { fonts } from "@/src/theme";
+import { launchImageLibrary } from 'react-native-image-picker';
+import { pick } from '@react-native-documents/picker';
 
 const { width } = Dimensions.get('window');
 
@@ -70,6 +82,125 @@ export default function ProfileDetailScreen() {
   } | null>(null);
   const [currentProfile, setCurrentProfile] = useState<any>(profile);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<Array<{ uri: string; type: string; name: string }>>([]);
+  const [alsoBlock, setAlsoBlock] = useState(true);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const handlePickImage = async () => {
+    if (selectedFiles.length >= 5) {
+      showCustomToast('You can attach up to 5 proof documents.');
+      return;
+    }
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        selectionLimit: 5 - selectedFiles.length,
+      });
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        showCustomToast(result.errorMessage || 'Gallery error.');
+        return;
+      }
+      const assets = result.assets;
+      if (assets && assets.length > 0) {
+        const newFiles = assets.map(asset => ({
+          uri: asset.uri || '',
+          name: asset.fileName || `proof_${Date.now()}.jpg`,
+          type: asset.type || 'image/jpeg',
+        }));
+        setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 5));
+      }
+    } catch (err) {
+      console.error('Image picker error:', err);
+      showCustomToast('Could not open gallery.');
+    }
+  };
+
+  const handlePickPDF = async () => {
+    if (selectedFiles.length >= 5) {
+      showCustomToast('You can attach up to 5 proof documents.');
+      return;
+    }
+    try {
+      const results = await pick({
+        type: ['application/pdf'],
+        allowMultiSelection: true,
+      });
+      if (results && results.length > 0) {
+        const newFiles = results.map(file => ({
+          uri: file.uri,
+          name: file.name || `proof_${Date.now()}.pdf`,
+          type: file.type || 'application/pdf',
+        }));
+        setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 5));
+      }
+    } catch (err: any) {
+      if (err.message && err.message.includes('cancel')) {
+        return;
+      }
+      console.warn('Document picker error:', err);
+      showCustomToast('Failed to select document.');
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleReportAndBlock = async () => {
+    if (!reportReason) {
+      showCustomToast('Please select a reason for reporting.');
+      return;
+    }
+
+    const targetUserId = currentProfile?.userId || currentProfile?.id;
+    if (!targetUserId) {
+      showCustomToast('User ID not found');
+      return;
+    }
+
+    setReportSubmitting(true);
+    try {
+      const reportRes = await submitReport(
+        targetUserId,
+        'user',
+        reportReason,
+        reportDescription,
+        selectedFiles
+      );
+
+      if (!reportRes.data?.success) {
+        showCustomToast(reportRes.data?.message || 'Failed to submit report.');
+        setReportSubmitting(false);
+        return;
+      }
+
+      if (alsoBlock) {
+        const blockRes = await blockUser(targetUserId, reportReason);
+        if (!blockRes.data?.success) {
+          showCustomToast(blockRes.data?.message || 'Report submitted, but failed to block user.');
+        }
+      }
+
+      showCustomToast(alsoBlock ? 'User reported and blocked successfully.' : 'Report submitted successfully.');
+      
+      setShowReportModal(false);
+      setReportReason('');
+      setReportDescription('');
+      setSelectedFiles([]);
+      navigation.goBack();
+    } catch (err: any) {
+      console.error('Report & Block error:', err);
+      showCustomToast(err.response?.data?.message || err.message || 'Something went wrong.');
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   const scrollY = React.useRef(new Animated.Value(0)).current;
 
@@ -863,6 +994,16 @@ export default function ProfileDetailScreen() {
             )}
           </View>
 
+          {/* Report or Flag Profile Button */}
+          <TouchableOpacity
+            style={styles.reportBtn}
+            onPress={() => setShowReportModal(true)}
+            activeOpacity={0.7}
+          >
+            <Flag size={18} color="#FF3B30" style={{ marginRight: 8 }} />
+            <Text style={styles.reportBtnText}>Report or Flag Profile</Text>
+          </TouchableOpacity>
+
           <View style={{ height: 110 + insets.bottom }} />
         </View>
       </Animated.ScrollView>
@@ -939,6 +1080,148 @@ export default function ProfileDetailScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Report Modal */}
+      <Modal
+        visible={showReportModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowReportModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowReportModal(false)} />
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report suspicious profile</Text>
+              <TouchableOpacity onPress={() => setShowReportModal(false)} style={{ padding: 4 }}>
+                <X size={20} color={deepPurple} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={styles.modalScroll}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.reasonLabel}>Why are you reporting this profile?</Text>
+              <View style={styles.reasonRow}>
+                {[
+                  'Commercial Matchmaker / Agent',
+                  'Fake Profile / Scammer',
+                  'Harassment / Abusive behavior',
+                  'Inappropriate Content / Photos',
+                  'Other',
+                ].map((reason) => {
+                  const isActive = reportReason === reason;
+                  return (
+                    <TouchableOpacity
+                      key={reason}
+                      style={[styles.reasonPill, isActive && styles.reasonPillActive]}
+                      onPress={() => setReportReason(reason)}
+                    >
+                      <Text style={[styles.reasonPillText, isActive && styles.reasonPillTextActive]}>
+                        {reason}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={styles.descLabel}>Tell us more (Optional)</Text>
+              <TextInput
+                style={styles.descInput}
+                placeholder="Please provide details about your report..."
+                placeholderTextColor="#A0A0A0"
+                multiline
+                numberOfLines={4}
+                value={reportDescription}
+                onChangeText={setReportDescription}
+              />
+
+              <Text style={styles.proofLabel}>Attach Proof (Images or PDFs - Max 5)</Text>
+              
+              {selectedFiles.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  contentContainerStyle={styles.fileList}
+                >
+                  {selectedFiles.map((file, index) => {
+                    const isImage = file.type.startsWith('image/');
+                    return (
+                      <View key={index} style={isImage ? styles.fileThumbnail : styles.fileDocBadge}>
+                        {isImage ? (
+                          <Image source={{ uri: file.uri }} style={{ width: '100%', height: '100%', borderRadius: 8 }} />
+                        ) : (
+                          <>
+                            <FileText size={20} color={deepPurple} style={{ alignSelf: 'center' }} />
+                            <Text style={styles.fileDocName} numberOfLines={1}>
+                              {file.name}
+                            </Text>
+                          </>
+                        )}
+                        <TouchableOpacity 
+                          style={styles.removeFileBtn} 
+                          onPress={() => handleRemoveFile(index)}
+                        >
+                          <X size={10} color="#FFF" />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
+              <View style={styles.proofBtnRow}>
+                <TouchableOpacity 
+                  style={styles.proofBtn} 
+                  onPress={handlePickImage}
+                  disabled={selectedFiles.length >= 5}
+                >
+                  <Plus size={14} color={deepPurple} />
+                  <Text style={styles.proofBtnText}>Add Image</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.proofBtn} 
+                  onPress={handlePickPDF}
+                  disabled={selectedFiles.length >= 5}
+                >
+                  <Plus size={14} color={deepPurple} />
+                  <Text style={styles.proofBtnText}>Add PDF</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.blockRow}>
+                <View style={styles.blockTextContainer}>
+                  <Text style={styles.blockTitle}>Also block this member</Text>
+                  <Text style={styles.blockDesc}>
+                    They will not be able to send you messages or view your details anymore.
+                  </Text>
+                </View>
+                <Switch
+                  value={alsoBlock}
+                  onValueChange={setAlsoBlock}
+                  trackColor={{ false: '#767577', true: '#FF3B30' }}
+                  thumbColor={alsoBlock ? '#FFF' : '#f4f3f4'}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitModalBtn, reportSubmitting && styles.submitModalBtnDisabled]}
+                onPress={handleReportAndBlock}
+                disabled={reportSubmitting}
+              >
+                {reportSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.submitModalBtnText}>Submit Report</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1262,5 +1545,217 @@ const styles = StyleSheet.create({
     fontSize: 14,
     ...fonts.bold,
     letterSpacing: 0.5,
+  },
+  reportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderWidth: 1.5,
+    borderRadius: 15,
+    marginTop: 25,
+    marginHorizontal: 25,
+    backgroundColor: 'rgba(255, 59, 48, 0.05)',
+    borderColor: '#FF3B30',
+  },
+  reportBtnText: {
+    color: '#FF3B30',
+    fontSize: 15,
+    ...fonts.bold,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#EDE6F5',
+    paddingBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    ...fonts.bold,
+    color: '#3B1E54',
+  },
+  modalScroll: {
+    flexGrow: 1,
+    paddingBottom: 30,
+  },
+  reasonLabel: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: '#3B1E54',
+    marginBottom: 12,
+  },
+  reasonRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  reasonPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(59, 30, 84, 0.04)',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  reasonPillActive: {
+    borderColor: '#FF3B30',
+    backgroundColor: 'rgba(255, 59, 48, 0.08)',
+  },
+  reasonPillText: {
+    fontSize: 12,
+    ...fonts.semibold,
+    color: '#3B1E54',
+  },
+  reasonPillTextActive: {
+    color: '#FF3B30',
+  },
+  descLabel: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: '#3B1E54',
+    marginBottom: 8,
+  },
+  descInput: {
+    borderWidth: 1.5,
+    borderColor: '#EDE6F5',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 13,
+    color: '#1A1A1A',
+    ...fonts.medium,
+    height: 80,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  proofLabel: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: '#3B1E54',
+    marginBottom: 8,
+  },
+  proofBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  proofBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    borderColor: '#3B1E54',
+    borderRadius: 12,
+    paddingVertical: 10,
+    flex: 1,
+    backgroundColor: 'rgba(59, 30, 84, 0.02)',
+  },
+  proofBtnText: {
+    fontSize: 12,
+    ...fonts.semibold,
+    color: '#3B1E54',
+    marginLeft: 6,
+  },
+  fileList: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
+    paddingVertical: 5,
+  },
+  fileThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EDE6F5',
+    position: 'relative',
+  },
+  fileDocBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#EDE6F5',
+    backgroundColor: 'rgba(59, 30, 84, 0.05)',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: 4,
+  },
+  fileDocName: {
+    fontSize: 8,
+    color: '#3B1E54',
+    ...fonts.semibold,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  removeFileBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  blockRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 15,
+    paddingVertical: 10,
+    borderTopWidth: 1.5,
+    borderTopColor: '#EDE6F5',
+    borderBottomWidth: 1.5,
+    borderBottomColor: '#EDE6F5',
+  },
+  blockTextContainer: {
+    flex: 1,
+    marginRight: 15,
+  },
+  blockTitle: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: '#3B1E54',
+  },
+  blockDesc: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
+  },
+  submitModalBtn: {
+    height: 52,
+    borderRadius: 15,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  submitModalBtnText: {
+    fontSize: 15,
+    ...fonts.bold,
+    color: '#FFFFFF',
+  },
+  submitModalBtnDisabled: {
+    opacity: 0.6,
   },
 });

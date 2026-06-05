@@ -36,42 +36,52 @@ exports.submitReport = async (req, res) => {
       });
     }
 
-    let reportImageUrl = null;
+    let uploadedFilePaths = [];
 
-    // Handle Image Upload if file exists
-    if (req.file) {
-      // 1. Process with Sharp
-      const processedBuffer = await sharp(req.file.buffer)
-        .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer();
+    // Handle multiple file uploads if files exist
+    if (req.files && req.files.length > 0) {
+      const { reportBucketName } = require("../config/minio");
 
-      // 2. Generate unique filename for reports
-      const fileName = `reports/${reporterId}/${uuidv4()}.webp`;
+      for (const file of req.files) {
+        let fileBuffer = file.buffer;
+        let contentType = file.mimetype;
+        let fileExtension = "webp";
 
-      // 3. Upload to Minio
-      await minioClient.putObject(
-        bucketName,
-        fileName,
-        processedBuffer,
-        processedBuffer.length,
-        { "Content-Type": "image/webp" },
-      );
+        try {
+          if (contentType.startsWith("image/")) {
+            // Process image with Sharp
+            fileBuffer = await sharp(file.buffer)
+              .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+              .webp({ quality: 80 })
+              .toBuffer();
+            contentType = "image/webp";
+            fileExtension = "webp";
+          } else if (contentType === "application/pdf") {
+            fileExtension = "pdf";
+          } else {
+            continue;
+          }
 
-      // 4. Construct URL
-      if (CDN_URL && (!useS3 || (!CDN_URL.includes("127.0.0.1") && !CDN_URL.includes("localhost")))) {
-        reportImageUrl = `${CDN_URL}/${fileName}`;
-      } else if (useS3) {
-        const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
-        reportImageUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${fileName}`;
-      } else {
-        const protocol =
-          process.env.MINIO_USE_SSL === "true" ? "https" : "http";
-        const host = process.env.MINIO_ENDPOINT || "localhost";
-        const port = process.env.MINIO_PORT || 9000;
-        reportImageUrl = `${protocol}://${host}:${port}/${bucketName}/${fileName}`;
+          // Generate unique relative file path key
+          const fileName = `reports/${reporterId}/${uuidv4()}.${fileExtension}`;
+
+          // Upload object to MinIO
+          await minioClient.putObject(
+            reportBucketName,
+            fileName,
+            fileBuffer,
+            fileBuffer.length,
+            { "Content-Type": contentType }
+          );
+
+          uploadedFilePaths.push(fileName);
+        } catch (uploadErr) {
+          console.error("Error uploading report proof item:", uploadErr);
+        }
       }
     }
+
+    const reportImageValue = uploadedFilePaths.length > 0 ? JSON.stringify(uploadedFilePaths) : null;
 
     const report = await Report.create({
       reporterId,
@@ -79,7 +89,7 @@ exports.submitReport = async (req, res) => {
       reportedType,
       reason,
       description,
-      reportImage: reportImageUrl,
+      reportImage: reportImageValue,
     });
 
     // Auto-Suspension Rule: 10 reports in 24h -> auto suspend

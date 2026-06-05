@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, TouchableOpacity, Dimensions, Platform, Image, Alert } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { StyleSheet, TouchableOpacity, Dimensions, Platform, Image, Alert, Animated } from "react-native";
 import { Text, View } from "@/components/Themed";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeScreen from "./HomeScreen";
@@ -7,7 +7,7 @@ import MatchesScreen from "./MatchesScreen";
 import ChatsScreen from "./ChatsScreen";
 import PremiumScreen from "./PremiumScreen";
 import UpdatesScreen from "./UpdatesScreen";
-import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Sparkles } from "lucide-react-native";
+import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Sparkles, Search } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import SideDrawer from "../../components/SideDrawer";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -26,6 +26,12 @@ export default function TabsScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("Home");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [hideTabBar, setHideTabBar] = useState(false);
+  const tabBarAnimation = useRef(new Animated.Value(1)).current;
+  const translateY = tabBarAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [120, 0],
+  });
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
@@ -139,6 +145,18 @@ export default function TabsScreen() {
     fetchUnreadCount();
   }, [activeTab]);
 
+  useEffect(() => {
+    setHideTabBar(false);
+  }, [activeTab]);
+
+  useEffect(() => {
+    Animated.timing(tabBarAnimation, {
+      toValue: hideTabBar ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [hideTabBar, tabBarAnimation]);
+
   const renderActiveScreen = () => {
     switch (activeTab) {
       case "Home":
@@ -148,7 +166,7 @@ export default function TabsScreen() {
           />
         );
       case "Matches":
-        return <MatchesScreen />;
+        return <MatchesScreen onSubTabChange={(subTab: string) => setHideTabBar(subTab === "daily")} />;
       case "Chat":
         return <ChatsScreen />;
       case "Premium":
@@ -202,6 +220,13 @@ export default function TabsScreen() {
           <View style={styles.navActions}>
             <TouchableOpacity
               style={styles.navButton}
+              onPress={() => navigation.navigate("SearchProfiles")}
+              activeOpacity={0.7}
+            >
+              <Search size={22} color="#3B1E54" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navButton}
               onPress={() => navigation.navigate("Notifications")}
               activeOpacity={0.7}
             >
@@ -221,8 +246,17 @@ export default function TabsScreen() {
       {/* Active Screen */}
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
-      {/* Floating Glassmorphic Pill Tab Bar */}
-      <View style={[styles.tabBarContainer, { bottom: Math.max(insets.bottom + 10, 24) }]}>
+      <Animated.View
+        pointerEvents={hideTabBar ? "none" : "auto"}
+        style={[
+          styles.tabBarContainer,
+          {
+            bottom: Math.max(insets.bottom + 10, 24),
+            opacity: tabBarAnimation,
+            transform: [{ translateY }],
+          },
+        ]}
+      >
         <View style={styles.glassTabBar}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -282,7 +316,7 @@ export default function TabsScreen() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
 
       {/* Side Navigation Drawer */}
       <SideDrawer

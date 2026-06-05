@@ -64,5 +64,18 @@ const attachmentUpload = multer({
   },
 });
 
+const reportUpload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit per file
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/") || file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images and PDF documents are allowed as proof!"));
+    }
+  },
+});
+
 module.exports = upload;
 module.exports.attachmentUpload = attachmentUpload;
+module.exports.reportUpload = reportUpload;

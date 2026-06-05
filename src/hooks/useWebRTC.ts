@@ -32,6 +32,7 @@ interface UseWebRTCProps {
   roomId: string;
   userId: string;
   callType?: "video" | "audio"; // default: video
+  token: string | null;
 }
 
 interface UseWebRTCReturn {
@@ -55,6 +56,7 @@ export function useWebRTC({
   roomId,
   userId,
   callType = "video",
+  token,
 }: UseWebRTCProps): UseWebRTCReturn {
   const socketRef = useRef<Socket | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -142,7 +144,10 @@ export function useWebRTC({
 
   // ─── SOCKET SETUP ─────────────────────────────────────────
   useEffect(() => {
-    const socket = io(SIGNALING_SERVER, { transports: ["websocket"] });
+    const socket = io(SIGNALING_SERVER, {
+      transports: ["websocket"],
+      auth: { token },
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -225,7 +230,7 @@ export function useWebRTC({
       cleanup();
       socket.disconnect();
     };
-  }, [roomId, userId, callType, getLocalStream, createPeerConnection, cleanup]);
+  }, [roomId, userId, callType, token, getLocalStream, createPeerConnection, cleanup]);
 
   // ─── ACTIONS ──────────────────────────────────────────────
   const startCall = useCallback(async () => {
