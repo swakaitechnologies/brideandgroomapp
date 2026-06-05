@@ -795,14 +795,39 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
               colors={[deepPurple]}
             />
           }
-          renderItem={({ item }) => (
-            <ProfileCard
-              profile={item}
-              type="grid"
-              layout="horizontal"
-              onPress={() => handleViewProfile(item)}
-            />
-          )}
+          renderItem={({ item }) => {
+            if (item.isBlockedByMe) {
+              return (
+                <View style={{ position: "relative", marginBottom: 16 }}>
+                  <ProfileCard
+                    profile={item}
+                    type="grid"
+                    layout="horizontal"
+                    style={{ marginBottom: 0 }}
+                    onPress={() => {}}
+                  />
+                  <View style={styles.gridBlockedOverlay}>
+                    <Ban size={22} color="#FF3B30" style={{ marginBottom: 4 }} />
+                    <Text style={styles.gridBlockedText}>This user is blocked by you.</Text>
+                    <TouchableOpacity 
+                      onPress={() => navigation.navigate("AccountSetting")}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.gridBlockedLink}>Manage Blocked Profiles</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }
+            return (
+              <ProfileCard
+                profile={item}
+                type="grid"
+                layout="horizontal"
+                onPress={() => handleViewProfile(item)}
+              />
+            );
+          }}
         />
       )}
 
@@ -1471,32 +1496,27 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     opacity: 0.8,
   },
-  blockedProfileCardGrid: {
-    backgroundColor: "#FDFBFF",
-    borderRadius: 16,
+  gridBlockedOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(15, 10, 25, 0.88)",
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
     padding: 16,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "rgba(255, 59, 48, 0.2)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 100,
+    zIndex: 10,
   },
-  blockedProfileGridOverlay: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  blockedProfileGridText: {
-    fontSize: 14,
-    ...fonts.semibold,
-    color: "#3B1E54",
-    marginBottom: 4,
-  },
-  blockedProfileGridLink: {
+  gridBlockedText: {
     fontSize: 13,
+    ...fonts.semibold,
+    color: "#FFFFFF",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  gridBlockedLink: {
+    fontSize: 12,
     ...fonts.bold,
     color: "#D4AF37",
     textDecorationLine: "underline",
+    textAlign: "center",
   },
 });
