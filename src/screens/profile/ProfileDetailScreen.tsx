@@ -994,15 +994,7 @@ export default function ProfileDetailScreen() {
             )}
           </View>
 
-          {/* Report or Flag Profile Button */}
-          <TouchableOpacity
-            style={styles.reportBtn}
-            onPress={() => setShowReportModal(true)}
-            activeOpacity={0.7}
-          >
-            <Flag size={18} color="#FF3B30" style={{ marginRight: 8 }} />
-            <Text style={styles.reportBtnText}>Report or Flag Profile</Text>
-          </TouchableOpacity>
+
 
           <View style={{ height: 110 + insets.bottom }} />
         </View>
@@ -1029,6 +1021,15 @@ export default function ProfileDetailScreen() {
           }}
         >
           <MessageCircle size={20} color={deepPurple} />
+        </TouchableOpacity>
+
+        {/* Report / Flag Button */}
+        <TouchableOpacity
+          style={[styles.msgButton, { borderColor: '#FF3B30', backgroundColor: 'rgba(255, 59, 48, 0.05)' }]}
+          onPress={() => setShowReportModal(true)}
+          activeOpacity={0.7}
+        >
+          <Flag size={20} color="#FF3B30" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
