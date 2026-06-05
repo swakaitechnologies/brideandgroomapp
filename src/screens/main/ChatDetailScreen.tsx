@@ -24,8 +24,9 @@ import {
   Paperclip, CheckCheck, ShieldCheck, 
   Image as ImageIcon, Camera, FileText, X, Smile,
   PhoneOff, Mic, MicOff, Volume2, VolumeX, VideoOff,
-  Crown, Zap, Lock
+  Crown, Zap, Lock, Play, Pause, Trash2
 } from 'lucide-react-native';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import { useSelector as useAppSelector } from 'react-redux';
 import { RootState } from '../../store';
 
@@ -82,6 +83,227 @@ export default function ChatDetailScreen() {
 
   const showCustomToast = (msg: string) => {
     showToast(msg);
+  };
+
+  // Audio Recorder & Player Refs and States
+  const audioRecorderPlayerRef = useRef(new AudioRecorderPlayer());
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordTime, setRecordTime] = useState('00:00');
+  const [recordDurationSecs, setRecordDurationSecs] = useState(0);
+
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+
+  const recordingDotOpacity = useRef(new Animated.Value(1)).current;
+
+  // Blinking animation for recording dot
+  useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null;
+    if (isRecording) {
+      anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(recordingDotOpacity, {
+            toValue: 0.2,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(recordingDotOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      anim.start();
+    } else {
+      recordingDotOpacity.setValue(1);
+    }
+    return () => {
+      if (anim) anim.stop();
+    };
+  }, [isRecording]);
+
+  // Audio player and recorder cleanup on unmount
+  useEffect(() => {
+    const player = audioRecorderPlayerRef.current;
+    return () => {
+      player.stopRecorder().catch(() => {});
+      player.stopPlayer().catch(() => {});
+      player.removeRecordBackListener();
+      player.removePlayBackListener();
+    };
+  }, []);
+
+  const formatMillis = (millis: number) => {
+    const totalSecs = Math.floor(millis / 1000);
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const requestMicPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission',
+            message: 'Bride and Groom needs access to your microphone to record voice notes.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const startRecording = async () => {
+    const hasPermission = await requestMicPermission();
+    if (!hasPermission) {
+      Alert.alert("Permission Required", "Microphone permission is required to record voice notes.");
+      return;
+    }
+
+    try {
+      setIsRecording(true);
+      setRecordTime('00:00');
+      setRecordDurationSecs(0);
+
+      const audioRecorderPlayer = audioRecorderPlayerRef.current;
+      const uri = await audioRecorderPlayer.startRecorder(undefined);
+      console.log("Recording started, output URI:", uri);
+
+      audioRecorderPlayer.addRecordBackListener((e: any) => {
+        const secs = Math.floor(e.currentPosition / 1000);
+        setRecordDurationSecs(secs);
+        setRecordTime(formatMillis(e.currentPosition));
+      });
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      setIsRecording(false);
+    }
+  };
+
+  const cancelRecording = async () => {
+    try {
+      const audioRecorderPlayer = audioRecorderPlayerRef.current;
+      await audioRecorderPlayer.stopRecorder();
+      audioRecorderPlayer.removeRecordBackListener();
+      setIsRecording(false);
+      setRecordTime('00:00');
+      setRecordDurationSecs(0);
+    } catch (err) {
+      console.error("Failed to cancel recording:", err);
+    }
+  };
+
+  const stopAndSendRecording = async () => {
+    if (subFetched && !subscription) {
+      showCustomToast('Premium is required to send voice notes.');
+      return;
+    }
+
+    try {
+      const audioRecorderPlayer = audioRecorderPlayerRef.current;
+      const resultUri = await audioRecorderPlayer.stopRecorder();
+      audioRecorderPlayer.removeRecordBackListener();
+      setIsRecording(false);
+
+      if (!resultUri) {
+        Alert.alert("Error", "No audio recorded.");
+        return;
+      }
+
+      // Prepend 'file://' on Android if not present (required for FormData upload)
+      let uploadUri = resultUri;
+      if (Platform.OS === 'android' && !uploadUri.startsWith('file://')) {
+        uploadUri = `file://${uploadUri}`;
+      }
+
+      console.log("Recording stopped, file path for upload:", uploadUri);
+      
+      const duration = recordDurationSecs;
+      setRecordTime('00:00');
+      setRecordDurationSecs(0);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: uploadUri,
+        type: 'audio/m4a',
+        name: `voice_${Date.now()}.m4a`,
+      } as any);
+
+      setLoading(true);
+      const res = await uploadMessageAttachment(formData);
+      if (res.data?.success && res.data.url) {
+        await handleSendMessage(`[AUDIO]:${res.data.url}|${duration}`);
+      } else {
+        Alert.alert("Upload Failed", `Failed to upload voice note: ${res.data?.message || 'Unknown error'}`);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error("Failed to stop and send recording:", err);
+      setLoading(false);
+      Alert.alert("Error", `Could not send voice note. Details: ${err.message || 'Unknown network error'}`);
+    }
+  };
+
+  const togglePlayAudio = async (messageId: string, audioUrl: string) => {
+    const player = audioRecorderPlayerRef.current;
+
+    try {
+      if (playingMessageId === messageId) {
+        await player.stopPlayer();
+        player.removePlayBackListener();
+        setPlayingMessageId(null);
+        setPlaybackPosition(0);
+        setPlaybackDuration(0);
+      } else {
+        if (playingMessageId) {
+          await player.stopPlayer();
+          player.removePlayBackListener();
+        }
+
+        setPlayingMessageId(messageId);
+        setPlaybackPosition(0);
+        setPlaybackDuration(0);
+
+        console.log("Playing audio:", audioUrl);
+        const resolvedUrl = resolvePhotoUrl(audioUrl);
+        await player.startPlayer(resolvedUrl);
+
+        player.addPlayBackListener((e: any) => {
+          setPlaybackPosition(e.currentPosition);
+          setPlaybackDuration(e.duration);
+          
+          if (e.currentPosition >= e.duration && e.duration > 0) {
+            player.stopPlayer().catch((err: any) => console.error(err));
+            player.removePlayBackListener();
+            setPlayingMessageId(null);
+            setPlaybackPosition(0);
+            setPlaybackDuration(0);
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Playback error:", err);
+      setPlayingMessageId(null);
+      setPlaybackPosition(0);
+      setPlaybackDuration(0);
+    }
   };
 
 
@@ -545,6 +767,14 @@ export default function ChatDetailScreen() {
       docUrl = parts[0];
       docName = parts[1] || 'Document';
     }
+    const isAudio = item.text.startsWith('[AUDIO]:');
+    let audioUrl = '';
+    let audioDuration = 0;
+    if (isAudio) {
+      const parts = item.text.substring(8).split('|');
+      audioUrl = parts[0];
+      audioDuration = parseInt(parts[1] || '0', 10);
+    }
 
     return (
       <View style={[styles.messageWrapper, isMe ? styles.myMessageWrapper : styles.theirMessageWrapper]}>
@@ -558,7 +788,8 @@ export default function ChatDetailScreen() {
           styles.messageBubble, 
           isMe ? { backgroundColor: deepPurple } : { backgroundColor: cardBg },
           isImage && { padding: 4, borderRadius: 12, overflow: 'hidden', maxWidth: '70%' },
-          isDoc && { padding: 4, borderRadius: 12, overflow: 'hidden', maxWidth: '75%' }
+          isDoc && { padding: 4, borderRadius: 12, overflow: 'hidden', maxWidth: '75%' },
+          isAudio && { padding: 4, borderRadius: 12, overflow: 'hidden', maxWidth: '75%' }
         ]}>
           {isImage ? (
             <Image 
@@ -593,6 +824,36 @@ export default function ChatDetailScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
+          ) : isAudio ? (
+            <View style={styles.audioMessageContainer}>
+              <TouchableOpacity 
+                style={styles.audioPlayBtn}
+                onPress={() => togglePlayAudio(item.id, audioUrl)}
+              >
+                {playingMessageId === item.id && playbackPosition < playbackDuration ? (
+                  <Pause size={20} color={deepPurple} fill={deepPurple} />
+                ) : (
+                  <Play size={20} color={deepPurple} fill={deepPurple} style={{ marginLeft: 2 }} />
+                )}
+              </TouchableOpacity>
+              <View style={styles.audioProgressBarContainer}>
+                <View 
+                  style={[
+                    styles.audioProgressBarFilled, 
+                    { 
+                      width: playingMessageId === item.id && playbackDuration > 0
+                        ? `${(playbackPosition / playbackDuration) * 100}%`
+                        : '0%' 
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.audioTimeText, { color: isMe ? '#FFF' : textColor }]}>
+                {playingMessageId === item.id && playbackPosition > 0
+                  ? formatMillis(playbackPosition)
+                  : formatDuration(audioDuration)}
+              </Text>
+            </View>
           ) : (
             <Text style={[styles.messageText, { color: isMe ? '#FFF' : textColor }]}>
               {item.text}
@@ -601,7 +862,8 @@ export default function ChatDetailScreen() {
           <View style={[
             styles.messageMeta, 
             isImage && { paddingHorizontal: 8, paddingBottom: 4, paddingTop: 2 },
-            isDoc && { paddingHorizontal: 8, paddingBottom: 4, paddingTop: 2 }
+            isDoc && { paddingHorizontal: 8, paddingBottom: 4, paddingTop: 2 },
+            isAudio && { paddingHorizontal: 8, paddingBottom: 4, paddingTop: 2 }
           ]}>
             <Text style={[styles.messageTime, { color: isMe ? 'rgba(255,255,255,0.6)' : mutedText }]}>
               {item.time}
@@ -720,32 +982,55 @@ export default function ChatDetailScreen() {
             paddingBottom: Math.max(insets.bottom, 20) 
           }
         ]}>
-          <TouchableOpacity style={styles.attachBtn} onPress={handleAttachment}>
-            <Paperclip size={22} color={mutedText} />
-          </TouchableOpacity>
-          <View style={[styles.textInputWrapper, { backgroundColor: isDark ? '#252525' : '#F5F5F5' }]}>
-            <TextInput
-              style={[styles.input, { color: textColor }]}
-              placeholder="Type a message..."
-              placeholderTextColor={mutedText}
-              value={message}
-              onChangeText={setMessage}
-              multiline
-              onFocus={() => setShowEmojiPicker(false)}
-            />
-            <TouchableOpacity 
-              style={styles.emojiBtn} 
-              onPress={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              <Smile size={22} color={showEmojiPicker ? accentColor : mutedText} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity 
-            style={[styles.sendBtn, { backgroundColor: deepPurple }]} 
-            onPress={() => handleSendMessage()}
-          >
-            <Send size={20} color={accentColor} />
-          </TouchableOpacity>
+          {isRecording ? (
+            <View style={[styles.recordingContainer, { backgroundColor: isDark ? '#252525' : '#F5F5F5' }]}>
+              <View style={styles.recordingTimerContainer}>
+                <Animated.View style={[styles.recordingDot, { opacity: recordingDotOpacity }]} />
+                <Text style={[styles.recordingText, { color: textColor }]}>Recording {recordTime}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <TouchableOpacity style={styles.recordControlBtn} onPress={cancelRecording}>
+                  <Trash2 size={22} color="#FF3B30" />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.sendBtn, { backgroundColor: deepPurple }]} onPress={stopAndSendRecording}>
+                  <Send size={20} color={accentColor} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <>
+              <TouchableOpacity style={styles.attachBtn} onPress={handleAttachment}>
+                <Paperclip size={22} color={mutedText} />
+              </TouchableOpacity>
+              <View style={[styles.textInputWrapper, { backgroundColor: isDark ? '#252525' : '#F5F5F5' }]}>
+                <TextInput
+                  style={[styles.input, { color: textColor }]}
+                  placeholder="Type a message..."
+                  placeholderTextColor={mutedText}
+                  value={message}
+                  onChangeText={setMessage}
+                  multiline
+                  onFocus={() => setShowEmojiPicker(false)}
+                />
+                <TouchableOpacity 
+                  style={styles.emojiBtn} 
+                  onPress={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  <Smile size={22} color={showEmojiPicker ? accentColor : mutedText} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity 
+                style={[styles.sendBtn, { backgroundColor: deepPurple }]} 
+                onPress={() => message.trim().length > 0 ? handleSendMessage() : startRecording()}
+              >
+                {message.trim().length > 0 ? (
+                  <Send size={20} color={accentColor} />
+                ) : (
+                  <Mic size={20} color={accentColor} />
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
 
@@ -1283,5 +1568,73 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
+  },
+  audioMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 12,
+    width: 220,
+    gap: 12,
+  },
+  audioPlayBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 3,
+  },
+  audioProgressBarContainer: {
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 2,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  audioProgressBarFilled: {
+    height: '100%',
+    backgroundColor: '#D4AF37',
+    borderRadius: 2,
+  },
+  audioTimeText: {
+    fontSize: 11,
+    minWidth: 35,
+    textAlign: 'right',
+    ...fonts.semibold,
+  },
+  recordingContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 4,
+    borderRadius: 25,
+    marginHorizontal: 5,
+  },
+  recordingTimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FF3B30',
+  },
+  recordingText: {
+    fontSize: 14,
+    ...fonts.semibold,
+  },
+  recordControlBtn: {
+    padding: 8,
   },
 });

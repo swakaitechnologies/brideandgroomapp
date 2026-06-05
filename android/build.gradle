@@ -21,10 +21,23 @@ buildscript {
 
 apply plugin: "com.facebook.react.rootproject"
 
-allprojects {
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            jvmTarget = "1.8"
+allprojects { prj ->
+    def configureKotlinTarget = {
+        if (prj.hasProperty("android")) {
+            prj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                def javaTarget = prj.android.compileOptions.targetCompatibility.toString()
+                kotlinOptions {
+                    jvmTarget = javaTarget
+                }
+            }
+        }
+    }
+
+    if (prj.state.executed) {
+        configureKotlinTarget()
+    } else {
+        prj.afterEvaluate {
+            configureKotlinTarget()
         }
     }
 }

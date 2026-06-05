@@ -15,10 +15,10 @@ import {
   MediaStream,
 } from "react-native-webrtc";
 import { io, Socket } from "socket.io-client";
-import { DEV_HOST } from "../services/api";
+import { MAIN_SOCKET_URL } from "../services/api";
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const SIGNALING_SERVER = `http://${DEV_HOST}:3001`;
+const SIGNALING_SERVER = MAIN_SOCKET_URL;
 
 const ICE_SERVERS = {
   iceServers: [

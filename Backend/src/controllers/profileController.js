@@ -1,6 +1,7 @@
 const { KYC, Profile, User, Photo: PhotoModel, PartnerPreference: PPModel, ProfileView, Interest, Subscription } = require("../models/associations");
 const { invalidateProfileCache } = require("../utils/cacheInvalidation");
 const { bucketName: minioBucketName, useS3 } = require("../config/minio");
+const bcrypt = require("bcryptjs");
 
 /**
  * Helper to calculate profile completion percentage
@@ -1273,21 +1274,46 @@ exports.getDailyPicks = async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     const cacheKey = `daily-picks:${userId}:${today}`;
 
+    const { Subscription: SubModel, Block } = require("../models/associations");
+
+    // Fetch users who blocked me
+    const blockedByRecords = await Block.findAll({
+      where: { blockedId: userId },
+      attributes: ["blockerId"]
+    });
+    const blockedByUserIds = blockedByRecords.map(r => r.blockerId);
+
+    // Fetch users I blocked
+    const blockedRecords = await Block.findAll({
+      where: { blockerId: userId },
+      attributes: ["blockedId"]
+    });
+    const blockedUserIds = blockedRecords.map(r => r.blockedId);
+
     // 1. Check Cache (Daily picks last for 24 hours)
     if (redisClient.isReady) {
       const cachedPicks = await redisClient.get(cacheKey);
       if (cachedPicks) {
         console.log(`[PICKS] Serving daily picks from cache for user ${userId}`);
+        const picks = JSON.parse(cachedPicks);
+
+        // Dynamically annotate isBlockedByMe and filter out anyone who blocked me
+        const annotatedPicks = picks
+          .filter(p => !blockedByUserIds.includes(p.userId))
+          .map(p => ({
+            ...p,
+            isBlockedByMe: blockedUserIds.includes(p.userId)
+          }));
+
         return res.status(200).json({
           success: true,
-          data: JSON.parse(cachedPicks),
+          data: annotatedPicks,
           cached: true,
         });
       }
     }
 
     // Check for Premium
-    const { Subscription: SubModel } = require("../models/associations");
     const viewerSub = await SubModel.findOne({
       where: { userId, status: "active", endDate: { [Op.gt]: new Date() } }
     });
@@ -1318,9 +1344,16 @@ exports.getDailyPicks = async (req, res) => {
     const { PartnerPreference: PPModel } = require("../models/associations");
     const preferences = await PPModel.findOne({ where: { userId } });
 
+    const userExcludeFilter = {
+      [Op.ne]: userId
+    };
+    if (blockedByUserIds.length > 0) {
+      userExcludeFilter[Op.notIn] = blockedByUserIds;
+    }
+
     // Build preference where clause
     const matchesWhere = {
-      userId: { [Op.ne]: userId },
+      userId: userExcludeFilter,
       verificationStatus: "approved",
       ...genderFilter,
     };
@@ -1542,9 +1575,15 @@ exports.getDailyPicks = async (req, res) => {
       });
     }
 
+    // Dynamically annotate isBlockedByMe
+    const annotatedTopPicks = topPicks.map(p => ({
+      ...p,
+      isBlockedByMe: blockedUserIds.includes(p.userId)
+    }));
+
     res.status(200).json({
       success: true,
-      data: topPicks
+      data: annotatedTopPicks
     });
   } catch (error) {
     console.error("Get Daily Picks Error:", error);

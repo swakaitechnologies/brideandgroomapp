@@ -62,5 +62,9 @@
 		<string>Quicksand-Regular.ttf</string>
 		<string>Quicksand-SemiBold.ttf</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to the camera for video calling and profile photo upload.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to the microphone for audio calls and voice messages.</string>
 </dict>
 </plist>
