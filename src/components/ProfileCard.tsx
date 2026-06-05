@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Heart, MessageCircle, Star, Crown, MapPin, Zap, User, Languages, Briefcase, Award, BookOpen, Lock } from 'lucide-react-native';
+import { Heart, MessageCircle, Star, Crown, MapPin, Zap, User, Languages, Briefcase, Award, BookOpen, Lock, Ban } from 'lucide-react-native';
 import { palette } from '../theme/colors';
 import { resolvePhotoUrl } from '../services/api';
 import { fonts } from "@/src/theme";
@@ -98,6 +98,48 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
   const imageStyle = type === 'premium'
     ? (isHorizontal ? styles.premiumImageHorizontal : styles.premiumImageVertical)
     : (isHorizontal ? styles.gridImageHorizontal : styles.gridImageVertical);
+
+  const isBlocked = !!profile.isBlockedByMe;
+
+  if (isBlocked) {
+    return (
+      <View 
+        style={[
+          cardStyle, 
+          { backgroundColor: cardBg, position: 'relative' },
+          style
+        ]}
+      >
+        <View style={imageContainerStyle}>
+          <Image
+            source={{ uri: getPhotoUrl() }}
+            style={imageStyle}
+            blurRadius={Platform.OS === 'ios' ? 10 : 5}
+          />
+        </View>
+   
+        <View style={[styles.content, { justifyContent: 'center' }]}>
+          <View style={styles.headerRow}>
+            <Text style={[styles.nameText, { color: textColor }]} numberOfLines={1}>
+              {profile.firstName}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[StyleSheet.absoluteFill, styles.blockedOverlay]}>
+          <Ban size={20} color="#FF3B30" style={{ marginBottom: 4 }} />
+          <Text style={styles.blockedOverlayTitle}>Blocked</Text>
+          <TouchableOpacity 
+            style={styles.blockedOverlayBtn}
+            onPress={() => navigation.navigate("AccountSetting")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.blockedOverlayBtnText}>Manage Profiles</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const connectBtnStyle = isHorizontal ? styles.connectBtnHorizontal : styles.connectBtnVertical;
 
@@ -405,5 +447,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  blockedOverlay: {
+    backgroundColor: 'rgba(20, 10, 30, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    padding: 10,
+  },
+  blockedOverlayTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    ...fonts.bold,
+    marginBottom: 6,
+  },
+  blockedOverlayBtn: {
+    backgroundColor: palette.gold.main,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  blockedOverlayBtnText: {
+    color: '#3B1E54',
+    fontSize: 11,
+    ...fonts.bold,
   },
 });

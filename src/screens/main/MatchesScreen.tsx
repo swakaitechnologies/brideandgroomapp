@@ -795,31 +795,14 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
               colors={[deepPurple]}
             />
           }
-          renderItem={({ item }) => {
-            if (item.isBlockedByMe) {
-              return (
-                <View style={styles.blockedProfileCardGrid}>
-                  <View style={styles.blockedProfileGridOverlay}>
-                    <Text style={styles.blockedProfileGridText}>This user is blocked by you.</Text>
-                    <TouchableOpacity 
-                      onPress={() => navigation.navigate("AccountSetting")}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.blockedProfileGridLink}>Manage Blocked Profiles</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            }
-            return (
-              <ProfileCard
-                profile={item}
-                type="grid"
-                layout="horizontal"
-                onPress={() => handleViewProfile(item)}
-              />
-            );
-          }}
+          renderItem={({ item }) => (
+            <ProfileCard
+              profile={item}
+              type="grid"
+              layout="horizontal"
+              onPress={() => handleViewProfile(item)}
+            />
+          )}
         />
       )}
 
