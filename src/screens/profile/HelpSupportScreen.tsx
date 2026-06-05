@@ -40,9 +40,10 @@ import {
   MessageCircle,
   Image as ImageIcon,
   ExternalLink,
+  Shield,
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL, resolvePhotoUrl } from '../../services/api';
+import { API_BASE_URL, resolvePhotoUrl, getMyReports } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -134,6 +135,12 @@ export default function HelpSupportScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
 
+  // Report History States
+  const [historySubTab, setHistorySubTab] = useState<'tickets' | 'reports'>('tickets');
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+
   // Custom Alert State
   const [alertConfig, setAlertConfig] = useState<{
     visible: boolean;
@@ -207,12 +214,41 @@ export default function HelpSupportScreen() {
     setRefreshing(false);
   };
 
-  // Fetch ticket history when tab changes to 'history'
+  const fetchReportsHistory = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setReportsLoading(true);
+    }
+    try {
+      const res = await getMyReports();
+      if (res.data && res.data.success) {
+        setReports(res.data.data || []);
+      } else {
+        showAlert('Error', 'Failed to retrieve report history.', 'error');
+      }
+    } catch (err) {
+      console.error('Fetch report history error:', err);
+      showAlert('Network Error', 'Could not load your report history.', 'error');
+    } finally {
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setReportsLoading(false);
+      }
+    }
+  };
+
+  // Fetch history when tab changes or sub-tab changes
   useEffect(() => {
     if (activeTab === 'history') {
-      fetchTicketHistory();
+      if (historySubTab === 'tickets') {
+        fetchTicketHistory();
+      } else {
+        fetchReportsHistory();
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, historySubTab]);
 
   // ---- FILE PICKER HANDLERS ----
 
@@ -663,137 +699,298 @@ export default function HelpSupportScreen() {
       {/* TAB CONTENT: TICKET HISTORY */}
       {activeTab === 'history' && (
         <View style={{ flex: 1 }}>
-          {historyLoading ? (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color={palette.gold.main} />
-              <Text style={styles.loaderText}>Loading tickets...</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={tickets}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 40 }]}
-              alwaysBounceVertical={true}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={() => fetchTicketHistory(true)}
-                  colors={[palette.gold.main]}
-                  tintColor={palette.gold.main}
-                />
-              }
-              renderItem={({ item }) => {
-                // Color badges matching ticket status: 'pending' | 'reviewed' | 'resolved'
-                let badgeStyle = styles.badgePending;
-                let badgeLabel = 'Pending';
-                if (item.status === 'reviewed') {
-                  badgeStyle = styles.badgeReviewed;
-                  badgeLabel = 'Reviewed';
-                } else if (item.status === 'resolved') {
-                  badgeStyle = styles.badgeResolved;
-                  badgeLabel = 'Resolved';
+          {/* Sub-segmented filter */}
+          <View style={styles.subTabContainer}>
+            <TouchableOpacity
+              style={[styles.subTabButton, historySubTab === 'tickets' && styles.activeSubTabButton]}
+              onPress={() => setHistorySubTab('tickets')}
+            >
+              <Text style={[styles.subTabLabel, historySubTab === 'tickets' && styles.activeSubTabLabel]}>
+                Support Tickets
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.subTabButton, historySubTab === 'reports' && styles.activeSubTabButton]}
+              onPress={() => setHistorySubTab('reports')}
+            >
+              <Text style={[styles.subTabLabel, historySubTab === 'reports' && styles.activeSubTabLabel]}>
+                Report History
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {historySubTab === 'tickets' ? (
+            historyLoading ? (
+              <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color={palette.gold.main} />
+                <Text style={styles.loaderText}>Loading tickets...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={tickets}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 40 }]}
+                alwaysBounceVertical={true}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => fetchTicketHistory(true)}
+                    colors={[palette.gold.main]}
+                    tintColor={palette.gold.main}
+                  />
                 }
+                renderItem={({ item }) => {
+                  // Color badges matching ticket status: 'pending' | 'reviewed' | 'resolved'
+                  let badgeStyle = styles.badgePending;
+                  let badgeLabel = 'Pending';
+                  if (item.status === 'reviewed') {
+                    badgeStyle = styles.badgeReviewed;
+                    badgeLabel = 'Reviewed';
+                  } else if (item.status === 'resolved') {
+                    badgeStyle = styles.badgeResolved;
+                    badgeLabel = 'Resolved';
+                  }
 
-                // Map database ENUM value for categories to friendly labels
-                const matchedCategory = CATEGORY_OPTIONS.find(opt => opt.value === item.type);
-                const categoryName = matchedCategory ? matchedCategory.label : 'Query';
+                  // Map database ENUM value for categories to friendly labels
+                  const matchedCategory = CATEGORY_OPTIONS.find(opt => opt.value === item.type);
+                  const categoryName = matchedCategory ? matchedCategory.label : 'Query';
 
-                const isTicketExpanded = expandedTicketId === item.id;
+                  const isTicketExpanded = expandedTicketId === item.id;
 
-                return (
-                  <TouchableOpacity
-                    style={styles.ticketCard}
-                    activeOpacity={0.8}
-                    onPress={() => setExpandedTicketId(isTicketExpanded ? null : item.id)}
-                  >
-                    <View style={styles.ticketHeader}>
-                      <View style={{ flex: 1, marginRight: 10 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={styles.ticketCategory}>{categoryName}</Text>
-                          {item.attachmentUrl && (
-                            <View style={styles.attachBadge}>
-                              <Paperclip size={10} color={palette.gold.main} />
-                            </View>
-                          )}
-                          {item.adminResponse && (
-                            <View style={styles.responseBadge}>
-                              <MessageCircle size={10} color="#4CAF50" />
-                            </View>
-                          )}
+                  return (
+                    <TouchableOpacity
+                      style={styles.ticketCard}
+                      activeOpacity={0.8}
+                      onPress={() => setExpandedTicketId(isTicketExpanded ? null : item.id)}
+                    >
+                      <View style={styles.ticketHeader}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={styles.ticketCategory}>{categoryName}</Text>
+                            {item.attachmentUrl && (
+                              <View style={styles.attachBadge}>
+                                <Paperclip size={10} color={palette.gold.main} />
+                              </View>
+                            )}
+                            {item.adminResponse && (
+                              <View style={styles.responseBadge}>
+                                <MessageCircle size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.ticketDate}>{formatDate(item.createdAt)}</Text>
                         </View>
-                        <Text style={styles.ticketDate}>{formatDate(item.createdAt)}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <View style={[styles.statusBadge, badgeStyle, { marginRight: 8 }]}>
+                            <Text style={styles.statusBadgeText}>{badgeLabel}</Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => handleDeleteQuery(item.id)}
+                            style={styles.deleteTicketBtn}
+                            activeOpacity={0.7}
+                          >
+                            <Trash2 size={16} color={palette.purple.muted} />
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <View style={[styles.statusBadge, badgeStyle, { marginRight: 8 }]}>
+                      <Text style={styles.ticketSubject}>{item.subject}</Text>
+                      <Text style={styles.ticketMessage}>{item.message}</Text>
+
+                      {/* Attachment Link */}
+                      {item.attachmentUrl && (
+                        <TouchableOpacity
+                          style={styles.attachmentLinkRow}
+                          onPress={() => handleViewAttachment(item.attachmentUrl)}
+                        >
+                          {isImageFile(item.attachmentUrl) ? (
+                            <ImageIcon size={14} color={palette.gold.main} />
+                          ) : (
+                            <FileText size={14} color={palette.gold.main} />
+                          )}
+                          <Text style={styles.attachmentLinkText} numberOfLines={1}>
+                            {item.attachmentUrl.split('/').pop() || 'View Attachment'}
+                          </Text>
+                          <ExternalLink size={12} color={palette.purple.muted} />
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Admin Response Section */}
+                      {item.adminResponse && isTicketExpanded && (
+                        <View style={styles.adminResponseCard}>
+                          <View style={styles.adminResponseHeader}>
+                            <MessageCircle size={14} color="#4CAF50" />
+                            <Text style={styles.adminResponseLabel}>Admin Response</Text>
+                          </View>
+                          <Text style={styles.adminResponseText}>{item.adminResponse}</Text>
+                        </View>
+                      )}
+
+                      {/* Expand hint */}
+                      {(item.adminResponse || item.attachmentUrl) && (
+                        <View style={styles.expandHintRow}>
+                          {isTicketExpanded ? (
+                            <ChevronUp size={14} color={palette.purple.muted} />
+                          ) : (
+                            <ChevronDown size={14} color={palette.purple.muted} />
+                          )}
+                          <Text style={styles.expandHintText}>
+                            {isTicketExpanded ? 'Tap to collapse' : 'Tap for details'}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+                ListEmptyComponent={
+                  <View style={styles.emptyHistoryContainer}>
+                    <HelpCircle size={44} color={palette.purple.border} style={{ marginBottom: 12 }} />
+                    <Text style={styles.emptyTitle}>No Support Tickets Found</Text>
+                    <Text style={styles.emptySubtitle}>
+                      If you submit a help request or feedback using the Contact Us form, it will appear here with its status.
+                    </Text>
+                  </View>
+                }
+              />
+            )
+          ) : (
+            reportsLoading ? (
+              <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color={palette.gold.main} />
+                <Text style={styles.loaderText}>Loading reports...</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={reports}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 40 }]}
+                alwaysBounceVertical={true}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => fetchReportsHistory(true)}
+                    colors={[palette.gold.main]}
+                    tintColor={palette.gold.main}
+                  />
+                }
+                renderItem={({ item }) => {
+                  // status badge styling: 'pending' | 'reviewed' | 'resolved' | 'dismissed' | 'urgent_review'
+                  let badgeStyle = styles.badgePending;
+                  let badgeLabel = 'Pending';
+                  if (item.status === 'reviewed') {
+                    badgeStyle = styles.badgeReviewed;
+                    badgeLabel = 'Reviewed';
+                  } else if (item.status === 'resolved') {
+                    badgeStyle = styles.badgeResolved;
+                    badgeLabel = 'Resolved';
+                  } else if (item.status === 'dismissed') {
+                    badgeStyle = styles.badgeDismissed;
+                    badgeLabel = 'Dismissed';
+                  } else if (item.status === 'urgent_review') {
+                    badgeStyle = styles.badgeUrgent;
+                    badgeLabel = 'Urgent Review';
+                  }
+
+                  const name = item.reportedUser?.profile
+                    ? `${item.reportedUser.profile.firstName || ''} ${item.reportedUser.profile.lastName || ''}`.trim()
+                    : (item.reportedUser ? `${item.reportedUser.firstName || ''} ${item.reportedUser.lastName || ''}`.trim() : 'Unknown Member');
+                  const customId = item.reportedUser?.profile?.customId || `ID: ${item.reportedId}`;
+                  
+                  const isReportExpanded = expandedReportId === item.id.toString();
+
+                  return (
+                    <TouchableOpacity
+                      style={styles.ticketCard}
+                      activeOpacity={0.8}
+                      onPress={() => setExpandedReportId(isReportExpanded ? null : item.id.toString())}
+                    >
+                      <View style={styles.ticketHeader}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                          <Text style={[styles.ticketCategory, { color: '#FF3B30' }]}>Reported Member</Text>
+                          <Text style={styles.reportedNameText}>{name}</Text>
+                          <Text style={styles.ticketDate}>{formatDate(item.createdAt)}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, badgeStyle]}>
                           <Text style={styles.statusBadgeText}>{badgeLabel}</Text>
                         </View>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteQuery(item.id)}
-                          style={styles.deleteTicketBtn}
-                          activeOpacity={0.7}
-                        >
-                          <Trash2 size={16} color={palette.purple.muted} />
-                        </TouchableOpacity>
                       </View>
-                    </View>
-                    <Text style={styles.ticketSubject}>{item.subject}</Text>
-                    <Text style={styles.ticketMessage}>{item.message}</Text>
+                      
+                      <View style={styles.reportDetailRow}>
+                        <Text style={styles.reportDetailLabel}>Reason:</Text>
+                        <Text style={styles.reportDetailValue}>{item.reason}</Text>
+                      </View>
 
-                    {/* Attachment Link */}
-                    {item.attachmentUrl && (
-                      <TouchableOpacity
-                        style={styles.attachmentLinkRow}
-                        onPress={() => handleViewAttachment(item.attachmentUrl)}
-                      >
-                        {isImageFile(item.attachmentUrl) ? (
-                          <ImageIcon size={14} color={palette.gold.main} />
-                        ) : (
-                          <FileText size={14} color={palette.gold.main} />
-                        )}
-                        <Text style={styles.attachmentLinkText} numberOfLines={1}>
-                          {item.attachmentUrl.split('/').pop() || 'View Attachment'}
-                        </Text>
-                        <ExternalLink size={12} color={palette.purple.muted} />
-                      </TouchableOpacity>
-                    )}
-
-                    {/* Admin Response Section */}
-                    {item.adminResponse && isTicketExpanded && (
-                      <View style={styles.adminResponseCard}>
-                        <View style={styles.adminResponseHeader}>
-                          <MessageCircle size={14} color="#4CAF50" />
-                          <Text style={styles.adminResponseLabel}>Admin Response</Text>
+                      {item.description ? (
+                        <View style={styles.reportDescWrapper}>
+                          <Text style={styles.reportDescText}>{item.description}</Text>
                         </View>
-                        <Text style={styles.adminResponseText}>{item.adminResponse}</Text>
-                      </View>
-                    )}
+                      ) : null}
 
-                    {/* Expand hint */}
-                    {(item.adminResponse || item.attachmentUrl) && (
-                      <View style={styles.expandHintRow}>
-                        {isTicketExpanded ? (
-                          <ChevronUp size={14} color={palette.purple.muted} />
-                        ) : (
-                          <ChevronDown size={14} color={palette.purple.muted} />
-                        )}
-                        <Text style={styles.expandHintText}>
-                          {isTicketExpanded ? 'Tap to collapse' : 'Tap for details'}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              }}
-              ListEmptyComponent={
-                <View style={styles.emptyHistoryContainer}>
-                  <HelpCircle size={44} color={palette.purple.border} style={{ marginBottom: 12 }} />
-                  <Text style={styles.emptyTitle}>No Support Tickets Found</Text>
-                  <Text style={styles.emptySubtitle}>
-                    If you submit a help request or feedback using the Contact Us form, it will appear here with its status.
-                  </Text>
-                </View>
-              }
-            />
+                      {/* Display proofs/attachments if available */}
+                      {item.proofUrls && item.proofUrls.length > 0 && (
+                        <View style={{ marginTop: 10 }}>
+                          <Text style={styles.proofLabel}>Proof Attachments ({item.proofUrls.length}):</Text>
+                          {item.proofUrls.map((url: string, pIdx: number) => {
+                            const isImg = isImageFile(url) || url.includes('.webp') || url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png');
+                            const fileName = url.split('/').pop()?.split('?')[0] || `proof_${pIdx + 1}`;
+                            return (
+                              <TouchableOpacity
+                                key={pIdx}
+                                style={[styles.attachmentLinkRow, { marginTop: 6 }]}
+                                onPress={() => handleViewAttachment(url)}
+                              >
+                                {isImg ? (
+                                  <ImageIcon size={14} color={palette.gold.main} />
+                                ) : (
+                                  <FileText size={14} color={palette.gold.main} />
+                                )}
+                                <Text style={styles.attachmentLinkText} numberOfLines={1}>
+                                  {fileName}
+                                </Text>
+                                <ExternalLink size={12} color={palette.purple.muted} />
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
+
+                      {/* Admin action/comments Section */}
+                      {item.actionTaken && isReportExpanded && (
+                        <View style={[styles.adminResponseCard, { borderColor: 'rgba(212, 175, 55, 0.2)', backgroundColor: '#FAF8FC' }]}>
+                          <View style={styles.adminResponseHeader}>
+                            <AlertCircle size={14} color={palette.gold.main} />
+                            <Text style={[styles.adminResponseLabel, { color: palette.gold.main }]}>Resolution Comment</Text>
+                          </View>
+                          <Text style={[styles.adminResponseText, { color: palette.purple.deep }]}>{item.actionTaken}</Text>
+                        </View>
+                      )}
+
+                      {/* Expand hint */}
+                      {item.actionTaken && (
+                        <View style={styles.expandHintRow}>
+                          {isReportExpanded ? (
+                            <ChevronUp size={14} color={palette.purple.muted} />
+                          ) : (
+                            <ChevronDown size={14} color={palette.purple.muted} />
+                          )}
+                          <Text style={styles.expandHintText}>
+                            {isReportExpanded ? 'Tap to collapse' : 'Tap for details'}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
+                ListEmptyComponent={
+                  <View style={styles.emptyHistoryContainer}>
+                    <Shield size={44} color={palette.purple.border} style={{ marginBottom: 12 }} />
+                    <Text style={styles.emptyTitle}>No Reports Submitted</Text>
+                    <Text style={styles.emptySubtitle}>
+                      Profiles you have flagged or reported to the administration for review will be listed here.
+                    </Text>
+                  </View>
+                }
+              />
+            )
           )}
         </View>
       )}
@@ -1504,5 +1701,89 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     ...fonts.semibold,
     fontSize: 14,
+  },
+  subTabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FAF9FC',
+    marginHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 5,
+    borderRadius: 10,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: palette.purple.border,
+  },
+  subTabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  activeSubTabButton: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  subTabLabel: {
+    fontSize: 12,
+    ...fonts.medium,
+    color: palette.purple.muted,
+  },
+  activeSubTabLabel: {
+    color: palette.purple.deep,
+    ...fonts.semibold,
+  },
+  badgeDismissed: {
+    backgroundColor: '#ECEFF1',
+  },
+  badgeUrgent: {
+    backgroundColor: '#FFEBEE',
+  },
+  reportedNameText: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: palette.purple.deep,
+    marginTop: 2,
+  },
+  reportDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  reportDetailLabel: {
+    fontSize: 12,
+    color: palette.purple.muted,
+    ...fonts.semibold,
+    marginRight: 6,
+  },
+  reportDetailValue: {
+    fontSize: 13,
+    ...fonts.semibold,
+    color: palette.purple.deep,
+  },
+  reportDescWrapper: {
+    backgroundColor: '#FAF9FC',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: palette.purple.border,
+  },
+  reportDescText: {
+    fontSize: 12,
+    color: palette.purple.deep,
+    lineHeight: 18,
+  },
+  proofLabel: {
+    fontSize: 12,
+    ...fonts.semibold,
+    color: palette.purple.muted,
+    marginBottom: 4,
+    marginTop: 8,
   },
 });

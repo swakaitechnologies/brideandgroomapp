@@ -1,5 +1,4 @@
-const Report = require("../models/Report");
-const User = require("../models/User");
+const { Report, User, Profile } = require("../models/associations");
 const sharp = require("sharp");
 const { minioClient, bucketName, useS3 } = require("../config/minio");
 const { v4: uuidv4 } = require("uuid");
@@ -130,6 +129,72 @@ exports.submitReport = async (req, res) => {
     });
   } catch (error) {
     console.error("Submit Report Error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+exports.getMyReports = async (req, res) => {
+  try {
+    const reporterId = req.userId;
+    const reports = await Report.findAll({
+      where: { reporterId },
+      include: [
+        {
+          model: User,
+          as: "reportedUser",
+          attributes: ["id", "firstName", "lastName", "email"],
+          include: [
+            {
+              model: Profile,
+              as: "profile",
+              attributes: ["customId", "firstName", "lastName"]
+            }
+          ]
+        }
+      ],
+      order: [["createdAt", "DESC"]]
+    });
+
+    const { minioClient, reportBucketName } = require("../config/minio");
+    const results = [];
+
+    for (const report of reports) {
+      const reportData = report.toJSON();
+      reportData.proofUrls = [];
+
+      if (report.reportImage) {
+        try {
+          let filePaths = [];
+          try {
+            filePaths = JSON.parse(report.reportImage);
+          } catch (e) {
+            filePaths = [report.reportImage];
+          }
+
+          if (Array.isArray(filePaths)) {
+            for (const path of filePaths) {
+              if (!path) continue;
+              const presignedUrl = await minioClient.presignedGetObject(
+                reportBucketName,
+                path,
+                3600
+              );
+              reportData.proofUrls.push(presignedUrl);
+            }
+          }
+        } catch (err) {
+          console.error("Presigned URL generation error for report proofs:", err);
+        }
+      }
+      results.push(reportData);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    console.error("Get My Reports Error:", error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

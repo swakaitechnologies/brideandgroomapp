@@ -21,10 +21,10 @@ import {
   Lock, User, Shield, Bell, AlertTriangle,
   CheckCircle, XCircle, AlertCircle, HelpCircle,
   Copy, Check, Mail, Phone, Calendar, Trash2,
-  Eye, EyeOff
+  Eye, EyeOff, Ban
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL } from '../../services/api';
+import { API_BASE_URL, getBlockedUsers, unblockUser } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { logout } from '../../store/authSlice';
@@ -40,6 +40,58 @@ export default function AccountSettingScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
+
+  // Blocked Profiles States
+  const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [blockedExpanded, setBlockedExpanded] = useState(false);
+
+  const fetchBlockedUsers = async () => {
+    setBlockedLoading(true);
+    try {
+      const res = await getBlockedUsers();
+      if (res.data && res.data.success) {
+        setBlockedUsers(res.data.data || []);
+      } else {
+        showAlert('Error', 'Failed to retrieve blocked users list.', 'error');
+      }
+    } catch (error) {
+      console.error('fetchBlockedUsers error:', error);
+      showAlert('Error', 'Failed to retrieve blocked users list.', 'error');
+    } finally {
+      setBlockedLoading(false);
+    }
+  };
+
+  const handleUnblockUser = async (userId: string) => {
+    showAlert(
+      'Unblock User',
+      'Are you sure you want to unblock this member?',
+      'confirm',
+      async () => {
+        try {
+          const res = await unblockUser(userId);
+          if (res.data && res.data.success) {
+            showAlert('Success', 'User unblocked successfully.', 'success');
+            fetchBlockedUsers();
+          } else {
+            showAlert('Error', 'Failed to unblock user.', 'error');
+          }
+        } catch (error) {
+          console.error('handleUnblockUser error:', error);
+          showAlert('Error', 'Failed to unblock user.', 'error');
+        }
+      }
+    );
+  };
+
+  const toggleBlockedSection = () => {
+    const nextState = !blockedExpanded;
+    setBlockedExpanded(nextState);
+    if (nextState) {
+      fetchBlockedUsers();
+    }
+  };
 
   // Loading States
   const [loading, setLoading] = useState(true);
@@ -823,6 +875,57 @@ export default function AccountSettingScreen() {
           </View>
         </View>
 
+        {/* Section 4.5: Blocked Profiles */}
+        <View style={styles.card}>
+          <TouchableOpacity 
+            style={[styles.cardHeader, { marginBottom: blockedExpanded ? 15 : 0 }]} 
+            onPress={toggleBlockedSection}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <Ban size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+              <Text style={styles.cardTitle}>Blocked Profiles</Text>
+            </View>
+            <ChevronDown 
+              size={20} 
+              color={palette.purple.muted} 
+              style={{ transform: [{ rotate: blockedExpanded ? '180deg' : '0deg' }] }} 
+            />
+          </TouchableOpacity>
+
+          {blockedExpanded && (
+            <View style={{ marginTop: 10 }}>
+              {blockedLoading ? (
+                <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
+              ) : blockedUsers.length === 0 ? (
+                <Text style={styles.noBlockedText}>No blocked profiles found.</Text>
+              ) : (
+                blockedUsers.map((item) => {
+                  const name = item.profile 
+                    ? `${item.profile.firstName || ''} ${item.profile.lastName || ''}`.trim() 
+                    : 'Blocked User';
+                  const customId = item.profile?.customId || `ID: ${item.userId}`;
+                  
+                  return (
+                    <View key={item.userId} style={styles.blockedRow}>
+                      <View style={{ flex: 1, marginRight: 10 }}>
+                        <Text style={styles.blockedName}>{name}</Text>
+                        <Text style={styles.blockedIdText}>{customId}</Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={styles.unblockBtn} 
+                        onPress={() => handleUnblockUser(item.userId)}
+                      >
+                        <Text style={styles.unblockBtnText}>Unblock</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
+        </View>
+
         {/* Section 5: Danger Zone */}
         <View style={[styles.card, styles.dangerCard]}>
           <View style={styles.cardHeader}>
@@ -1330,5 +1433,42 @@ const styles = StyleSheet.create({
   alertBtnTextSecondary: {
     color: palette.purple.deep,
     fontSize: 14,
+  },
+  noBlockedText: {
+    fontSize: 14,
+    color: palette.purple.muted,
+    textAlign: 'center',
+    marginVertical: 15,
+  },
+  blockedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F2F7',
+  },
+  blockedName: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: palette.purple.deep,
+  },
+  blockedIdText: {
+    fontSize: 12,
+    color: palette.purple.muted,
+    marginTop: 2,
+  },
+  unblockBtn: {
+    backgroundColor: '#FAF9FC',
+    borderColor: palette.purple.border,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  unblockBtnText: {
+    fontSize: 13,
+    ...fonts.semibold,
+    color: palette.purple.deep,
   },
 });

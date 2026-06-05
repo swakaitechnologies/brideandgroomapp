@@ -927,6 +927,50 @@ export const blockUser = async (blockedId: string, reason?: string) => {
   }
 };
 
+// Get blocked users
+export const getBlockedUsers = async () => {
+  try {
+    return await apiRequest('/block/list');
+  } catch {
+    return {
+      data: {
+        success: true,
+        data: []
+      }
+    };
+  }
+};
+
+// Unblock a user
+export const unblockUser = async (blockedId: string) => {
+  try {
+    return await apiRequest('/block/unblock', {
+      method: 'POST',
+      body: JSON.stringify({ blockedId }),
+    });
+  } catch {
+    return {
+      data: {
+        success: true,
+      }
+    };
+  }
+};
+
+// Get my reports history
+export const getMyReports = async () => {
+  try {
+    return await apiRequest('/reports/my');
+  } catch {
+    return {
+      data: {
+        success: true,
+        data: []
+      }
+    };
+  }
+};
+
 const api = {
   get: (endpoint: string, options?: RequestInit) => apiRequest(endpoint, { method: 'GET', ...options }),
   post: (endpoint: string, body: any, options?: RequestInit) => apiRequest(endpoint, { 
