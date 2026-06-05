@@ -15,19 +15,19 @@ const bucketName = useS3
   : (process.env.MINIO_BUCKET || "user-photos");
 
 const kycBucketName = useS3
-  ? (process.env.AWS_KYC_BUCKET || bucketName)
+  ? (process.env.AWS_KYC_BUCKET || "kyc-documents-989346120215-ap-south-1-an")
   : (process.env.MINIO_KYC_BUCKET || "kyc-documents");
 
 const bannerBucketName = useS3
-  ? (process.env.AWS_BANNER_BUCKET || bucketName)
+  ? (process.env.AWS_BANNER_BUCKET || "banners-989346120215-ap-south-1-an")
   : (process.env.MINIO_BANNER_BUCKET || "banners");
 
 const feedbackBucketName = useS3
-  ? (process.env.AWS_FEEDBACK_BUCKET || bucketName)
+  ? (process.env.AWS_FEEDBACK_BUCKET || "user-feedback-989346120215-ap-south-1-an")
   : (process.env.MINIO_FEEDBACK_BUCKET || "user-feedback");
 
 const reportBucketName = useS3
-  ? (process.env.AWS_REPORT_BUCKET || bucketName)
+  ? (process.env.AWS_REPORT_BUCKET || "report-bucket-989346120215-ap-south-1-an")
   : (process.env.MINIO_REPORT_BUCKET || "report-bucket");
 
 if (useS3) {
