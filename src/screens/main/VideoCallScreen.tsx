@@ -211,7 +211,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
       )}
 
       {/* Local PIP Video view (floating on top right/bottom right) */}
-      {isVideoCall && isCallActive && isConnected && localStream && !isVideoOff && (
+      {isVideoCall && isCallActive && localStream && !isVideoOff && (
         <View style={[styles.localPipBox, { bottom: Math.max(insets.bottom, 20) + 96 }]}>
           <RTCView
             streamURL={localStream.toURL()}
@@ -228,7 +228,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={[styles.controlBtn, isMuted && styles.controlBtnActive]}
           onPress={toggleMute}
-          disabled={!isConnected}
+          disabled={!localStream}
           activeOpacity={0.8}
         >
           {isMuted ? (
@@ -243,7 +243,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={[styles.controlBtn, isVideoOff && styles.controlBtnActive]}
             onPress={toggleVideo}
-            disabled={!isConnected}
+            disabled={!localStream}
             activeOpacity={0.8}
           >
             {isVideoOff ? (
@@ -259,7 +259,7 @@ export default function VideoCallScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.controlBtn}
             onPress={switchCamera}
-            disabled={!isConnected}
+            disabled={!localStream}
             activeOpacity={0.8}
           >
             <RefreshCw size={22} color="rgba(255, 255, 255, 0.8)" />

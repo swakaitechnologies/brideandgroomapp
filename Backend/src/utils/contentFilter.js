@@ -27,7 +27,7 @@ const forbiddenMessage =
 const validateMessageContent = (text) => {
   if (!text) return { isValid: true, reason: null };
 
-  if (text.startsWith("[IMAGE]:") || text.startsWith("[DOCUMENT]:")) {
+  if (text.startsWith("[IMAGE]:") || text.startsWith("[DOCUMENT]:") || text.startsWith("[AUDIO]:")) {
     console.log(`[DEBUG] Attachment message allowed automatically: "${text}"`);
     return { isValid: true, reason: null };
   }

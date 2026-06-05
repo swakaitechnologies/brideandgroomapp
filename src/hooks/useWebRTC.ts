@@ -144,13 +144,25 @@ export function useWebRTC({
 
   // ─── SOCKET SETUP ─────────────────────────────────────────
   useEffect(() => {
+    // Don't connect until the auth token has been loaded from secure storage.
+    // Without this guard the effect runs once with token=null, connects,
+    // then re-runs when token arrives — the cleanup of the first run sets
+    // isCallActive=false which triggers the "Call Ended" navigation.
+    if (token === null) return;
+
     const socket = io(SIGNALING_SERVER, {
       transports: ["websocket"],
       auth: { token },
     });
     socketRef.current = socket;
 
-    socket.on("connect", () => {
+    socket.on("connect", async () => {
+      // Acquire local media immediately so the camera preview shows right away
+      try {
+        await getLocalStream();
+      } catch (err) {
+        console.warn("Failed to get local stream on connect:", err);
+      }
       socket.emit("join-room", { roomId, userId });
     });
 
@@ -158,7 +170,8 @@ export function useWebRTC({
     socket.on("room-users", async ({ users }: { users: string[] }) => {
       if (users.length > 0) {
         try {
-          const stream = await getLocalStream();
+          // Re-use existing local stream or acquire a new one
+          const stream = localStreamRef.current || await getLocalStream();
           const pc = createPeerConnection(stream);
           const targetSocket = users[0];
           (pc as any).remoteSocketId = targetSocket;
@@ -176,7 +189,9 @@ export function useWebRTC({
       }
     });
 
-    // New user joined — they will send us an offer
+    // New user joined — if we are the caller waiting (no peer connection yet),
+    // we should wait for their offer, OR if we already have a stream we initiate.
+    // The new user will receive room-users and send us an offer.
     socket.on("user-joined", ({ socketId }: { socketId: string }) => {
       console.log("User joined, waiting for their offer...", socketId);
     });
@@ -184,7 +199,8 @@ export function useWebRTC({
     // We received an offer — send back an answer
     socket.on("offer", async ({ from, offer }: { from: string; offer: any }) => {
       try {
-        const stream = await getLocalStream();
+        // Re-use existing local stream or acquire a new one
+        const stream = localStreamRef.current || await getLocalStream();
         const pc = createPeerConnection(stream);
         (pc as any).remoteSocketId = from;
 

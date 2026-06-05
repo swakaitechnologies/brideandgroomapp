@@ -182,9 +182,6 @@ export default function WelcomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <View style={styles.trustBadge}>
-            <Text style={styles.trustBadgeText}>🛡️ Safe & Secure Matrimony</Text>
-          </View>
         </Animated.View>
 
         {/* Illustration */}
