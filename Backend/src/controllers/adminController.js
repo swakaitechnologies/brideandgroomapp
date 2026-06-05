@@ -287,7 +287,7 @@ exports.getReports = async (req, res) => {
             order: [["createdAt", "DESC"]]
         });
 
-        const { minioClient, reportBucketName } = require("../config/minio");
+        const { minioClient, reportBucketName, resolvePresignedUrl } = require("../config/minio");
         const results = [];
 
         for (const report of reports) {
@@ -311,7 +311,7 @@ exports.getReports = async (req, res) => {
                                 path,
                                 3600
                             );
-                            reportData.proofUrls.push(presignedUrl);
+                            reportData.proofUrls.push(resolvePresignedUrl(presignedUrl));
                         }
                     }
                 } catch (err) {

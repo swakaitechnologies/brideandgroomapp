@@ -1162,24 +1162,50 @@ export default function HelpSupportScreen() {
                   <View style={styles.modalDetailSection}>
                     <Text style={styles.modalSectionLabel}>Submitted Proofs ({selectedReport.proofUrls.length})</Text>
                     {selectedReport.proofUrls.map((url: string, pIdx: number) => {
-                      const isImg = isImageFile(url) || url.includes('.webp') || url.includes('.jpg') || url.includes('.jpeg') || url.includes('.png');
+                      const isImg = isImageFile(url) || url.toLowerCase().includes('.webp') || url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') || url.toLowerCase().includes('.png');
                       const fileName = url.split('/').pop()?.split('?')[0] || `proof_${pIdx + 1}`;
+                      const resolvedUrl = resolvePhotoUrl(url);
                       return (
-                        <TouchableOpacity
-                          key={pIdx}
-                          style={[styles.attachmentLinkRow, { marginTop: 8 }]}
-                          onPress={() => handleViewAttachment(url)}
-                        >
+                        <View key={pIdx} style={{ marginBottom: 12 }}>
                           {isImg ? (
-                            <ImageIcon size={14} color={palette.gold.main} />
+                            <TouchableOpacity 
+                              onPress={() => handleViewAttachment(url)}
+                              activeOpacity={0.8}
+                              style={{ width: '100%', height: 160, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: palette.purple.border }}
+                            >
+                              <Image 
+                                source={{ uri: resolvedUrl }} 
+                                style={{ width: '100%', height: '100%', resizeMode: 'cover' }} 
+                              />
+                              <View style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                paddingVertical: 4,
+                                paddingHorizontal: 10,
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <Text style={{ color: '#FFF', fontSize: 11, ...fonts.medium, flex: 1 }} numberOfLines={1}>{fileName}</Text>
+                                <ExternalLink size={11} color="#FFF" />
+                              </View>
+                            </TouchableOpacity>
                           ) : (
-                            <FileText size={14} color={palette.gold.main} />
+                            <TouchableOpacity
+                              style={[styles.attachmentLinkRow, { marginTop: 0 }]}
+                              onPress={() => handleViewAttachment(url)}
+                            >
+                              <FileText size={14} color={palette.gold.main} />
+                              <Text style={styles.attachmentLinkText} numberOfLines={1}>
+                                {fileName}
+                              </Text>
+                              <ExternalLink size={12} color={palette.purple.muted} />
+                            </TouchableOpacity>
                           )}
-                          <Text style={styles.attachmentLinkText} numberOfLines={1}>
-                            {fileName}
-                          </Text>
-                          <ExternalLink size={12} color={palette.purple.muted} />
-                        </TouchableOpacity>
+                        </View>
                       );
                     })}
                   </View>

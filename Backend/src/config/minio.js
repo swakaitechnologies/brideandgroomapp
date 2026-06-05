@@ -167,4 +167,21 @@ const initMinio = async (retries = 5) => {
   }
 };
 
-module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, reportBucketName, initMinio, useS3 };
+const resolvePresignedUrl = (presignedUrl) => {
+  if (!presignedUrl) return presignedUrl;
+  const publicUrl = process.env.MINIO_PUBLIC_URL;
+  if (publicUrl) {
+    try {
+      const urlObj = new URL(presignedUrl);
+      const publicUrlObj = new URL(publicUrl);
+      urlObj.protocol = publicUrlObj.protocol;
+      urlObj.host = publicUrlObj.host;
+      return urlObj.toString();
+    } catch (e) {
+      console.error("Error resolving presigned URL host:", e);
+    }
+  }
+  return presignedUrl;
+};
+
+module.exports = { minioClient, bucketName, kycBucketName, bannerBucketName, feedbackBucketName, reportBucketName, initMinio, resolvePresignedUrl, useS3 };
