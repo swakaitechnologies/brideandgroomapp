@@ -782,7 +782,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             <LottieView
               source={require('../../../assets/animations/c22b3edc-116e-11ee-b29e-6b53b36a56ea.json')}
               autoPlay
-              loop={false}
+              loop={true}
               style={styles.celebrationLottie}
             />
             <Text style={styles.celebrationTitle}>Welcome to Bride & Groom! 🎉</Text>

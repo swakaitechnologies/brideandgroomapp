@@ -237,7 +237,7 @@ export default function CheckoutScreen() {
           <LottieView
             source={require('../../../assets/animations/7ae221e8-1183-11ee-a1e0-f351111eea7f.json')}
             autoPlay
-            loop={false}
+            loop={true}
             style={{ width: 160, height: 160, marginBottom: 20 }}
           />
           <Text style={[styles.successTitle, { color: textColor }]}>Payment Confirmed!</Text>
@@ -267,7 +267,7 @@ export default function CheckoutScreen() {
           <LottieView
             source={require('../../../assets/animations/8418934e-1153-11ee-b862-8f7bf804c03e (1).json')}
             autoPlay
-            loop={false}
+            loop={true}
             style={{ width: 160, height: 160, marginBottom: 20 }}
           />
           <Text style={[styles.successTitle, { color: '#C62828' }]}>Payment Failed</Text>
