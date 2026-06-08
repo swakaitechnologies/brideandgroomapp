@@ -234,7 +234,7 @@ exports.getUserComplianceReport = async (req, res) => {
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [["createdAt", "DESC"]],
-      attributes: ["id", "firstName", "lastName", "isMobileVerified", "nomineeName"],
+      attributes: ["id", "firstName", "lastName", "isMobileVerified", "nomineeName", "createdAt"],
     });
 
     const reportData = users.map(user => {
