@@ -9,9 +9,9 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  View,
+  Text,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, View } from '@/components/Themed';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
@@ -19,16 +19,19 @@ import {
   ArrowLeft,
   ShieldCheck,
   CheckCircle2,
+  Heart,
+  LockKeyhole,
 } from 'lucide-react-native';
-import { palette } from '../../theme/colors';
-import { API_BASE_URL } from '../../services/api';
+import { palette } from '@/src/theme/colors';
+import { fonts } from '@/src/theme';
 import LinearGradient from 'react-native-linear-gradient';
-import { fonts } from "@/src/theme";
+import { API_BASE_URL } from '../../services/api';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,376 +85,430 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Background Decorative Gradients */}
-          <LinearGradient
-            colors={[palette.purple.deep, '#2D1B44']}
-            style={styles.bgGradientTop}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          <LinearGradient
-            colors={['#2D1B44', palette.purple.deep]}
-            style={styles.bgGradientBottom}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
+    <View style={styles.root}>
+      {/* Decorative Background Hearts */}
+      <View style={styles.bgHeart1} pointerEvents="none" collapsable={false}>
+        <Heart size={140} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart2} pointerEvents="none" collapsable={false}>
+        <Heart size={80} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart3} pointerEvents="none" collapsable={false}>
+        <Heart size={100} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart4} pointerEvents="none" collapsable={false}>
+        <Heart size={60} color="#FF4D4D" />
+      </View>
 
-          <View style={styles.header}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}
+        >
+          {/* Header Section */}
+          <View style={styles.headerSection}>
             <Image
               source={require('../../../assets/images/logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
+            <View style={styles.taglineRow}>
+              <View style={styles.taglineLine} />
+              <Heart size={14} color={palette.purple.deep} fill={palette.purple.deep} />
+              <View style={styles.taglineLine} />
+            </View>
+            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
-          <View style={styles.formCard}>
+          {/* Form / Card Section */}
+          <View style={styles.formSection}>
             {!isSent ? (
               <>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.cardTitle}>
-                    Forgot <Text style={styles.cardTitleItalic}>Password?</Text>
-                  </Text>
-                  <Text style={styles.cardSubtitle}>
-                    Enter your email and we'll send you a divine link to reset
-                    your access.
-                  </Text>
-                </View>
+                <Text style={styles.formTitle}>Forgot Password?</Text>
+                <Text style={styles.formSubtitle}>
+                  Enter your email and we'll send you a link to reset your access.
+                </Text>
 
                 {error && (
-                  <View style={styles.errorContainer}>
+                  <View style={styles.errorBox}>
                     <Text style={styles.errorText}>{error}</Text>
                   </View>
                 )}
 
-                <Text style={styles.label}>Email Address</Text>
-                <View style={styles.inputContainer}>
-                  <Mail
-                    size={20}
-                    color={palette.purple.deep}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="e.g. grace@example.com"
-                    placeholderTextColor={palette.neutral.grey}
-                    value={email}
-                    onChangeText={val => {
-                      setEmail(val);
-                      setError(null);
-                    }}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                  />
+                {/* Email input field wrapper */}
+                <View style={styles.fieldWrap}>
+                  <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+                  <View
+                    collapsable={false}
+                    style={[
+                      styles.inputRow,
+                      emailFocused && styles.inputRowFocused,
+                    ]}
+                  >
+                    <Mail
+                      size={18}
+                      color={emailFocused ? palette.purple.deep : palette.purple.muted}
+                      style={styles.fieldIcon}
+                    />
+                    <TextInput
+                      collapsable={false}
+                      style={styles.textInput}
+                      placeholder="name@domain.com"
+                      placeholderTextColor="#A39BB0"
+                      value={email}
+                      onChangeText={(val) => {
+                        setEmail(val);
+                        setError(null);
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
+                    />
+                  </View>
                 </View>
 
+                {/* Send Button */}
                 <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    isLoading && styles.buttonDisabled,
-                  ]}
+                  style={[styles.actionBtn, isLoading && styles.btnDisabled]}
                   onPress={handleSubmit}
                   disabled={isLoading}
+                  activeOpacity={0.9}
                 >
-                  {isLoading ? (
-                    <ActivityIndicator color={palette.purple.deep} />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>
-                      SEND RESET LINK
-                    </Text>
-                  )}
+                  <LinearGradient
+                    colors={[palette.purple.deep, '#34005B']}
+                    style={styles.gradientBtn}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.actionBtnText}>Send Reset Link</Text>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
               </>
             ) : (
               <View style={styles.successContainer}>
                 <View style={styles.successIconWrapper}>
-                  <CheckCircle2 size={42} color="#2E7D32" />
+                  <CheckCircle2 size={36} color="#2E7D32" />
                 </View>
-                <Text style={styles.successTitle}>
-                  Check <Text style={styles.successTitleItalic}>Email</Text>
-                </Text>
+                <Text style={styles.successTitle}>Check Email</Text>
                 <Text style={styles.successSubtitle}>
-                  We've sent a divine link to{' '}
-                  <Text style={styles.successEmailBold}>{email}</Text>. Click
-                  the link to restore your sanctuary.
+                  We've sent a recovery link to{' '}
+                  <Text style={styles.successEmailBold}>{email}</Text>. Click the link in your email to restore access.
                 </Text>
                 <TouchableOpacity
-                  style={styles.outlineButton}
+                  style={styles.outlineBtn}
                   onPress={() => {
                     setIsSent(false);
                     setEmail('');
                   }}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.outlineButtonText}>
-                    USE ANOTHER EMAIL
-                  </Text>
+                  <Text style={styles.outlineBtnText}>Use Another Email</Text>
                 </TouchableOpacity>
               </View>
             )}
 
+            {/* Back to Login */}
             <View style={styles.footerLinks}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('Login')}
                 style={styles.backButton}
+                activeOpacity={0.7}
               >
                 <ArrowLeft
                   size={16}
                   color={palette.purple.deep}
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.backButtonText}>BACK TO MEMBER LOGIN</Text>
+                <Text style={styles.backButtonText}>BACK TO LOGIN</Text>
               </TouchableOpacity>
-
-              <View style={styles.secureBadge}>
-                <ShieldCheck
-                  size={14}
-                  color={palette.purple.muted}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.secureBadgeText}>
-                  SECURE RECOVERY PROTOCOL
-                </Text>
-              </View>
             </View>
           </View>
 
-          <Text style={styles.footerCopy}>&copy; 2026 BRIDE&GROOM LEGACY</Text>
+          {/* Bottom Trust Badges */}
+          <View style={styles.bottomSection}>
+            <View style={styles.trustBadgesRow}>
+              <View style={styles.badgeItem}>
+                <ShieldCheck size={14} color="#7A6F8B" />
+                <Text style={styles.badgeText}>100% Verified Profiles</Text>
+              </View>
+              <View style={styles.badgeDivider} />
+              <View style={styles.badgeItem}>
+                <LockKeyhole size={14} color="#7A6F8B" />
+                <Text style={styles.badgeText}>Highly Secured</Text>
+              </View>
+            </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: palette.purple.light,
+    backgroundColor: '#F8F5FC',
   },
-  container: {
+  keyboardView: {
     flex: 1,
-    backgroundColor: palette.purple.light,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 25,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 28,
     justifyContent: 'center',
+    paddingBottom: 40,
+    paddingTop: Platform.OS === 'ios' ? 40 : 60,
   },
-  header: {
+  headerSection: {
     alignItems: 'center',
-    marginBottom: 40,
-    backgroundColor: 'transparent',
+    marginBottom: height * 0.04,
   },
   logo: {
-    width: width * 0.7,
-    height: 100,
+    width: width * 0.65,
+    height: 70,
   },
-  bgGradientTop: {
-    position: 'absolute',
-    top: -60,
-    left: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    opacity: 1,
-  },
-  bgGradientBottom: {
-    position: 'absolute',
-    bottom: -150,
-    right: -100,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    opacity: 1,
-  },
-  formCard: {
-    backgroundColor: palette.neutral.white,
-    borderRadius: 25,
-    padding: 25,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  titleContainer: {
-    alignItems: 'center',
-    marginBottom: 25,
-    backgroundColor: 'transparent',
-  },
-  cardTitle: {
-    fontSize: 26,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    textAlign: 'center',
-  },
-  cardTitleItalic: {
-    color: palette.gold.main,
-    fontStyle: 'italic',
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  label: {
-    fontSize: 10,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginLeft: 5,
-  },
-  inputContainer: {
+  taglineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FDFBFF',
+    marginVertical: 12,
+  },
+  taglineLine: {
+    width: 32,
+    height: 1,
+    backgroundColor: palette.purple.muted,
+    opacity: 0.4,
+    marginHorizontal: 10,
+  },
+  taglineText: {
+    fontSize: 10,
+    color: '#6B5A80',
+    letterSpacing: 1.5,
+    ...fonts.semibold,
+    textAlign: 'center',
+  },
+  formSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingHorizontal: 26,
+    paddingVertical: 32,
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 36,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: palette.purple.border,
-    borderRadius: 15,
-    marginBottom: 20,
-    paddingHorizontal: 15,
+    borderColor: 'rgba(237, 230, 245, 0.6)',
   },
-  inputIcon: {
-    marginRight: 10,
+  formTitle: {
+    fontSize: 24,
+    ...fonts.bold,
+    color: palette.purple.deep,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
-  input: {
+  formSubtitle: {
+    fontSize: 14,
+    color: '#7A6F8B',
+    marginBottom: 28,
+    ...fonts.regular,
+  },
+  fieldWrap: {
+    marginBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    ...fonts.semibold,
+    color: '#7A6F8B',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FDFDFD',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#EDE6F5',
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputRowFocused: {
+    borderColor: palette.purple.deep,
+    backgroundColor: '#FFFFFF',
+  },
+  fieldIcon: {
+    marginRight: 12,
+  },
+  textInput: {
     flex: 1,
-    height: 55,
     fontSize: 15,
     color: palette.purple.deep,
+    ...fonts.medium,
+    paddingVertical: 0,
   },
-  primaryButton: {
-    backgroundColor: palette.gold.main,
-    height: 55,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  primaryButtonText: {
-    color: palette.purple.deep,
-    fontSize: 12,
-    ...fonts.semibold,
-    letterSpacing: 1.5,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  errorContainer: {
-    backgroundColor: '#FFF0F0',
-    padding: 12,
+  errorBox: {
+    backgroundColor: '#FFF2F2',
     borderRadius: 12,
-    marginBottom: 20,
+    padding: 12,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#FFE6E6',
   },
   errorText: {
-    color: palette.status.error,
+    color: '#D32F2F',
     fontSize: 13,
     textAlign: 'center',
+    ...fonts.medium,
+  },
+  actionBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  gradientBtn: {
+    height: 56,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    ...fonts.semibold,
+  },
+  btnDisabled: {
+    opacity: 0.6,
   },
   successContainer: {
     alignItems: 'center',
     paddingVertical: 10,
-    backgroundColor: 'transparent',
   },
   successIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
+    width: 70,
+    height: 70,
+    borderRadius: 22,
     backgroundColor: '#E8F5E9',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
   },
   successTitle: {
-    fontSize: 26,
-    ...fonts.semibold,
+    fontSize: 24,
+    ...fonts.bold,
     color: palette.purple.deep,
     textAlign: 'center',
   },
-  successTitleItalic: {
-    color: '#2E7D32',
-    fontStyle: 'italic',
-  },
   successSubtitle: {
     fontSize: 14,
-    color: palette.purple.muted,
+    color: '#7A6F8B',
     textAlign: 'center',
     marginTop: 10,
     lineHeight: 22,
-    paddingHorizontal: 10,
+    ...fonts.regular,
   },
   successEmailBold: {
     color: palette.purple.deep,
     ...fonts.semibold,
   },
-  outlineButton: {
+  outlineBtn: {
     width: '100%',
-    height: 55,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: palette.purple.border,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#EDE6F5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 25,
-    backgroundColor: palette.neutral.white,
+    marginTop: 24,
+    backgroundColor: '#FFFFFF',
   },
-  outlineButtonText: {
+  outlineBtnText: {
     color: palette.purple.deep,
-    fontSize: 12,
+    fontSize: 15,
     ...fonts.semibold,
-    letterSpacing: 1.5,
   },
   footerLinks: {
-    marginTop: 30,
+    marginTop: 24,
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#F5F0FA',
     paddingTop: 20,
-    backgroundColor: 'transparent',
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    backgroundColor: 'transparent',
   },
   backButtonText: {
-    fontSize: 11,
+    fontSize: 12,
     ...fonts.semibold,
     color: palette.purple.deep,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  secureBadge: {
+  bottomSection: {
+    marginTop: 32,
+    alignItems: 'center',
+  },
+  trustBadgesRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    gap: 12,
   },
-  secureBadgeText: {
-    fontSize: 9,
-    ...fonts.semibold,
-    color: palette.purple.muted,
-    letterSpacing: 1.5,
+  badgeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  footerCopy: {
-    textAlign: 'center',
-    color: '#A590C0',
-    fontSize: 10,
-    ...fonts.semibold,
-    letterSpacing: 3,
-    marginTop: 30,
+  badgeDivider: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#C4C0CE',
+  },
+  badgeText: {
+    fontSize: 11,
+    color: '#7A6F8B',
+    ...fonts.medium,
+  },
+  bgHeart1: {
+    position: 'absolute',
+    top: -20,
+    left: -40,
+    transform: [{ rotate: '-15deg' }],
+    opacity: 0.15,
+  },
+  bgHeart2: {
+    position: 'absolute',
+    top: height * 0.25,
+    right: -20,
+    transform: [{ rotate: '25deg' }],
+    opacity: 0.12,
+  },
+  bgHeart3: {
+    position: 'absolute',
+    bottom: height * 0.15,
+    left: -30,
+    transform: [{ rotate: '15deg' }],
+    opacity: 0.1,
+  },
+  bgHeart4: {
+    position: 'absolute',
+    bottom: 40,
+    right: 30,
+    transform: [{ rotate: '-20deg' }],
+    opacity: 0.15,
   },
 });
