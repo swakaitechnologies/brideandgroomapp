@@ -34,7 +34,7 @@ const checkSubscription = async (req, res, next) => {
         status: { [Op.in]: ["active", "trialing"] },
         endDate: { [Op.gt]: new Date() },
       },
-      include: [{ model: SubscriptionPlan, as: "plan", attributes: ["name", "maxContacts", "maxMessages"] }],
+      include: [{ model: SubscriptionPlan, as: "plan", attributes: ["name", "maxContacts", "maxMessages", "features"] }],
     });
 
     if (subscription) {
@@ -103,8 +103,38 @@ const freeTierLimiter = (feature, dailyLimit = 5) => async (req, res, next) => {
   next();
 };
 
+/**
+ * Require a specific plan feature string (e.g. "video_intro") in subscription plan.
+ * Returns 403 if not present.
+ */
+const requirePlanFeature = (featureName) => {
+  return (req, res, next) => {
+    if (!req.isPremium || !req.subscription) {
+      return res.status(403).json({
+        success: false,
+        message: `This feature is exclusive to plans supporting '${featureName}'`,
+        requiresUpgrade: true,
+      });
+    }
+
+    const plan = req.subscription.plan;
+    const features = plan && Array.isArray(plan.features) ? plan.features : [];
+
+    if (!features.includes(featureName)) {
+      return res.status(403).json({
+        success: false,
+        message: `Your subscription plan does not include the '${featureName}' feature. Please upgrade.`,
+        requiresUpgrade: true,
+      });
+    }
+
+    next();
+  };
+};
+
 module.exports = {
   checkSubscription,
   requirePremium,
   freeTierLimiter,
+  requirePlanFeature,
 };

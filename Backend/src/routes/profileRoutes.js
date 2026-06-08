@@ -17,6 +17,13 @@ router.get("/viewers", protect, profileController.getProfileViewers);
 router.get("/metadata", protect, profileController.getMetadata);
 router.post("/share", protect, profileController.shareProfile);
 router.get("/share/public/:shareToken", profileController.redirectSharedProfile);
+
+// Premium Intro Video Reels
+const { checkSubscription, requirePlanFeature } = require("../middleware/subscriptionMiddleware");
+const { videoIntroUpload } = require("../middleware/upload");
+router.post("/intro-video", protect, checkSubscription, requirePlanFeature("video_intro"), videoIntroUpload.single("video"), profileController.uploadIntroVideo);
+router.delete("/intro-video", protect, profileController.deleteIntroVideo);
+
 router.get("/:id", protect, profileController.getProfileById);
 router.post("/request-mobile-change", protect, profileController.requestMobileChange);
 router.put("/", protect, (req, res, next) => {

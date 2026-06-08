@@ -11,6 +11,10 @@ router.get("/requests", adminController.getAllRequests);
 router.patch("/requests/:id", adminController.processRequest);
 router.get("/audit-profiles", adminController.getAuditProfiles);
 
+// Video Intro Moderation
+router.get("/profiles/pending-video", adminController.getPendingIntroVideos);
+router.patch("/profiles/:profileId/video", adminController.moderateIntroVideo);
+
 // Reports management
 router.get("/reports", adminController.getReports);
 router.patch("/reports/:id", adminController.processReport);

@@ -27,6 +27,7 @@ import OnboardingScreen from './src/screens/core/OnboardingScreen';
 import SafetyScreen from './src/screens/core/SafetyScreen';
 import ProfileDetailScreen from './src/screens/profile/ProfileDetailScreen';
 import MyPhotosScreen from './src/screens/profile/MyPhotosScreen';
+import MyVideoIntroScreen from './src/screens/profile/MyVideoIntroScreen';
 import KYCVerificationScreen from './src/screens/profile/KYCVerificationScreen';
 import EditProfileScreen from './src/screens/profile/EditProfileScreen';
 import PartnerPreferenceScreen from './src/screens/profile/PartnerPreferenceScreen';
@@ -130,6 +131,7 @@ function App() {
             <Stack.Screen name="Safety" component={SafetyScreen} />
             <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
             <Stack.Screen name="MyPhotos" component={MyPhotosScreen} />
+            <Stack.Screen name="MyVideoIntro" component={MyVideoIntroScreen} />
             <Stack.Screen name="KYCVerification" component={KYCVerificationScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="PartnerPreference" component={PartnerPreferenceScreen} />

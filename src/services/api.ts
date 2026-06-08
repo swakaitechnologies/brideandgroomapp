@@ -645,6 +645,37 @@ export const getPhotos = async () => {
   }
 };
 
+// Upload User Intro Video
+export const uploadIntroVideo = async (formData: FormData) => {
+  return await apiRequest('/profile/intro-video', {
+    method: 'POST',
+    body: formData as any,
+  });
+};
+
+// Delete User Intro Video
+export const deleteIntroVideo = async () => {
+  return await apiRequest('/profile/intro-video', {
+    method: 'DELETE',
+  });
+};
+
+// Admin: Get Pending Video Intros
+export const getPendingVideos = async () => {
+  return await apiRequest('/admin/profiles/pending-video');
+};
+
+// Admin: Moderate Intro Video
+export const moderateVideo = async (profileId: string, status: 'approved' | 'rejected', rejectionReason?: string) => {
+  return await apiRequest(`/admin/profiles/${profileId}/video`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status, rejectionReason }),
+  });
+};
+
 // Upload User Photos
 export const uploadPhotos = async (formData: FormData) => {
   try {

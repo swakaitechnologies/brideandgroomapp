@@ -112,6 +112,18 @@ const Profile = sequelize.define(
       unique: true,
       allowNull: true,
     },
+    introVideoUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    introVideoStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "pending",
+      validate: {
+        isIn: [["pending", "approved", "rejected"]],
+      },
+    },
   },
   {
     indexes: [

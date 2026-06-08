@@ -40,7 +40,7 @@ const sendTokens = async (req, res, userId) => {
     const { UserSession } = require("../models/associations");
     const ipAddress = req.ip || req.connection.remoteAddress || "";
     const deviceSignature = req.headers["user-agent"] || "Unknown Device";
-    
+
     const existingSession = await UserSession.findOne({
       where: { userId, ipAddress, deviceSignature }
     });
@@ -215,7 +215,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
-    
+
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
     }
@@ -366,22 +366,14 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetExpiry = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    try {
-      await sendPasswordResetEmail(user.email, resetToken);
-      res.json({
-        message: "If an account with that email exists, a reset link has been sent.",
-        emailSent: true
-      });
-    } catch (emailErr) {
+    sendPasswordResetEmail(user.email, resetToken).catch((emailErr) => {
       console.error("RESET EMAIL ERROR:", emailErr);
-      res.status(500).json({
-        message: "Failed to send reset email via SMTP",
-        error: emailErr.message,
-        stack: emailErr.stack,
-        code: emailErr.code,
-        emailSent: false
-      });
-    }
+    });
+
+    res.json({
+      message:
+        "If an account with that email exists, a reset link has been sent.",
+    });
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
     res
@@ -446,7 +438,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  
+
   if (!refreshToken) {
     return res.status(401).json({ message: "No refresh token provided" });
   }
@@ -500,8 +492,8 @@ exports.refreshToken = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Token refreshed",
       token: newAccessToken,
       refreshToken: newRefreshToken
@@ -568,7 +560,7 @@ exports.updateAccountInfo = async (req, res) => {
         }
         user.email = email.toLowerCase();
         user.isEmailVerified = false;
-        
+
         // Also update Profile
         await Profile.update(
           { email: email.toLowerCase() },
@@ -581,7 +573,7 @@ exports.updateAccountInfo = async (req, res) => {
         const emailToken = generateVerificationToken();
         user.emailVerificationToken = emailToken;
         user.emailTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        
+
         sendVerificationEmail(email.toLowerCase(), emailToken).catch((emailErr) => {
           logger.error("Verification email failed to send on update:", emailErr);
         });
@@ -782,24 +774,24 @@ exports.verifyOTP = async (req, res) => {
   try {
     const { otp } = req.body;
     const userId = req.userId || req.body.userId; // Support both token and body for fallback
-    
+
     if (!otp) {
       return res.status(400).json({ message: "OTP code is required." });
     }
-    
+
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
-    
+
     if (user.isMobileVerified) {
       return res.status(400).json({ message: "Mobile number is already verified." });
     }
-    
+
     if (user.mobileOTP !== otp || user.otpExpiry < new Date()) {
       return res.status(400).json({ message: "Invalid or expired OTP code." });
     }
-    
+
     user.isMobileVerified = true;
     user.mobileOTP = null;
     user.otpExpiry = null;
@@ -807,7 +799,7 @@ exports.verifyOTP = async (req, res) => {
 
     // Track successful OTP verification
     trackBackendEvent(user.id, "mobile_otp_verified", { mobile: user.mobile });
-    
+
     res.json({
       success: true,
       message: "Mobile verified successfully.",
@@ -831,12 +823,12 @@ exports.updateNominee = async (req, res) => {
   try {
     const { nomineeName, nomineeContact } = req.body;
     const userId = req.userId;
-    
+
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
-    
+
     user.nomineeName = nomineeName || null;
     user.nomineeContact = nomineeContact || null;
     await user.save();
@@ -846,7 +838,7 @@ exports.updateNominee = async (req, res) => {
       hasName: !!nomineeName,
       hasContact: !!nomineeContact
     });
-    
+
     res.json({
       success: true,
       message: "Nominee details updated successfully.",
@@ -866,15 +858,15 @@ exports.getActiveSessions = async (req, res) => {
   try {
     const userId = req.userId;
     const { UserSession } = require("../models/associations");
-    
+
     const sessions = await UserSession.findAll({
       where: { userId },
       order: [["lastActive", "DESC"]],
     });
-    
+
     const currentIp = req.ip || req.connection.remoteAddress || "";
     const currentAgent = req.headers["user-agent"] || "Unknown Device";
-    
+
     res.json({
       success: true,
       sessions: sessions.map(s => ({
@@ -897,7 +889,7 @@ exports.logoutOtherSessions = async (req, res) => {
     const currentIp = req.ip || req.connection.remoteAddress || "";
     const currentAgent = req.headers["user-agent"] || "Unknown Device";
     const { UserSession } = require("../models/associations");
-    
+
     const { Op } = require("sequelize");
     // Delete all sessions for this user EXCEPT the current one
     await UserSession.destroy({
@@ -909,7 +901,7 @@ exports.logoutOtherSessions = async (req, res) => {
         ]
       }
     });
-    
+
     res.json({
       success: true,
       message: "Successfully logged out of all other devices."

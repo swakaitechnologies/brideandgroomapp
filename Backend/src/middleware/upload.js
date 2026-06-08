@@ -76,6 +76,18 @@ const reportUpload = multer({
   },
 });
 
+const videoIntroUpload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("video/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only video files are allowed for intro video!"));
+    }
+  },
+});
+
 module.exports = upload;
 module.exports.attachmentUpload = attachmentUpload;
 module.exports.reportUpload = reportUpload;
+module.exports.videoIntroUpload = videoIntroUpload;

@@ -173,6 +173,18 @@ const connectDB = async () => {
       unique: true,
     });
 
+    // Programmatically ensure introVideoUrl and introVideoStatus columns exist in Profiles
+    await ensureColumn("Profiles", "introVideoUrl", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+
+    await ensureColumn("Profiles", "introVideoStatus", {
+      type: Sequelize.STRING,
+      allowNull: false,
+      defaultValue: "pending",
+    });
+
     // Programmatically ensure Feedback type ENUM supports 'billing'
     try {
       if (dialect === "mysql") {

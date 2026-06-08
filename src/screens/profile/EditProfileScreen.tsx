@@ -22,7 +22,7 @@ import {
   User, Phone, MapPin,
   Briefcase, Users,
   Heart, Globe, Star, ChevronDown,
-  Check, X, Lock,
+  Check, X, Lock, Video
 } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { palette } from '../../theme/colors';
@@ -506,14 +506,43 @@ export default function EditProfileScreen() {
               style={styles.heroImg}
             />
             <View style={styles.heroOverlay}>
-              <TouchableOpacity
-                style={styles.cameraPill}
-                onPress={() => navigation.navigate('MyPhotos')}
-                activeOpacity={0.8}
-              >
-                <Camera size={16} color="#FFF" />
-                <Text style={styles.cameraPillText}>Change Photo</Text>
-              </TouchableOpacity>
+              <View style={{ position: 'absolute', top: 16, right: 16, flexDirection: 'row', gap: 8, backgroundColor: 'transparent' }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    gap: 6,
+                  }}
+                  onPress={() => navigation.navigate('MyPhotos')}
+                  activeOpacity={0.8}
+                >
+                  <Camera size={14} color="#FFF" />
+                  <Text style={styles.cameraPillText}>Photos</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(59,30,84,0.85)',
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    gap: 6,
+                    borderWidth: 1,
+                    borderColor: palette.gold.main,
+                  }}
+                  onPress={() => navigation.navigate('MyVideoIntro')}
+                  activeOpacity={0.8}
+                >
+                  <Video size={14} color="#FFF" />
+                  <Text style={styles.cameraPillText}>Intro Video</Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.heroDetails}>
                 <Text style={styles.heroName}>{profile?.firstName} {profile?.lastName}</Text>

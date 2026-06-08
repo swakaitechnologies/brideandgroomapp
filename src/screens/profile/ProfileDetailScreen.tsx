@@ -15,6 +15,9 @@ import {
   Modal,
   TextInput,
   Pressable,
+  View as RNView,
+  Text as RNText,
+  Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useProfileSocket } from '../../hooks/useProfileSocket';
@@ -39,9 +42,12 @@ import {
   X,
   FileText,
   Plus,
+  Play,
+  PlayCircle,
 } from 'lucide-react-native';
 import { Text, View } from '@/components/Themed';
 import { palette } from '../../theme/colors';
+import LinearGradient from 'react-native-linear-gradient';
 import {
   revealContact,
   getMySubscription,
@@ -673,6 +679,100 @@ export default function ProfileDetailScreen() {
               </Text>
             </View>
           </View>
+
+          {/* Section: 15-Sec Intro Video Reel */}
+          {currentProfile.introVideoUrl ? (
+            <RNView style={[styles.detailCard, { padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }]}>
+              <LinearGradient
+                colors={['#3B1E54', '#D4AF37']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: 1.5, borderRadius: 20 }}
+              >
+                <RNView style={{ backgroundColor: cardBg, borderRadius: 19, padding: 16 }}>
+                  <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent' }}>
+                    <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
+                      <PlayCircle size={22} color={palette.gold.main} />
+                      <RNText style={[styles.detailCardTitle, { color: deepPurple, marginBottom: 0 }]}>
+                        15-Second Intro Video
+                      </RNText>
+                    </RNView>
+                    <RNView style={{ backgroundColor: 'rgba(214, 175, 55, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                      <RNText style={{ fontSize: 10, ...fonts.bold, color: palette.gold.main }}>PREMIUM REEL</RNText>
+                    </RNView>
+                  </RNView>
+
+                  <RNText style={{ fontSize: 13, color: mutedText, lineHeight: 18, marginBottom: 16 }}>
+                    Watch a short voice/video greeting from this candidate to hear their voice, speech style, and expression.
+                  </RNText>
+
+                  <TouchableOpacity
+                    style={{
+                      height: 180,
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      position: 'relative',
+                      backgroundColor: '#1E1E1E',
+                    }}
+                    onPress={() => {
+                      if (currentProfile.introVideoUrl) {
+                        Linking.openURL(currentProfile.introVideoUrl).catch(err => {
+                          console.error("Failed to play video:", err);
+                        });
+                      }
+                    }}
+                    activeOpacity={0.9}
+                  >
+                    {/* Placeholder cover image with blur overlay */}
+                    <Image
+                      source={{
+                        uri: resolvePhotoUrl(
+                          currentProfile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                          currentProfile.photos?.[0]?.url ||
+                          `https://api.dicebear.com/7.x/avataaars/png?seed=${currentProfile.email || 'intro'}`
+                        )
+                      }}
+                      style={{ width: '100%', height: '100%', opacity: 0.6 }}
+                      blurRadius={10}
+                    />
+
+                    {/* Centered Play Button Overlay */}
+                    <RNView style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: 'transparent',
+                    }}>
+                      <RNView style={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        backgroundColor: 'rgba(59, 30, 84, 0.85)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderWidth: 2,
+                        borderColor: palette.gold.main,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 6,
+                        elevation: 5,
+                      }}>
+                        <Play size={24} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: 3 }} />
+                      </RNView>
+                      <RNText style={{ color: '#FFFFFF', ...fonts.bold, fontSize: 13, marginTop: 10, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+                        Play Intro Video (15s)
+                      </RNText>
+                    </RNView>
+                  </TouchableOpacity>
+                </RNView>
+              </LinearGradient>
+            </RNView>
+          ) : null}
 
           {/* Section: Personal Info */}
           <View style={styles.detailCard}>

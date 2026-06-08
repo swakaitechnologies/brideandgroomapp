@@ -65,13 +65,12 @@ const ensureAbsoluteUrls = (profile) => {
   if (!profile) return profile;
   const profileJson = typeof profile.toJSON === "function" ? profile.toJSON() : profile;
   
+  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+  const host = process.env.MINIO_ENDPOINT;
+  const port = process.env.MINIO_PORT;
+  const bucket = minioBucketName || process.env.MINIO_BUCKET || 'user-photos';
+
   if (profileJson.photos && Array.isArray(profileJson.photos)) {
-    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-    const host = process.env.MINIO_ENDPOINT;
-    const port = process.env.MINIO_PORT;
-    // Use the resolved bucket name from minio.js config
-    const bucket = minioBucketName || process.env.MINIO_BUCKET || 'user-photos';
-    
     profileJson.photos = profileJson.photos.map(photo => {
       // Ensure photo is a plain object
       const p = typeof photo.toJSON === "function" ? photo.toJSON() : photo;
@@ -95,6 +94,17 @@ const ensureAbsoluteUrls = (profile) => {
       return p;
     });
   }
+
+  // Handle introVideoUrl
+  if (profileJson.introVideoUrl && !profileJson.introVideoUrl.startsWith('http')) {
+    if (useS3) {
+      const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-south-1";
+      profileJson.introVideoUrl = `https://${bucket}.s3.${region}.amazonaws.com/${profileJson.introVideoUrl}`;
+    } else {
+      profileJson.introVideoUrl = `${protocol}://${host}:${port}/${bucket}/${profileJson.introVideoUrl}`;
+    }
+  }
+
   return profileJson;
 };
 const PrivacySetting = require("../models/PrivacySetting");
@@ -194,6 +204,13 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
   if (!isContactRevealed && viewerId !== profileJson.userId) {
     if (profileJson.lastName) {
       profileJson.lastName = profileJson.lastName.charAt(0) + ".";
+    }
+  }
+
+  // 5. Intro Video Masking
+  if (viewerId !== profileJson.userId) {
+    if (profileJson.introVideoStatus !== "approved") {
+      profileJson.introVideoUrl = null;
     }
   }
 
@@ -2068,5 +2085,86 @@ exports.exportUserData = async (req, res) => {
   } catch (error) {
     console.error("EXPORT USER DATA ERROR:", error);
     res.status(500).json({ success: false, message: "Server error during data export" });
+  }
+};
+
+/**
+ * POST /api/profile/intro-video
+ * Upload user intro video (max 15s - validated on client, handled raw on backend)
+ */
+exports.uploadIntroVideo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No video file uploaded" });
+    }
+
+    const userId = req.userId;
+
+    // Upload to MinIO under 'intro-videos/userId' folder
+    const { uploadToMinio } = require("../utils/minioService");
+    const { url } = await uploadToMinio(`intro-videos/${userId}`, req.file, { thumb: false });
+
+    // Update Profile
+    const profile = await Profile.findOne({ where: { userId } });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    profile.introVideoUrl = url;
+    profile.introVideoStatus = "pending";
+    await profile.save();
+
+    await invalidateProfileCache(userId);
+
+    res.status(201).json({
+      success: true,
+      message: "Intro video uploaded successfully and is pending review.",
+      data: {
+        introVideoUrl: url,
+        introVideoStatus: "pending",
+      },
+    });
+  } catch (error) {
+    console.error("Upload intro video error:", error);
+    res.status(500).json({ success: false, message: "Server error during video upload" });
+  }
+};
+
+/**
+ * DELETE /api/profile/intro-video
+ * Delete user intro video
+ */
+exports.deleteIntroVideo = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const profile = await Profile.findOne({ where: { userId } });
+
+    if (!profile || !profile.introVideoUrl) {
+      return res.status(404).json({ success: false, message: "Intro video not found" });
+    }
+
+    // Deleting from Minio
+    const { minioClient, bucketName } = require("../config/minio");
+    const urlParts = profile.introVideoUrl.split(`${bucketName}/`);
+    const objectName = urlParts.length > 1 ? urlParts[1] : null;
+
+    if (objectName) {
+      try {
+        await minioClient.removeObject(bucketName, objectName);
+      } catch (minioErr) {
+        console.error("MinIO video deletion error (continuing DB update):", minioErr.message);
+      }
+    }
+
+    profile.introVideoUrl = null;
+    profile.introVideoStatus = "pending"; // reset status
+    await profile.save();
+
+    await invalidateProfileCache(userId);
+
+    res.status(200).json({ success: true, message: "Intro video deleted successfully" });
+  } catch (error) {
+    console.error("Delete intro video error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

@@ -375,3 +375,75 @@ exports.processReport = async (req, res) => {
         res.status(500).json({ success: false, message: "Error updating report auditing details" });
     }
 };
+
+/**
+ * GET /api/admin/profiles/pending-video
+ * Retrieve all profiles with pending video intros
+ */
+exports.getPendingIntroVideos = async (req, res) => {
+  try {
+    const profiles = await Profile.findAll({
+      where: {
+        introVideoStatus: "pending",
+        introVideoUrl: {
+          [require("sequelize").Op.ne]: null,
+        },
+      },
+      include: [
+        { model: User, as: "user", attributes: ["firstName", "lastName", "email"] },
+      ],
+    });
+
+    res.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error("GET PENDING INTRO VIDEOS ERROR:", error);
+    res.status(500).json({ success: false, message: "Error fetching pending intro videos" });
+  }
+};
+
+/**
+ * PATCH /api/admin/profiles/:profileId/video
+ * Approve or reject an intro video
+ */
+exports.moderateIntroVideo = async (req, res) => {
+  const { profileId } = req.params;
+  const { status, rejectionReason } = req.body;
+
+  if (!["approved", "rejected"].includes(status)) {
+    return res.status(400).json({ success: false, message: "Invalid status, must be approved or rejected" });
+  }
+
+  try {
+    const profile = await Profile.findByPk(profileId);
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    profile.introVideoStatus = status;
+    await profile.save();
+
+    await invalidateProfileCache(profile.userId);
+
+    // Send in-app user notification
+    try {
+      await sendNotification({
+        receiverId: profile.userId,
+        type: status === "approved" ? "profile_approved" : "profile_rejected",
+        message: status === "approved"
+          ? "Your 15-second video introduction has been approved and is now active on your profile."
+          : `Your 15-second video introduction was rejected. Reason: ${rejectionReason || "Does not comply with community guidelines."}`,
+      });
+    } catch (notifErr) {
+      console.error("Failed to send moderation notification:", notifErr.message);
+    }
+
+    res.json({
+      success: true,
+      message: `Intro video has been ${status} successfully.`,
+      data: profile,
+    });
+  } catch (error) {
+    console.error("MODERATE INTRO VIDEO ERROR:", error);
+    res.status(500).json({ success: false, message: "Error moderating intro video" });
+  }
+};
