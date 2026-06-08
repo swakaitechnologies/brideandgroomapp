@@ -5,6 +5,8 @@ const {
   ProfileView,
   Photo,
   Report,
+  PrivacySetting,
+  UserSession,
 } = require("../models/associations");
 const { client: redisClient } = require("../config/redis");
 const { Op } = require("sequelize");
@@ -126,5 +128,72 @@ exports.getRecentRegistrations = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Error fetching recent registrations" });
+  }
+};
+
+exports.getAnalyticsSummary = async (req, res) => {
+  try {
+    const totalUsers = await User.count();
+    
+    // Aggregates of consent status
+    const [
+      matchmakingOptIn,
+      photoProcessingOptIn,
+      analyticsOptIn,
+      activeSessionsCount,
+      usersWithNominee,
+      verifiedMobiles
+    ] = await Promise.all([
+      PrivacySetting.count({ where: { consentMatchmaking: true } }),
+      PrivacySetting.count({ where: { consentPhotoProcessing: true } }),
+      PrivacySetting.count({ where: { consentAnalytics: true } }),
+      UserSession.count(),
+      User.count({ where: { nomineeName: { [Op.ne]: null } } }),
+      User.count({ where: { isMobileVerified: true } }),
+    ]);
+
+    const matchmakingOptOut = totalUsers - matchmakingOptIn;
+    const photoProcessingOptOut = totalUsers - photoProcessingOptIn;
+    const analyticsOptOut = totalUsers - analyticsOptIn;
+
+    // Consent Ratios (in percentages)
+    const consentStats = {
+      totalUsers,
+      matchmaking: {
+        optIn: matchmakingOptIn,
+        optOut: matchmakingOptOut,
+        percentage: totalUsers ? Math.round((matchmakingOptIn / totalUsers) * 100) : 0,
+      },
+      photoProcessing: {
+        optIn: photoProcessingOptIn,
+        optOut: photoProcessingOptOut,
+        percentage: totalUsers ? Math.round((photoProcessingOptIn / totalUsers) * 100) : 0,
+      },
+      analytics: {
+        optIn: analyticsOptIn,
+        optOut: analyticsOptOut,
+        percentage: totalUsers ? Math.round((analyticsOptIn / totalUsers) * 100) : 0,
+      }
+    };
+
+    // System Event Statistics based on database state
+    const eventStats = {
+      activeSessions: activeSessionsCount,
+      nomineeSetups: usersWithNominee,
+      mobileVerifications: verifiedMobiles,
+      totalViewsCount: await ProfileView.count(),
+      pendingReports: await Report.count({ where: { status: "pending" } }),
+    };
+
+    res.json({
+      success: true,
+      data: {
+        consentStats,
+        eventStats,
+      }
+    });
+  } catch (error) {
+    console.error("getAnalyticsSummary Error:", error);
+    res.status(500).json({ success: false, message: "Error fetching analytics statistics" });
   }
 };

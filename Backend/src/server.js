@@ -75,6 +75,39 @@ const startServer = async () => {
   // Run every 1 minute
   setInterval(sweepInactiveUsers, 60000);
 
+  // Purge application diagnostic log files older than 90 days (compliance with DPDP data minimization)
+  const purgeOldLogs = async () => {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const logDir = path.join(__dirname, "../logs");
+      if (!fs.existsSync(logDir)) return;
+      
+      const files = fs.readdirSync(logDir);
+      const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
+      
+      let purgedCount = 0;
+      files.forEach((file) => {
+        const filePath = path.join(logDir, file);
+        const stats = fs.statSync(filePath);
+        if (stats.isFile() && stats.mtimeMs < ninetyDaysAgo) {
+          fs.unlinkSync(filePath);
+          purgedCount++;
+        }
+      });
+      if (purgedCount > 0) {
+        logger.info(`[LOG RETENTION] Purged ${purgedCount} log files older than 90 days.`);
+      }
+    } catch (err) {
+      logger.error("[LOG RETENTION ERROR] Failed to purge logs:", err);
+    }
+  };
+
+  // Run once immediately on startup
+  purgeOldLogs();
+  // Run once every 24 hours
+  setInterval(purgeOldLogs, 24 * 60 * 60 * 1000);
+
 
 
   if (process.env.NODE_ENV === "production" && cluster.isMaster) {

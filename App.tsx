@@ -22,6 +22,7 @@ import TabsScreen from './src/screens/main/TabsScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import VerifyEmailScreen from './src/screens/auth/VerifyEmailScreen';
+import VerifyOTPScreen from './src/screens/auth/VerifyOTPScreen';
 import OnboardingScreen from './src/screens/core/OnboardingScreen';
 import SafetyScreen from './src/screens/core/SafetyScreen';
 import ProfileDetailScreen from './src/screens/profile/ProfileDetailScreen';
@@ -125,6 +126,7 @@ function App() {
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+            <Stack.Screen name="VerifyOTP" component={VerifyOTPScreen} />
             <Stack.Screen name="Safety" component={SafetyScreen} />
             <Stack.Screen name="ProfileDetail" component={ProfileDetailScreen} />
             <Stack.Screen name="MyPhotos" component={MyPhotosScreen} />

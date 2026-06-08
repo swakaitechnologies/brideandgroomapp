@@ -36,6 +36,7 @@ import {
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
 import { fonts } from "@/src/theme";
+import { TrackService } from "../../services/analyticsService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -63,6 +64,8 @@ export default function RegisterScreen() {
     country: "India",
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+  const [certifyAge, setCertifyAge] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Field focus states
@@ -73,6 +76,10 @@ export default function RegisterScreen() {
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
 
+
+  useEffect(() => {
+    TrackService.trackScreen('Register_Screen');
+  }, []);
 
   const updateDOB = (day: string, month: string, year: string) => {
     if (day && month && year && year.length === 4) {
@@ -152,8 +159,16 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setValidationError(null);
+    if (!certifyAge) {
+      setValidationError("You must certify that you are at least 18 years old.");
+      return;
+    }
     if (!agreedToTerms) {
-      setValidationError("Please agree to the Terms of Use and Privacy Policy.");
+      setValidationError("Please agree to the Terms of Use.");
+      return;
+    }
+    if (!agreedToPrivacy) {
+      setValidationError("Please agree to the collection and processing of your profile data as outlined in the Privacy Policy.");
       return;
     }
     if (isUnderage) {
@@ -164,6 +179,7 @@ export default function RegisterScreen() {
       setValidationError("Password must be at least 6 characters.");
       return;
     }
+    TrackService.trackEvent('registration_initiated', { createdBy: formData.createdBy });
     const result = await dispatch(
       register({ ...formData, agreedToTerms, is18Plus: currentAge >= 18 })
     );
@@ -173,7 +189,8 @@ export default function RegisterScreen() {
       } catch (err) {
         console.log("Error setting registration flag:", err);
       }
-      navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
+      TrackService.trackEvent('registration_success');
+      navigation.reset({ index: 0, routes: [{ name: "VerifyOTP" }] });
     }
   };
 
@@ -420,6 +437,21 @@ export default function RegisterScreen() {
         </View>
       </View>
 
+      {/* Checkbox 1: Certify Age */}
+      <TouchableOpacity
+        style={s.termsRow}
+        onPress={() => setCertifyAge(!certifyAge)}
+        activeOpacity={0.8}
+      >
+        <View style={[s.checkbox, certifyAge && s.checkboxChecked]}>
+          {certifyAge && <CheckCircle2 size={12} color="#FFF" />}
+        </View>
+        <Text style={s.termsText}>
+          I certify that I am at least 18 years old. (Required)
+        </Text>
+      </TouchableOpacity>
+
+      {/* Checkbox 2: Terms of Use */}
       <TouchableOpacity
         style={s.termsRow}
         onPress={() => setAgreedToTerms(!agreedToTerms)}
@@ -429,7 +461,21 @@ export default function RegisterScreen() {
           {agreedToTerms && <CheckCircle2 size={12} color="#FFF" />}
         </View>
         <Text style={s.termsText}>
-          I certify that I am at least 18 years old and agree to the Terms of Use and Privacy Policy.
+          I agree to the Terms of Use. (Required)
+        </Text>
+      </TouchableOpacity>
+
+      {/* Checkbox 3: Privacy Policy */}
+      <TouchableOpacity
+        style={s.termsRow}
+        onPress={() => setAgreedToPrivacy(!agreedToPrivacy)}
+        activeOpacity={0.8}
+      >
+        <View style={[s.checkbox, agreedToPrivacy && s.checkboxChecked]}>
+          {agreedToPrivacy && <CheckCircle2 size={12} color="#FFF" />}
+        </View>
+        <Text style={s.termsText}>
+          I agree to the collection and processing of my profile data as outlined in the Privacy Policy. (Required)
         </Text>
       </TouchableOpacity>
 

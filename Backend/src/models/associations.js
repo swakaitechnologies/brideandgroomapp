@@ -25,6 +25,7 @@ const CallHistory = require("./CallHistory");
 const ContactFilter = require("./ContactFilter");
 const Coupon = require("./Coupon");
 const Like = require("./Like");
+const UserSession = require("./UserSession");
 
 // User <-> Profile
 User.hasOne(Profile, {
@@ -34,11 +35,19 @@ User.hasOne(Profile, {
 });
 Profile.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+// User <-> UserSession
+User.hasMany(UserSession, {
+  foreignKey: "userId",
+  as: "sessions",
+  onDelete: "CASCADE",
+});
+UserSession.belongsTo(User, { foreignKey: "userId", as: "user" });
+
 // CallHistory associations
-User.hasMany(CallHistory, { foreignKey: "callerId", as: "outgoingCalls" });
-User.hasMany(CallHistory, { foreignKey: "receiverId", as: "incomingCalls" });
-CallHistory.belongsTo(User, { foreignKey: "callerId", as: "caller" });
-CallHistory.belongsTo(User, { foreignKey: "receiverId", as: "receiver" });
+User.hasMany(CallHistory, { foreignKey: "callerId", as: "outgoingCalls", onDelete: "CASCADE" });
+User.hasMany(CallHistory, { foreignKey: "receiverId", as: "incomingCalls", onDelete: "CASCADE" });
+CallHistory.belongsTo(User, { foreignKey: "callerId", as: "caller", onDelete: "CASCADE" });
+CallHistory.belongsTo(User, { foreignKey: "receiverId", as: "receiver", onDelete: "CASCADE" });
 CallHistory.belongsTo(Profile, { foreignKey: "callerId", targetKey: "userId", as: "callerProfile" });
 CallHistory.belongsTo(Profile, { foreignKey: "receiverId", targetKey: "userId", as: "receiverProfile" });
 
@@ -239,4 +248,5 @@ module.exports = {
   CallHistory,
   Coupon,
   ContactFilter,
+  UserSession,
 };

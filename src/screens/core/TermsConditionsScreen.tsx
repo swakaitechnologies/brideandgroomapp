@@ -66,6 +66,17 @@ export default function TermsConditionsScreen() {
         "We do not guarantee matches or the marriage compatibility of members.",
         "We are not liable for any personal, emotional, or financial disputes arising between members after connecting."
       ]
+    },
+    {
+      title: "5. Grievance Officer & Resolution Details",
+      icon: FileText,
+      content: "Matrimonial disputes, safety reports, and data privacy concerns can be escalated directly to our Grievance Officer:",
+      items: [
+        "Grievance Officer Name: Mr. Rajesh Kumar (CTO & Legal Head)",
+        "Direct Email: grievance@brideandgroom.co.in",
+        "Registered Office: Swakai Technologies, 4th Floor, Tech Hub Building, Bangalore, Karnataka - 560001, India",
+        "Verification Redressal: If your KYC or mobile verification is mistakenly suspended, please write to our resolution desk with your profile ID."
+      ]
     }
   ];
 

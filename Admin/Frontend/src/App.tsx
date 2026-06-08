@@ -17,6 +17,7 @@ import AnnouncementsPage from "./pages/announcements/AnnouncementsPage";
 import BannerManagementPage from "./pages/banners/BannerManagementPage";
 import AuditLogsPage from "./pages/logs/AuditLogsPage";
 import ProfileAuditPage from "./pages/moderation/ProfileAuditPage";
+import AnalyticsDashboardPage from "./pages/analytics/AnalyticsDashboardPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import AdminsPage from "./pages/admins/AdminsPage";
 import UserRequestsPage from "./pages/moderation/UserRequestsPage";
@@ -175,6 +176,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute allowedRoles={["superadmin"]}>
               <AuditLogsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/analytics"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin", "moderator"]}>
+              <AnalyticsDashboardPage />
             </ProtectedRoute>
           }
         />

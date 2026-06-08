@@ -8,5 +8,5 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods", "Admin", "Backend"]
+  "exclude": ["**/node_modules", "**/Pods", "Admin", "Backend", "screenshots-editor", "SignalingServer"]
 }

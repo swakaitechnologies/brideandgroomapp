@@ -219,6 +219,10 @@ const connectDB = async () => {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
     });
+    await ensureColumn("PrivacySettings", "isProfilePaused", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false,
+    });
 
     // Programmatically ensure couponId column exists in Payments
     await ensureColumn("Payments", "couponId", {
@@ -236,6 +240,30 @@ const connectDB = async () => {
     await ensureColumn("Users", "fcmToken", {
       type: Sequelize.STRING,
       allowNull: true,
+    });
+
+    // Programmatically ensure nomineeName and nomineeContact columns exist in Users (DPDP Right to Nominate)
+    await ensureColumn("Users", "nomineeName", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+    await ensureColumn("Users", "nomineeContact", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+
+    // Programmatically ensure granular consent columns exist in PrivacySettings (DPDP Consent Management)
+    await ensureColumn("PrivacySettings", "consentMatchmaking", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: true,
+    });
+    await ensureColumn("PrivacySettings", "consentPhotoProcessing", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: true,
+    });
+    await ensureColumn("PrivacySettings", "consentAnalytics", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: true,
     });
   } catch (error) {
     console.error("❌ Unable to connect to the database:", error);

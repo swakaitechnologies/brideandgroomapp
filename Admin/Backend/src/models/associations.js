@@ -18,6 +18,8 @@ const Payment = require("./Payment");
 const Coupon = require("./Coupon");
 const Banner = require("./Banner");
 const OtaUpdate = require("./OtaUpdate");
+const PrivacySetting = require("./PrivacySetting");
+const UserSession = require("./UserSession");
 
 // Define Associations
 Admin.hasMany(AdminLog, { foreignKey: "adminId", as: "logs" });
@@ -25,6 +27,12 @@ AdminLog.belongsTo(Admin, { foreignKey: "adminId", as: "admin" });
 
 User.hasOne(Profile, { foreignKey: "userId", as: "profile" });
 Profile.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+User.hasOne(PrivacySetting, { foreignKey: "userId", as: "privacySetting" });
+PrivacySetting.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+User.hasMany(UserSession, { foreignKey: "userId", as: "sessions", onDelete: "CASCADE" });
+UserSession.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 User.hasMany(SuccessStory, { foreignKey: "userId", as: "successStories" });
 SuccessStory.belongsTo(User, { foreignKey: "userId", as: "user" });
@@ -103,4 +111,6 @@ module.exports = {
   Coupon,
   Banner,
   OtaUpdate,
+  PrivacySetting,
+  UserSession,
 };

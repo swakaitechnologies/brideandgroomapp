@@ -33,6 +33,17 @@ exports.getPrivacySettings = async (req, res) => {
 // Update privacy settings
 exports.updatePrivacySettings = async (req, res) => {
   try {
+    if (req.body.isProfilePaused !== undefined) {
+      const { getActiveSubscription } = require("../utils/subscriptionHelper");
+      const activeSub = await getActiveSubscription(req.userId);
+      if (!activeSub) {
+        return res.status(403).json({
+          success: false,
+          message: "Smart Profile Hiding is a premium-exclusive feature. Please upgrade your subscription."
+        });
+      }
+    }
+
     const [settings, created] = await PrivacySetting.findOrCreate({
       where: { userId: req.userId },
       defaults: req.body,

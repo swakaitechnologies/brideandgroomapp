@@ -70,6 +70,11 @@ const authSlice = createSlice({
         state.user.isEmailVerified = true;
       }
     },
+    verifyMobileSuccess: (state: any) => {
+      if (state.user) {
+        state.user.isMobileVerified = true;
+      }
+    },
     logout: (state: any) => {
       state.user = null;
       state.error = null;
@@ -104,6 +109,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { verifyEmailSuccess, logout } = authSlice.actions;
+export const { verifyEmailSuccess, verifyMobileSuccess, logout } = authSlice.actions;
 
 export default authSlice.reducer;

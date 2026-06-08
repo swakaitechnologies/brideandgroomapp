@@ -17,6 +17,7 @@ import {
   Activity,
   CreditCard,
   Image as ImageIcon,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useState } from "react";
@@ -34,6 +35,12 @@ const SIDEBAR_ITEMS = [
     label: "Overview",
     icon: LayoutDashboard,
     roles: ["superadmin", "moderator", "support"],
+  },
+  {
+    path: "/dashboard/analytics",
+    label: "Consent & Activity",
+    icon: ShieldCheck,
+    roles: ["superadmin", "moderator"],
   },
   {
     path: import.meta.env.VITE_UMAMI_URL || "https://analytics.brideandgroom.co.in",

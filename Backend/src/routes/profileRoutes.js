@@ -8,6 +8,7 @@ const announcementController = require("../controllers/announcementController");
 
 router.get("/announcements/latest", protect, announcementController.getLatestAnnouncement);
 router.get("/", protect, profileController.getProfile);
+router.get("/export-data", protect, profileController.exportUserData);
 router.get("/download/pdf", protect, profileController.downloadProfilePdf);
 router.get("/all", protect, profileController.getAllProfiles);
 router.get("/search", protect, profileController.searchProfiles);

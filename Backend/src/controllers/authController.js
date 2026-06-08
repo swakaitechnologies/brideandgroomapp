@@ -1,4 +1,5 @@
 const logger = require("../utils/logger");
+const { trackBackendEvent } = require("../utils/analyticsHelper");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {
@@ -7,7 +8,8 @@ const {
 } = require("../models/associations");
 const { invalidateProfileCache } = require("../utils/cacheInvalidation");
 const { sequelize } = require("../config/database");
-const { generateVerificationToken } = require("../utils/otpUtils");
+const { generateVerificationToken, generateOTP } = require("../utils/otpUtils");
+const { sendOTP } = require("../utils/smsService");
 const { redisClient } = require("../config/redis");
 const {
   sendVerificationEmail,
@@ -17,7 +19,7 @@ const {
 const { recordFailedAttempt, clearFailedAttempts } = require("../middleware/accountLockout");
 
 // Helper to generate and set tokens
-const sendTokens = async (res, userId) => {
+const sendTokens = async (req, res, userId) => {
   const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: "15m",
   });
@@ -31,6 +33,30 @@ const sendTokens = async (res, userId) => {
     await redisClient.set(`rt:${userId}`, refreshToken, {
       EX: 7 * 24 * 60 * 60,
     });
+  }
+
+  // Record Session in DB (DPDP Right to Information - Session Tracking)
+  try {
+    const { UserSession } = require("../models/associations");
+    const ipAddress = req.ip || req.connection.remoteAddress || "";
+    const deviceSignature = req.headers["user-agent"] || "Unknown Device";
+    
+    const existingSession = await UserSession.findOne({
+      where: { userId, ipAddress, deviceSignature }
+    });
+    if (existingSession) {
+      existingSession.lastActive = new Date();
+      await existingSession.save();
+    } else {
+      await UserSession.create({
+        userId,
+        ipAddress,
+        deviceSignature,
+        lastActive: new Date()
+      });
+    }
+  } catch (err) {
+    logger.error("Error recording user session:", err);
   }
 
   // Set Access Token in Cookie (15 mins)
@@ -98,6 +124,9 @@ exports.register = async (req, res) => {
       }
     }
 
+    const mobileOtpCode = generateOTP();
+    const otpExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     // Start Transaction
     const result = await sequelize.transaction(async (t) => {
       const newUser = await User.create(
@@ -107,7 +136,9 @@ exports.register = async (req, res) => {
           email,
           password: hashedPassword,
           mobile,
-          isMobileVerified: true,
+          isMobileVerified: false,
+          mobileOTP: mobileOtpCode,
+          otpExpiry: otpExpiryTime,
           emailVerificationToken: emailToken,
           emailTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
           registrationIp,
@@ -146,12 +177,19 @@ exports.register = async (req, res) => {
       .then(() => logger.info(`[EMAIL] Verification sent to ${email}`))
       .catch((emailErr) => logger.error("EMAIL SEND ERROR:", emailErr));
 
+    sendOTP(mobile, mobileOtpCode)
+      .then(() => logger.info(`[SMS] OTP verification sent to ${mobile}`))
+      .catch((smsErr) => logger.error("SMS SEND ERROR:", smsErr));
+
     // Issue Dual Tokens
-    const tokens = await sendTokens(res, newUser.id);
+    const tokens = await sendTokens(req, res, newUser.id);
+
+    // Track registration event
+    trackBackendEvent(newUser.id, "registration_success", { ip: req.ip || "" });
 
     res.status(201).json({
       message:
-        "Registration successful. Please check your email to verify your account.",
+        "Registration successful. Please verify your mobile number with the OTP code sent to you.",
       token: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       user: {
@@ -161,7 +199,7 @@ exports.register = async (req, res) => {
         email: newUser.email,
         mobile: newUser.mobile,
         isEmailVerified: newUser.isEmailVerified,
-        isMobileVerified: true,
+        isMobileVerified: false,
       },
     });
   } catch (error) {
@@ -207,7 +245,10 @@ exports.login = async (req, res) => {
     }
 
     // Issue Dual Tokens
-    const tokens = await sendTokens(res, user.id);
+    const tokens = await sendTokens(req, res, user.id);
+
+    // Track successful login event
+    trackBackendEvent(user.id, "login_success", { ip: req.ip || "" });
 
     res.json({
       token: tokens.accessToken, // For mobile compatibility
@@ -219,7 +260,7 @@ exports.login = async (req, res) => {
         email: user.email,
         mobile: user.mobile,
         isEmailVerified: user.isEmailVerified,
-        isMobileVerified: true,
+        isMobileVerified: user.isMobileVerified,
         isBlocked: user.isBlocked,
       },
     });
@@ -295,13 +336,15 @@ exports.getMe = async (req, res) => {
         "email",
         "mobile",
         "isEmailVerified",
+        "isMobileVerified",
         "isBlocked",
         "createdAt",
+        "nomineeName",
+        "nomineeContact",
       ],
     });
     if (!user) return res.status(404).json({ message: "User not found" });
     const userJson = user.toJSON();
-    userJson.isMobileVerified = true;
     res.json(userJson);
   } catch {
     res.status(500).json({ message: "Server error" });
@@ -545,13 +588,22 @@ exports.updateAccountInfo = async (req, res) => {
           throw new Error("Mobile number is already registered by another account");
         }
         user.mobile = mobile;
-        user.isMobileVerified = true; // Auto-verified for now on update
+        user.isMobileVerified = false;
+
+        const mobileOtpCode = generateOTP();
+        const otpExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        user.mobileOTP = mobileOtpCode;
+        user.otpExpiry = otpExpiryTime;
 
         // Also update Profile
         await Profile.update(
           { mobile },
           { where: { userId }, transaction: t }
         );
+
+        sendOTP(mobile, mobileOtpCode)
+          .then(() => logger.info(`[SMS] OTP verification sent to ${mobile} on number update`))
+          .catch((smsErr) => logger.error("SMS SEND ERROR ON UPDATE:", smsErr));
       }
 
       await user.save({ transaction: t });
@@ -715,5 +767,147 @@ exports.verifyEmailLink = async (req, res) => {
   } catch (error) {
     console.error("Email verification link error:", error);
     res.status(500).send("Server error during email verification.");
+  }
+};
+
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const userId = req.userId || req.body.userId; // Support both token and body for fallback
+    
+    if (!otp) {
+      return res.status(400).json({ message: "OTP code is required." });
+    }
+    
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    
+    if (user.isMobileVerified) {
+      return res.status(400).json({ message: "Mobile number is already verified." });
+    }
+    
+    if (user.mobileOTP !== otp || user.otpExpiry < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired OTP code." });
+    }
+    
+    user.isMobileVerified = true;
+    user.mobileOTP = null;
+    user.otpExpiry = null;
+    await user.save();
+
+    // Track successful OTP verification
+    trackBackendEvent(user.id, "mobile_otp_verified", { mobile: user.mobile });
+    
+    res.json({
+      success: true,
+      message: "Mobile verified successfully.",
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        mobile: user.mobile,
+        isEmailVerified: user.isEmailVerified,
+        isMobileVerified: true,
+      }
+    });
+  } catch (error) {
+    logger.error("VERIFY OTP ERROR:", error);
+    res.status(500).json({ message: "Server error during OTP verification." });
+  }
+};
+
+exports.updateNominee = async (req, res) => {
+  try {
+    const { nomineeName, nomineeContact } = req.body;
+    const userId = req.userId;
+    
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    
+    user.nomineeName = nomineeName || null;
+    user.nomineeContact = nomineeContact || null;
+    await user.save();
+
+    // Track nominee details update
+    trackBackendEvent(user.id, "nominee_updated", {
+      hasName: !!nomineeName,
+      hasContact: !!nomineeContact
+    });
+    
+    res.json({
+      success: true,
+      message: "Nominee details updated successfully.",
+      user: {
+        id: user.id,
+        nomineeName: user.nomineeName,
+        nomineeContact: user.nomineeContact,
+      }
+    });
+  } catch (error) {
+    logger.error("UPDATE NOMINEE ERROR:", error);
+    res.status(500).json({ message: "Server error during nominee update." });
+  }
+};
+
+exports.getActiveSessions = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { UserSession } = require("../models/associations");
+    
+    const sessions = await UserSession.findAll({
+      where: { userId },
+      order: [["lastActive", "DESC"]],
+    });
+    
+    const currentIp = req.ip || req.connection.remoteAddress || "";
+    const currentAgent = req.headers["user-agent"] || "Unknown Device";
+    
+    res.json({
+      success: true,
+      sessions: sessions.map(s => ({
+        id: s.id,
+        ipAddress: s.ipAddress,
+        deviceSignature: s.deviceSignature,
+        lastActive: s.lastActive,
+        isCurrent: s.ipAddress === currentIp && s.deviceSignature === currentAgent
+      }))
+    });
+  } catch (error) {
+    logger.error("GET ACTIVE SESSIONS ERROR:", error);
+    res.status(500).json({ message: "Server error retrieving active sessions." });
+  }
+};
+
+exports.logoutOtherSessions = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const currentIp = req.ip || req.connection.remoteAddress || "";
+    const currentAgent = req.headers["user-agent"] || "Unknown Device";
+    const { UserSession } = require("../models/associations");
+    
+    const { Op } = require("sequelize");
+    // Delete all sessions for this user EXCEPT the current one
+    await UserSession.destroy({
+      where: {
+        userId,
+        [Op.or]: [
+          { ipAddress: { [Op.ne]: currentIp } },
+          { deviceSignature: { [Op.ne]: currentAgent } }
+        ]
+      }
+    });
+    
+    res.json({
+      success: true,
+      message: "Successfully logged out of all other devices."
+    });
+  } catch (error) {
+    logger.error("LOGOUT OTHER DEVICES ERROR:", error);
+    res.status(500).json({ message: "Server error during session cleanup." });
   }
 };

@@ -46,6 +46,10 @@ router.post("/change-password", authMiddleware, authController.changePassword);
 router.get("/me", authMiddleware, authController.getMe);
 router.put("/update-info", authMiddleware, authController.updateAccountInfo);
 router.delete("/delete-account", authMiddleware, authController.deleteAccount);
+router.post("/verify-otp", authMiddleware, authController.verifyOTP);
+router.put("/update-nominee", authMiddleware, authController.updateNominee);
+router.get("/sessions", authMiddleware, authController.getActiveSessions);
+router.post("/sessions/logout-others", authMiddleware, authController.logoutOtherSessions);
 router.get("/verify-email-link", authController.verifyEmailLink);
 
 module.exports = router;

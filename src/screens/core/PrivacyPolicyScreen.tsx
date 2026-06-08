@@ -68,6 +68,17 @@ export default function PrivacyPolicyScreen() {
         "Photo Visibility: Restrict photo viewing permission or submit additional photos selectively.",
         "Account Controls: Block, report, or delete your account history at any time."
       ]
+    },
+    {
+      title: "5. Grievance Officer & Cross-Border Disclosures",
+      icon: Shield,
+      content: "In accordance with Section 11 of the DPDP Act 2023, you may address any personal data processing complaints or query resolutions to our designated Grievance Officer:",
+      items: [
+        "Grievance Officer Name: Mr. Rajesh Kumar (CTO & Legal Head)",
+        "Direct Email: grievance@brideandgroom.co.in",
+        "Registered Office: Swakai Technologies, 4th Floor, Tech Hub Building, Bangalore, Karnataka - 560001, India",
+        "Cross-Border Transfer: We securely host profile files and process Razorpay/Stripe billing records on standard cloud infrastructure located in compliant jurisdictions (India/USA)."
+      ]
     }
   ];
 

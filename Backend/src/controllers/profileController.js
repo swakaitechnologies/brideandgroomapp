@@ -1,5 +1,6 @@
 const { KYC, Profile, User, Photo: PhotoModel, PartnerPreference: PPModel, ProfileView, Interest, Subscription } = require("../models/associations");
 const { invalidateProfileCache } = require("../utils/cacheInvalidation");
+const { trackBackendEvent } = require("../utils/analyticsHelper");
 const { bucketName: minioBucketName, useS3 } = require("../config/minio");
 const bcrypt = require("bcryptjs");
 
@@ -438,6 +439,11 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
+    // Track profile update event
+    trackBackendEvent(userId, "profile_updated", {
+      completionScore: normalizedProfile.profileCompletion
+    });
+
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -573,7 +579,7 @@ exports.getAllProfiles = async (req, res) => {
     const filteredProfiles = profiles
       .filter((p) => {
         const settings = p.privacySettings;
-        return !settings || !settings.isDeactivated;
+        return !settings || (!settings.isDeactivated && !settings.isProfilePaused);
       })
       .map((p) => {
         const ownerLikedViewer = !!ownerLikedViewerMap.get(p.userId);
@@ -1126,7 +1132,7 @@ exports.searchProfiles = async (req, res) => {
     const filteredSearch = profiles
       .filter((p) => {
         const settings = p.privacySettings;
-        return !settings || !settings.isDeactivated;
+        return !settings || (!settings.isDeactivated && !settings.isProfilePaused);
       })
       .map((p) => {
         const ownerLikedViewer = !!ownerLikedViewerMap.get(p.userId);
@@ -1527,9 +1533,15 @@ exports.getDailyPicks = async (req, res) => {
     });
 
     const { calculateTrustScore } = require("../utils/trustScore");
+
+    // Filter deactivated and paused profiles
+    const activeProfiles = profiles.filter((p) => {
+      const settings = p.privacySettings;
+      return !settings || (!settings.isDeactivated && !settings.isProfilePaused);
+    });
     
     // Calculate deterministic compatibility score
-    const scoredProfiles = profiles.map(p => {
+    const scoredProfiles = activeProfiles.map(p => {
        const combined = [userId, p.userId].sort().join("");
        let hash = 0;
        for (let i = 0; i < combined.length; i++) {
@@ -1972,5 +1984,89 @@ exports.redirectSharedProfile = async (req, res) => {
   } catch (error) {
     console.error("RESOLVE SHARE LINK ERROR:", error);
     res.redirect("https://brideandgroom.co.in");
+  }
+};
+
+exports.exportUserData = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const {
+      User,
+      Profile,
+      Photo,
+      PartnerPreference,
+      PrivacySetting,
+      Payment,
+      Feedback,
+      Shortlist,
+      Like,
+      Block,
+      Report,
+      CallHistory,
+    } = require("../models/associations");
+    const { Op } = require("sequelize");
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const profile = await Profile.findOne({ where: { userId } });
+    const photos = await Photo.findAll({ where: { userId } });
+    const partnerPreference = await PartnerPreference.findOne({ where: { userId } });
+    const privacySetting = await PrivacySetting.findOne({ where: { userId } });
+    const payments = await Payment.findAll({ where: { userId } });
+    const feedbacks = await Feedback.findAll({ where: { userId } });
+    const shortlists = await Shortlist.findAll({ where: { userId } });
+    const likes = await Like.findAll({ where: { userId } });
+    const blocks = await Block.findAll({ where: { blockerId: userId } });
+    const reports = await Report.findAll({ where: { reporterId: userId } });
+    const calls = await CallHistory.findAll({
+      where: {
+        [Op.or]: [{ callerId: userId }, { receiverId: userId }],
+      },
+    });
+
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      account: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        mobile: user.mobile,
+        isEmailVerified: user.isEmailVerified,
+        isMobileVerified: user.isMobileVerified,
+        nomineeName: user.nomineeName,
+        nomineeContact: user.nomineeContact,
+        createdAt: user.createdAt,
+      },
+      profile: profile ? profile.toJSON() : null,
+      photos: photos.map((p) => p.toJSON()),
+      partnerPreference: partnerPreference ? partnerPreference.toJSON() : null,
+      privacySetting: privacySetting ? privacySetting.toJSON() : null,
+      payments: payments.map((p) => p.toJSON()),
+      feedbacks: feedbacks.map((f) => f.toJSON()),
+      shortlists: shortlists.map((s) => s.toJSON()),
+      likes: likes.map((l) => l.toJSON()),
+      blocks: blocks.map((b) => b.toJSON()),
+      reports: reports.map((r) => r.toJSON()),
+      calls: calls.map((c) => c.toJSON()),
+    };
+
+    // Track successful export event
+    trackBackendEvent(userId, "data_portability_export", {
+      photosCount: photos.length,
+      paymentsCount: payments.length
+    });
+
+    res.json({
+      success: true,
+      message: "Data compiled successfully.",
+      data: exportData,
+    });
+  } catch (error) {
+    console.error("EXPORT USER DATA ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error during data export" });
   }
 };

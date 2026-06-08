@@ -126,6 +126,14 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    nomineeName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    nomineeContact: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   },
   {
     timestamps: true,

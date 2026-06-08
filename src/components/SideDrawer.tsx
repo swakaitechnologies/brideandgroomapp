@@ -16,6 +16,7 @@ import {
   Modal,
   Easing,
   Clipboard,
+  ActivityIndicator,
 } from 'react-native';
 import {
   Heart, Mail, MessageSquare,
@@ -23,7 +24,7 @@ import {
   Star, BadgeCheck, Copy, X,
   LogOut, Crown, Ticket, ChevronRight,
   ShieldCheck, Edit3, Download, Share2, User,
-  FileText
+  FileText, EyeOff
 } from 'lucide-react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
@@ -33,7 +34,7 @@ import { logout } from '../store/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../services/secureStorage';
-import { API_BASE_URL, getActivePromoBanner, getMySubscription, getProfile, resolvePhotoUrl } from '../services/api';
+import { API_BASE_URL, getActivePromoBanner, getMySubscription, getProfile, resolvePhotoUrl, getPrivacySettings, updatePrivacySettings } from '../services/api';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { fonts } from "@/src/theme";
 
@@ -66,6 +67,15 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
   const [profileData, setProfileData] = useState<any>(null);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [appVersion, setAppVersion] = useState('1.1.0');
+  const [isProfilePaused, setIsProfilePaused] = useState(false);
+  const [isPausedLoading, setIsPausedLoading] = useState(false);
+  const isPremium = !!subscription || user?.accountType === 'Premium' || profileData?.accountType === 'Premium';
+
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'success' | 'error' | 'premium'>('success');
+  const [alertButtons, setAlertButtons] = useState<any[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -113,6 +123,18 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
         }
       };
       fetchProfile();
+
+      const fetchPrivacy = async () => {
+        try {
+          const res = await getPrivacySettings();
+          if (res.data?.success && res.data?.data) {
+            setIsProfilePaused(!!res.data.data.isProfilePaused);
+          }
+        } catch (error) {
+          console.warn("Failed to fetch privacy settings in side drawer:", error);
+        }
+      };
+      fetchPrivacy();
     }
   }, [isOpen]);
 
@@ -269,6 +291,68 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
     } catch (error: any) {
       console.error(error.message);
       Alert.alert("Error", "Could not share profile. Please try again.");
+    }
+  };
+
+  const showCustomAlert = (
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'premium' = 'success',
+    buttons: any[] = []
+  ) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertType(type);
+    setAlertButtons(buttons);
+    setAlertVisible(true);
+  };
+
+  const handleTogglePauseProfile = async () => {
+    if (!isPremium) {
+      showCustomAlert(
+        "Premium Feature",
+        "Smart Profile Hiding (Pause Mode) is exclusive to premium members. Upgrade now to access this feature.",
+        "premium",
+        [
+          { text: "Cancel", style: "cancel", onPress: () => setAlertVisible(false) },
+          { text: "Upgrade Now", onPress: () => { setAlertVisible(false); handleTabNavigation("Premium"); } }
+        ]
+      );
+      return;
+    }
+
+    try {
+      setIsPausedLoading(true);
+      const nextState = !isProfilePaused;
+      const res = await updatePrivacySettings({ isProfilePaused: nextState });
+      if (res.data?.success) {
+        setIsProfilePaused(nextState);
+        showCustomAlert(
+          "Success",
+          nextState
+            ? "Your profile is now paused and hidden from search grids and recommendations."
+            : "Your profile is now active and visible in discovery.",
+          "success",
+          [{ text: "Okay", onPress: () => setAlertVisible(false) }]
+        );
+      } else {
+        showCustomAlert(
+          "Error",
+          res.data?.message || "Failed to update privacy settings. Please try again.",
+          "error",
+          [{ text: "Okay", onPress: () => setAlertVisible(false) }]
+        );
+      }
+    } catch (error) {
+      console.error("Error updating privacy settings:", error);
+      showCustomAlert(
+        "Error",
+        "An error occurred while updating settings.",
+        "error",
+        [{ text: "Okay", onPress: () => setAlertVisible(false) }]
+      );
+    } finally {
+      setIsPausedLoading(false);
     }
   };
 
@@ -442,7 +526,51 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
             <Text style={[styles.flatSectionHeader, { color: mutedText }]}>Preferences & Matches</Text>
             <View style={[styles.flatSectionContent, { backgroundColor: cardBg }]}>
               <MenuItem icon={Settings} label="Partner Preference" onPress={() => { onClose(); navigation.navigate('PartnerPreference'); }} />
-              <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} isLast={true} />
+              <MenuItem icon={Shield} label="Contact Filter" onPress={() => { onClose(); navigation.navigate('ContactFilter'); }} />
+              
+              {/* Pause Discovery Toggle */}
+              <TouchableOpacity
+                style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                onPress={handleTogglePauseProfile}
+                disabled={isPausedLoading}
+              >
+                <View style={styles.menuItemLeft}>
+                  <EyeOff size={20} color={isDark ? palette.gold.main : palette.purple.deep} />
+                  <View style={{ marginLeft: 15 }}>
+                    <Text style={[styles.menuItemLabel, { color: textColor, marginLeft: 0 }]}>Pause Discovery</Text>
+                    <Text style={{ fontSize: 10, color: mutedText, marginTop: 2 }}>Hide profile from search grids</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {!isPremium && (
+                    <Crown size={14} color={palette.gold.main} fill={palette.gold.main} />
+                  )}
+                  {isPausedLoading ? (
+                    <ActivityIndicator size="small" color={isDark ? palette.gold.main : palette.purple.deep} />
+                  ) : (
+                    <View
+                      style={[
+                        styles.switchTrack,
+                        {
+                          backgroundColor: isProfilePaused
+                            ? palette.purple.deep
+                            : (isDark ? '#3D2B4F' : 'rgba(59, 30, 84, 0.08)')
+                        }
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.switchThumb,
+                          {
+                            transform: [{ translateX: isProfilePaused ? 16 : 0 }],
+                            backgroundColor: isProfilePaused ? palette.gold.main : '#FFFFFF'
+                          }
+                        ]}
+                      />
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -543,7 +671,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
           <View style={styles.logoutModalContent}>
             <Text style={styles.logoutModalTitle}>Confirm Logout</Text>
             <Text style={styles.logoutModalMessage}>Are you sure you want to sign out of your account?</Text>
-
+ 
             <View style={styles.logoutActions}>
               <TouchableOpacity
                 style={styles.logoutCancelBtn}
@@ -557,6 +685,55 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               >
                 <Text style={styles.logoutConfirmBtnText}>Logout</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Premium Alert Modal */}
+      <Modal
+        visible={alertVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAlertVisible(false)}
+      >
+        <View style={styles.alertModalOverlay}>
+          <View style={styles.alertModalContent}>
+            {/* Header Icon */}
+            <View style={[
+              styles.alertIconContainer,
+              alertType === 'success' && { backgroundColor: 'rgba(76, 175, 80, 0.1)' },
+              alertType === 'error' && { backgroundColor: 'rgba(255, 77, 77, 0.1)' },
+              alertType === 'premium' && { backgroundColor: 'rgba(212, 175, 55, 0.1)' },
+            ]}>
+              {alertType === 'success' && <ShieldCheck size={28} color="#4CAF50" />}
+              {alertType === 'error' && <X size={28} color="#FF3B30" />}
+              {alertType === 'premium' && <Crown size={28} color={palette.gold.main} fill={palette.gold.main} />}
+            </View>
+
+            <Text style={[styles.alertModalTitle, { color: textColor }]}>{alertTitle}</Text>
+            <Text style={styles.alertModalMessage}>{alertMessage}</Text>
+
+            <View style={styles.alertActions}>
+              {alertButtons.map((btn, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[
+                    styles.alertBtn,
+                    btn.style === 'cancel' ? styles.alertCancelBtn : styles.alertConfirmBtn,
+                    alertType === 'premium' && btn.style !== 'cancel' && { backgroundColor: palette.gold.main }
+                  ]}
+                  onPress={btn.onPress}
+                >
+                  <Text style={[
+                    styles.alertBtnText,
+                    btn.style === 'cancel' ? styles.alertCancelBtnText : styles.alertConfirmBtnText,
+                    alertType === 'premium' && btn.style !== 'cancel' && { color: palette.purple.deep }
+                  ]}>
+                    {btn.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         </View>
@@ -915,6 +1092,97 @@ const styles = StyleSheet.create({
   logoutConfirmBtnText: {
     fontSize: 13,
     ...fonts.semibold,
+    color: '#FFFFFF',
+  },
+  switchTrack: {
+    width: 40,
+    height: 24,
+    borderRadius: 12,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  switchThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+  },
+  alertModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertModalContent: {
+    width: 300,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  alertIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  alertModalTitle: {
+    fontSize: 20,
+    ...fonts.bold,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  alertModalMessage: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  alertActions: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  alertBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertCancelBtn: {
+    backgroundColor: '#F3F2F5',
+  },
+  alertConfirmBtn: {
+    backgroundColor: palette.purple.deep,
+  },
+  alertBtnText: {
+    fontSize: 14,
+    ...fonts.semibold,
+  },
+  alertCancelBtnText: {
+    color: '#666666',
+  },
+  alertConfirmBtnText: {
     color: '#FFFFFF',
   },
 });

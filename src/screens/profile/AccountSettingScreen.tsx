@@ -21,7 +21,7 @@ import {
   Lock, User, Shield, Bell, AlertTriangle,
   CheckCircle, XCircle, AlertCircle, HelpCircle,
   Copy, Check, Mail, Phone, Calendar, Trash2,
-  Eye, EyeOff, Ban
+  Eye, EyeOff, Ban, Monitor, Smartphone, LogOut
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { API_BASE_URL, getBlockedUsers, unblockUser } from '../../services/api';
@@ -29,6 +29,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { logout } from '../../store/authSlice';
 import { fonts } from "@/src/theme";
+import { setAnalyticsConsent, TrackService } from '../../services/analyticsService';
 
 // Options definitions for Privacy settings
 const VISIBILITY_OPTIONS = ['Everyone', 'Members', 'Interacted'];
@@ -105,8 +106,27 @@ export default function AccountSettingScreen() {
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isMobileVerified, setIsMobileVerified] = useState(false);
   const [copied, setCopied] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
+
+  // Nominee States
+  const [nomineeName, setNomineeName] = useState('');
+  const [nomineeContact, setNomineeContact] = useState('');
+  const [savingNominee, setSavingNominee] = useState(false);
+
+  // Consent States
+  const [consentMatchmaking, setConsentMatchmaking] = useState(true);
+  const [consentPhotoProcessing, setConsentPhotoProcessing] = useState(true);
+  const [consentAnalytics, setConsentAnalytics] = useState(true);
+
+  // Data Export States
+  const [exportingData, setExportingData] = useState(false);
+
+  // Session Control States
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [terminatingOthers, setTerminatingOthers] = useState(false);
 
   // Info Update & Password Change Form States
   const [infoPassword, setInfoPassword] = useState('');
@@ -202,6 +222,9 @@ export default function AccountSettingScreen() {
         setEmail(userResult.email || '');
         setMobile(userResult.mobile || '');
         setIsEmailVerified(!!userResult.isEmailVerified);
+        setIsMobileVerified(!!userResult.isMobileVerified);
+        setNomineeName(userResult.nomineeName || '');
+        setNomineeContact(userResult.nomineeContact || '');
         if (userResult.createdAt) {
           const date = new Date(userResult.createdAt);
           const formatted = date.toLocaleDateString('en-US', {
@@ -244,6 +267,14 @@ export default function AccountSettingScreen() {
         setTwoFactorEnabled(!!p.twoFactorEnabled);
         setIsDeactivated(!!p.isDeactivated);
         
+        // Consent settings (granular purposing)
+        if (p.consentMatchmaking !== undefined) setConsentMatchmaking(!!p.consentMatchmaking);
+        if (p.consentPhotoProcessing !== undefined) setConsentPhotoProcessing(!!p.consentPhotoProcessing);
+        if (p.consentAnalytics !== undefined) {
+          setConsentAnalytics(!!p.consentAnalytics);
+          setAnalyticsConsent(!!p.consentAnalytics);
+        }
+        
         // Notifications settings (unified in PrivacySetting model)
         if (p.notifyInterests !== undefined) setNotifyInterests(!!p.notifyInterests);
         if (p.notifyMessages !== undefined) setNotifyMessages(!!p.notifyMessages);
@@ -260,6 +291,8 @@ export default function AccountSettingScreen() {
 
   useEffect(() => {
     fetchData();
+    fetchSessions();
+    TrackService.trackScreen('Settings_Screen');
   }, []);
 
   // Copy ID
@@ -344,6 +377,131 @@ export default function AccountSettingScreen() {
     } finally {
       setSavingInfo(false);
     }
+  };
+
+  // Nominee Save Handler
+  const handleSaveNominee = async () => {
+    if (!nomineeName.trim() || !nomineeContact.trim()) {
+      showAlert('Validation Error', 'Nominee Name and Contact Info are required.', 'error');
+      return;
+    }
+
+    setSavingNominee(true);
+    try {
+      const token = await secureStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/auth/update-nominee`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Mobile-App': 'true'
+        },
+        body: JSON.stringify({
+          nomineeName,
+          nomineeContact,
+        })
+      });
+      const result = await res.json() as any;
+      if (res.ok) {
+        showAlert('Success', 'Matrimonial nominee details updated successfully.', 'success');
+        TrackService.trackEvent('save_nominee_details_success');
+      } else {
+        showAlert('Save Failed', result.message || 'Failed to update nominee.', 'error');
+      }
+    } catch (error: any) {
+      showAlert('Error', error.message || 'Network request failed.', 'error');
+    } finally {
+      setSavingNominee(false);
+    }
+  };
+
+  // Download My Data Handler
+  const handleDownloadData = async () => {
+    setExportingData(true);
+    try {
+      const token = await secureStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/profile/export-data`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Mobile-App': 'true'
+        }
+      });
+      const result = await res.json() as any;
+      if (res.ok && result.success) {
+        const dataStr = JSON.stringify(result.data, null, 2);
+        Clipboard.setString(dataStr);
+        showAlert(
+          'Data Exported', 
+          'All your personal profile data, settings, preferences, payments, and feedbacks have been securely compiled and copied to your clipboard. You can paste it into any notes app or document editor.', 
+          'success'
+        );
+        TrackService.trackEvent('download_user_data_export_success');
+      } else {
+        showAlert('Export Failed', result.message || 'Could not compile data.', 'error');
+      }
+    } catch (error: any) {
+      showAlert('Error', error.message || 'Network connection failed.', 'error');
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  // Fetch active sessions list
+  const fetchSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const token = await secureStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/auth/sessions`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Mobile-App': 'true'
+        }
+      });
+      const result = await res.json() as any;
+      if (res.ok && result.success) {
+        setSessions(result.sessions || []);
+      }
+    } catch (error) {
+      console.error('fetchSessions error:', error);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  // Logout other sessions
+  const handleLogoutOthers = async () => {
+    showAlert(
+      'Logout Other Devices',
+      'Are you sure you want to log out of all other devices?',
+      'confirm',
+      async () => {
+        setTerminatingOthers(true);
+        try {
+          const token = await secureStorage.getItem('token');
+          const res = await fetch(`${API_BASE_URL}/auth/sessions/logout-others`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'X-Mobile-App': 'true'
+            }
+          });
+          const result = await res.json() as any;
+          if (res.ok && result.success) {
+            showAlert('Success', 'Logged out of all other devices.', 'success');
+            fetchSessions();
+          } else {
+            showAlert('Error', result.message || 'Failed to clear other sessions.', 'error');
+          }
+        } catch (error) {
+          showAlert('Error', 'Network request failed.', 'error');
+        } finally {
+          setTerminatingOthers(false);
+        }
+      }
+    );
   };
 
   // Update Password
@@ -786,7 +944,7 @@ export default function AccountSettingScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+          <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.toggleLabel}>Two-Factor Authentication</Text>
               <Text style={styles.toggleHint}>Secure your account updates with verification codes.</Text>
@@ -798,6 +956,59 @@ export default function AccountSettingScreen() {
                 updateSetting({ twoFactorEnabled: val });
               }}
               thumbColor={twoFactorEnabled ? palette.gold.main : '#E8E0F0'}
+              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+            />
+          </View>
+
+          {/* Granular Consent Purposing */}
+          <View style={styles.divider} />
+          <Text style={[styles.label, { marginBottom: 10 }]}>Granular Consent PURPOSES (DPDP)</Text>
+          
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Matchmaking & Compatibility</Text>
+              <Text style={styles.toggleHint}>Process my bio and profile data for matchmaking suggestions and search feeds.</Text>
+            </View>
+            <Switch
+              value={consentMatchmaking}
+              onValueChange={(val) => {
+                setConsentMatchmaking(val);
+                updateSetting({ consentMatchmaking: val });
+              }}
+              thumbColor={consentMatchmaking ? palette.gold.main : '#E8E0F0'}
+              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+            />
+          </View>
+
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Photo Analysis & Verification</Text>
+              <Text style={styles.toggleHint}>Process and scan my photos to verify identity, security, and matchmaking tags.</Text>
+            </View>
+            <Switch
+              value={consentPhotoProcessing}
+              onValueChange={(val) => {
+                setConsentPhotoProcessing(val);
+                updateSetting({ consentPhotoProcessing: val });
+              }}
+              thumbColor={consentPhotoProcessing ? palette.gold.main : '#E8E0F0'}
+              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+            />
+          </View>
+
+          <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>Usage Analytics Tracking</Text>
+              <Text style={styles.toggleHint}>Collect analytics telemetry to help us improve app features and fix bugs.</Text>
+            </View>
+            <Switch
+              value={consentAnalytics}
+              onValueChange={(val) => {
+                setConsentAnalytics(val);
+                setAnalyticsConsent(val);
+                updateSetting({ consentAnalytics: val });
+              }}
+              thumbColor={consentAnalytics ? palette.gold.main : '#E8E0F0'}
               trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
             />
           </View>
@@ -921,6 +1132,145 @@ export default function AccountSettingScreen() {
                     </View>
                   );
                 })
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Section 4.7: Matrimonial Nominee Setup (DPDP Section 14 Right to Nominate) */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>Matrimonial Nominee Setup</Text>
+          </View>
+          
+          <Text style={styles.toggleHint}>
+            Under Section 14 of the DPDP Act 2023, you have the right to nominate any individual to operate or manage your account profile in the event of death or incapacity.
+          </Text>
+          
+          <View style={[styles.inputWrapper, { marginTop: 15 }]}>
+            <Text style={styles.label}>Nominee Full Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter nominee name"
+              placeholderTextColor="rgba(126, 107, 143, 0.4)"
+              value={nomineeName}
+              onChangeText={setNomineeName}
+            />
+          </View>
+          
+          <View style={styles.inputWrapper}>
+            <Text style={styles.label}>Nominee Contact Info (Email or Phone)</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter email address or mobile number"
+              placeholderTextColor="rgba(126, 107, 143, 0.4)"
+              value={nomineeContact}
+              onChangeText={setNomineeContact}
+            />
+          </View>
+          
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNominee} disabled={savingNominee}>
+            {savingNominee ? (
+              <ActivityIndicator size="small" color={palette.purple.deep} />
+            ) : (
+              <>
+                <Save size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                <Text style={styles.saveBtnText}>Save Nominee Info</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 4.8: Data Portability (DPDP Right to Access / Export) */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>Data Portability (Right to Access)</Text>
+          </View>
+          
+          <Text style={styles.toggleHint}>
+            Under Section 11 of the DPDP Act 2023, you have the right to access and download a portable copy of all personal data we process about you.
+          </Text>
+          
+          <TouchableOpacity 
+            style={[styles.saveBtn, { backgroundColor: palette.purple.deep, marginTop: 15 }]} 
+            onPress={handleDownloadData} 
+            disabled={exportingData}
+          >
+            {exportingData ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Copy size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={[styles.saveBtnText, { color: '#FFFFFF' }]}>Export & Copy My Data</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 4.9: Active Login Sessions */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Monitor size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+            <Text style={styles.cardTitle}>Active Login Sessions</Text>
+          </View>
+          
+          <Text style={styles.toggleHint}>
+            Manage and review your active login sessions on different devices. You can log out of all other devices if you notice any unrecognized activity.
+          </Text>
+          
+          {sessionsLoading ? (
+            <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
+          ) : (
+            <View style={{ marginTop: 15 }}>
+              {sessions.map((session) => {
+                const isCurrent = session.isCurrent;
+                const formattedDate = new Date(session.lastActive).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                return (
+                  <View key={session.id} style={styles.sessionRow}>
+                    <View style={styles.sessionIconWrapper}>
+                      <Smartphone size={20} color={isCurrent ? palette.gold.main : palette.purple.muted} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={styles.sessionDevice} numberOfLines={1}>
+                          {session.deviceSignature || 'Unknown Device'}
+                        </Text>
+                        {isCurrent && (
+                          <View style={styles.currentSessionBadge}>
+                            <Text style={styles.currentSessionText}>Current</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.sessionMeta}>
+                        IP: {session.ipAddress || 'Unknown'} • Active: {formattedDate}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+              
+              {sessions.length > 1 && (
+                <TouchableOpacity
+                  style={[styles.saveBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: palette.purple.border, marginTop: 15 }]}
+                  onPress={handleLogoutOthers}
+                  disabled={terminatingOthers}
+                >
+                  {terminatingOthers ? (
+                    <ActivityIndicator size="small" color={palette.purple.deep} />
+                  ) : (
+                    <>
+                      <LogOut size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                      <Text style={styles.saveBtnText}>Log Out Other Devices</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
               )}
             </View>
           )}
@@ -1470,5 +1820,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     ...fonts.semibold,
     color: palette.purple.deep,
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F2F7',
+  },
+  sessionIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FAF9FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  sessionDevice: {
+    fontSize: 14,
+    ...fonts.semibold,
+    color: palette.purple.deep,
+    flexShrink: 1,
+  },
+  sessionMeta: {
+    fontSize: 11,
+    color: palette.purple.muted,
+    marginTop: 2,
+  },
+  currentSessionBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  currentSessionText: {
+    color: '#4CAF50',
+    fontSize: 10,
+    ...fonts.semibold,
   },
 });

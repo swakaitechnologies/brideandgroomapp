@@ -52,6 +52,11 @@ router.get(
   "/dashboard/recent-registrations",
   dashboardController.getRecentRegistrations,
 );
+router.get(
+  "/dashboard/analytics/summary",
+  authorize("superadmin", "moderator"),
+  dashboardController.getAnalyticsSummary,
+);
 
 // User Management Routes
 router.get("/users", userManagementController.getAllUsers);
