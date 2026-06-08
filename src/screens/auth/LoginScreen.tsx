@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -12,6 +12,7 @@ import {
   Animated,
   View,
   Text,
+  StatusBar,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/src/store/authSlice";
@@ -24,7 +25,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Heart,
   ShieldCheck,
   LockKeyhole,
 } from "lucide-react-native";
@@ -73,19 +73,19 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Decorative Background Hearts */}
-      <View style={styles.bgHeart1} pointerEvents="none" collapsable={false}>
-        <Heart size={140} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart2} pointerEvents="none" collapsable={false}>
-        <Heart size={80} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart3} pointerEvents="none" collapsable={false}>
-        <Heart size={100} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart4} pointerEvents="none" collapsable={false}>
-        <Heart size={60} color="#FF4D4D" />
-      </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={["#160A29", "#0B0314", "#05010A"]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
+      {/* Decorative Ambient Glow Blobs */}
+      <View style={styles.ambientGlowTop} pointerEvents="none" />
+      <View style={styles.ambientGlowBottom} pointerEvents="none" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -95,7 +95,6 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={false}
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
@@ -103,40 +102,34 @@ export default function LoginScreen() {
               source={require("../../../assets/images/logo.png")}
               style={styles.logo}
               resizeMode="contain"
+              tintColor="#FFFFFF" // Tint logo white for dark theme contrast
             />
-            <View style={styles.taglineRow}>
-              <View style={styles.taglineLine} />
-              <Heart size={14} color={palette.purple.deep} fill={palette.purple.deep} />
-              <View style={styles.taglineLine} />
-            </View>
             <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
-          {/* Form Section */}
+          {/* Glassmorphic Form Card */}
           <View style={styles.formSection}>
             <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Sign in to discover your perfect match</Text>
+            <Text style={styles.formSubtitle}>Sign in to access your elite matches</Text>
 
             {/* Email Address */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+              <Text style={styles.fieldLabel}>Email Address</Text>
               <View
-                collapsable={false}
                 style={[
                   styles.inputRow,
                   emailFocused && styles.inputRowFocused,
                 ]}
               >
                 <Mail
-                  size={18}
-                  color={emailFocused ? palette.purple.deep : palette.purple.muted}
+                  size={16}
+                  color={emailFocused ? palette.gold.main : "rgba(255, 255, 255, 0.4)"}
                   style={styles.fieldIcon}
                 />
                 <TextInput
-                  collapsable={false}
                   style={styles.textInput}
                   placeholder="name@domain.com"
-                  placeholderTextColor="#A39BB0"
+                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
@@ -150,31 +143,29 @@ export default function LoginScreen() {
             {/* Password */}
             <View style={styles.fieldWrap}>
               <View style={styles.passwordHeader}>
-                <Text style={styles.fieldLabel}>PASSWORD</Text>
+                <Text style={styles.fieldLabel}>Password</Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("ForgotPassword")}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.forgotText}>Forgot password?</Text>
+                  <Text style={styles.forgotText}>Forgot?</Text>
                 </TouchableOpacity>
               </View>
               <View
-                collapsable={false}
                 style={[
                   styles.inputRow,
                   passwordFocused && styles.inputRowFocused,
                 ]}
               >
                 <Lock
-                  size={18}
-                  color={passwordFocused ? palette.purple.deep : palette.purple.muted}
+                  size={16}
+                  color={passwordFocused ? palette.gold.main : "rgba(255, 255, 255, 0.4)"}
                   style={styles.fieldIcon}
                 />
                 <TextInput
-                  collapsable={false}
                   style={styles.textInput}
-                  placeholder="Enter password"
-                  placeholderTextColor="#A39BB0"
+                  placeholder="••••••••"
+                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -188,9 +179,9 @@ export default function LoginScreen() {
                   activeOpacity={0.7}
                 >
                   {showPassword ? (
-                    <EyeOff size={18} color={palette.purple.muted} />
+                    <EyeOff size={16} color="rgba(255, 255, 255, 0.4)" />
                   ) : (
-                    <Eye size={18} color={palette.purple.muted} />
+                    <Eye size={16} color="rgba(255, 255, 255, 0.4)" />
                   )}
                 </TouchableOpacity>
               </View>
@@ -205,7 +196,7 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Sign In Button */}
+            {/* Sign In Button (Gold Gradient) */}
             <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
               <TouchableOpacity
                 style={[styles.signInBtn, loading && styles.btnDisabled]}
@@ -214,17 +205,17 @@ export default function LoginScreen() {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={[palette.purple.deep, "#34005B"]}
+                  colors={[palette.gold.main, "#C59B27"]}
                   style={styles.signInGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <ActivityIndicator color="#160A29" size="small" />
                   ) : (
                     <>
                       <Text style={styles.signInText}>Sign In</Text>
-                      <ArrowRight size={16} color="#FFFFFF" />
+                      <ArrowRight size={16} color="#160A29" style={{ marginLeft: 4 }} />
                     </>
                   )}
                 </LinearGradient>
@@ -247,13 +238,13 @@ export default function LoginScreen() {
             {/* Premium Trust Badges */}
             <View style={styles.trustBadgesRow}>
               <View style={styles.badgeItem}>
-                <ShieldCheck size={14} color="#7A6F8B" />
+                <ShieldCheck size={14} color="rgba(255, 255, 255, 0.4)" />
                 <Text style={styles.badgeText}>100% Verified Profiles</Text>
               </View>
               <View style={styles.badgeDivider} />
               <View style={styles.badgeItem}>
-                <LockKeyhole size={14} color="#7A6F8B" />
-                <Text style={styles.badgeText}>Highly Secured</Text>
+                <LockKeyhole size={14} color="rgba(255, 255, 255, 0.4)" />
+                <Text style={styles.badgeText}>Secured Access</Text>
               </View>
             </View>
           </View>
@@ -266,156 +257,147 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#F8F5FC",
+    backgroundColor: "#05010A",
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 28,
+    paddingHorizontal: 26,
     justifyContent: "center",
     paddingBottom: 40,
-    paddingTop: Platform.OS === "ios" ? 40 : 60,
+    paddingTop: Platform.OS === "ios" ? 60 : 80,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: height * 0.04,
+    marginBottom: height * 0.05,
   },
   logo: {
-    width: width * 0.65,
-    height: 70,
-  },
-  taglineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 12,
-  },
-  taglineLine: {
-    width: 32,
-    height: 1,
-    backgroundColor: palette.purple.muted,
-    opacity: 0.4,
-    marginHorizontal: 10,
+    width: width * 0.62,
+    height: 60,
   },
   taglineText: {
-    fontSize: 10,
-    color: "#6B5A80",
-    letterSpacing: 1.5,
+    fontSize: 9,
+    color: palette.gold.main,
+    letterSpacing: 2,
     ...fonts.semibold,
     textAlign: "center",
+    marginTop: 15,
   },
   formSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: 28,
-    paddingHorizontal: 26,
+    paddingHorizontal: 24,
     paddingVertical: 32,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.08,
-    shadowRadius: 36,
-    elevation: 8,
     borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.6)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 6,
   },
   formTitle: {
     fontSize: 24,
-    ...fonts.bold,
-    color: palette.purple.deep,
-    marginBottom: 6,
-    letterSpacing: -0.5,
+    ...fonts.semibold,
+    color: "#FFFFFF",
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   formSubtitle: {
-    fontSize: 14,
-    color: "#7A6F8B",
-    marginBottom: 28,
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.5)",
+    marginBottom: 26,
     ...fonts.regular,
   },
   fieldWrap: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
   fieldLabel: {
     fontSize: 11,
     ...fonts.semibold,
-    color: "#7A6F8B",
-    letterSpacing: 1,
-    marginBottom: 8,
+    color: "rgba(255, 255, 255, 0.6)",
+    marginBottom: 6,
   },
   passwordHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   forgotText: {
-    fontSize: 12,
-    color: palette.purple.deep,
+    fontSize: 11,
+    color: palette.gold.main,
     ...fonts.semibold,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FDFDFD",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#EDE6F5",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
     paddingHorizontal: 16,
-    height: 56,
+    height: 52,
   },
   inputRowFocused: {
-    borderColor: palette.purple.deep,
-    backgroundColor: "#FFFFFF",
+    borderColor: palette.gold.main,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    shadowColor: palette.gold.main,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   fieldIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   textInput: {
     flex: 1,
-    fontSize: 15,
-    color: palette.purple.deep,
+    fontSize: 14,
+    color: "#FFFFFF",
     ...fonts.medium,
     paddingVertical: 0,
   },
   eyeBtn: {
-    paddingLeft: 10,
+    paddingLeft: 8,
   },
   errorBox: {
-    backgroundColor: "#FFF2F2",
-    borderRadius: 12,
+    backgroundColor: "rgba(255, 77, 77, 0.1)",
+    borderRadius: 10,
     padding: 12,
-    marginBottom: 18,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#FFE6E6",
+    borderColor: "rgba(255, 77, 77, 0.2)",
   },
   errorText: {
-    color: "#D32F2F",
-    fontSize: 13,
+    color: "#FF4D4D",
+    fontSize: 12,
     textAlign: "center",
     ...fonts.medium,
   },
   signInBtn: {
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
-    marginTop: 8,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 6,
+    marginTop: 6,
+    shadowColor: palette.gold.main,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
   },
   signInGradient: {
-    height: 56,
+    height: 52,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
   },
   btnDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   signInText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: "#160A29",
+    fontSize: 15,
     ...fonts.semibold,
   },
   bottomSection: {
@@ -425,16 +407,16 @@ const styles = StyleSheet.create({
   signupPromptRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   newHereText: {
-    fontSize: 14,
-    color: "#7A6F8B",
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.5)",
     ...fonts.regular,
   },
   createAccountText: {
-    fontSize: 14,
-    color: palette.purple.deep,
+    fontSize: 13,
+    color: palette.gold.main,
     ...fonts.semibold,
   },
   trustBadgesRow: {
@@ -448,42 +430,32 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badgeDivider: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#C4C0CE",
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   badgeText: {
-    fontSize: 11,
-    color: "#7A6F8B",
+    fontSize: 10,
+    color: "rgba(255, 255, 255, 0.5)",
     ...fonts.medium,
   },
-  bgHeart1: {
+  ambientGlowTop: {
     position: "absolute",
-    top: -20,
-    left: -40,
-    transform: [{ rotate: "-15deg" }],
-    opacity: 0.15,
+    top: -200,
+    right: -200,
+    width: 500,
+    height: 500,
+    borderRadius: 250,
+    backgroundColor: "rgba(212, 175, 55, 0.03)",
   },
-  bgHeart2: {
+  ambientGlowBottom: {
     position: "absolute",
-    top: height * 0.25,
-    right: -20,
-    transform: [{ rotate: "25deg" }],
-    opacity: 0.12,
-  },
-  bgHeart3: {
-    position: "absolute",
-    bottom: height * 0.15,
-    left: -30,
-    transform: [{ rotate: "15deg" }],
-    opacity: 0.1,
-  },
-  bgHeart4: {
-    position: "absolute",
-    bottom: 40,
-    right: 30,
-    transform: [{ rotate: "-20deg" }],
-    opacity: 0.15,
+    bottom: -150,
+    left: -150,
+    width: 450,
+    height: 450,
+    borderRadius: 225,
+    backgroundColor: "rgba(122, 111, 139, 0.04)",
   },
 });
