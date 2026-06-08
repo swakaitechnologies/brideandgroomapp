@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -20,8 +20,6 @@ import { RootState, AppDispatch } from "@/src/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
-  Mail,
-  Lock,
   ArrowRight,
   Eye,
   EyeOff,
@@ -47,6 +45,62 @@ export default function LoginScreen() {
 
   // Animations
   const buttonScale = useRef(new Animated.Value(1)).current;
+  const emailAnim = useRef(new Animated.Value(email ? 1 : 0)).current;
+  const passwordAnim = useRef(new Animated.Value(password ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(emailAnim, {
+      toValue: (emailFocused || email !== "") ? 1 : 0,
+      duration: 150,
+      useNativeDriver: false,
+    }).start();
+  }, [emailFocused, email]);
+
+  useEffect(() => {
+    Animated.timing(passwordAnim, {
+      toValue: (passwordFocused || password !== "") ? 1 : 0,
+      duration: 150,
+      useNativeDriver: false,
+    }).start();
+  }, [passwordFocused, password]);
+
+  const emailLabelTranslateY = emailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, -9],
+  });
+
+  const emailLabelFontSize = emailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [14, 11],
+  });
+
+  const emailLabelBgColor = emailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["transparent", "#FFFFFF"],
+  });
+
+  const emailLabelColor = emailFocused 
+    ? palette.gold.main 
+    : (email !== "" ? "rgba(107, 90, 128, 0.6)" : "rgba(163, 155, 176, 0.6)");
+
+  const passwordLabelTranslateY = passwordAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, -9],
+  });
+
+  const passwordLabelFontSize = passwordAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [14, 11],
+  });
+
+  const passwordLabelBgColor = passwordAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["transparent", "#FFFFFF"],
+  });
+
+  const passwordLabelColor = passwordFocused 
+    ? palette.gold.main 
+    : (password !== "" ? "rgba(107, 90, 128, 0.6)" : "rgba(163, 155, 176, 0.6)");
 
   const handleLogin = async () => {
     Animated.sequence([
@@ -105,22 +159,28 @@ export default function LoginScreen() {
 
             {/* Email Address */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>Email Address</Text>
               <View
                 style={[
                   styles.inputRow,
                   emailFocused && styles.inputRowFocused,
                 ]}
               >
-                <Mail
-                  size={16}
-                  color={emailFocused ? palette.gold.main : "rgba(107, 90, 128, 0.4)"}
-                  style={styles.fieldIcon}
-                />
+                <Animated.Text
+                  style={[
+                    styles.floatingLabel,
+                    {
+                      transform: [{ translateY: emailLabelTranslateY }],
+                      fontSize: emailLabelFontSize,
+                      color: emailLabelColor,
+                      backgroundColor: emailLabelBgColor,
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  Email Address
+                </Animated.Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="name@domain.com"
-                  placeholderTextColor="rgba(163, 155, 176, 0.6)"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
@@ -133,8 +193,7 @@ export default function LoginScreen() {
 
             {/* Password */}
             <View style={styles.fieldWrap}>
-              <View style={styles.passwordHeader}>
-                <Text style={styles.fieldLabel}>Password</Text>
+              <View style={styles.forgotHeader}>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("ForgotPassword")}
                   activeOpacity={0.7}
@@ -148,15 +207,22 @@ export default function LoginScreen() {
                   passwordFocused && styles.inputRowFocused,
                 ]}
               >
-                <Lock
-                  size={16}
-                  color={passwordFocused ? palette.gold.main : "rgba(107, 90, 128, 0.4)"}
-                  style={styles.fieldIcon}
-                />
+                <Animated.Text
+                  style={[
+                    styles.floatingLabel,
+                    {
+                      transform: [{ translateY: passwordLabelTranslateY }],
+                      fontSize: passwordLabelFontSize,
+                      color: passwordLabelColor,
+                      backgroundColor: passwordLabelBgColor,
+                    },
+                  ]}
+                  pointerEvents="none"
+                >
+                  Password
+                </Animated.Text>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="••••••••"
-                  placeholderTextColor="rgba(163, 155, 176, 0.6)"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -304,23 +370,26 @@ const styles = StyleSheet.create({
   },
   fieldWrap: {
     marginBottom: 18,
+    position: "relative",
   },
-  fieldLabel: {
-    fontSize: 11,
-    ...fonts.semibold,
-    color: "rgba(107, 90, 128, 0.6)",
-    marginBottom: 6,
-  },
-  passwordHeader: {
+  forgotHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "flex-end",
     marginBottom: 6,
+    height: 16,
   },
   forgotText: {
     fontSize: 11,
     color: palette.purple.deep,
     ...fonts.semibold,
+  },
+  floatingLabel: {
+    position: "absolute",
+    left: 12,
+    top: 0,
+    paddingHorizontal: 4,
+    ...fonts.medium,
+    zIndex: 2,
   },
   inputRow: {
     flexDirection: "row",
