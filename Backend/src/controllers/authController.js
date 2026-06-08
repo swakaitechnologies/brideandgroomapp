@@ -366,14 +366,22 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetExpiry = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    sendPasswordResetEmail(user.email, resetToken).catch((emailErr) => {
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+      res.json({
+        message: "If an account with that email exists, a reset link has been sent.",
+        emailSent: true
+      });
+    } catch (emailErr) {
       console.error("RESET EMAIL ERROR:", emailErr);
-    });
-
-    res.json({
-      message:
-        "If an account with that email exists, a reset link has been sent.",
-    });
+      res.status(500).json({
+        message: "Failed to send reset email via SMTP",
+        error: emailErr.message,
+        stack: emailErr.stack,
+        code: emailErr.code,
+        emailSent: false
+      });
+    }
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
     res
