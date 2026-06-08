@@ -57,6 +57,11 @@ router.get(
   authorize("superadmin", "moderator"),
   dashboardController.getAnalyticsSummary,
 );
+router.get(
+  "/dashboard/analytics/users",
+  authorize("superadmin", "moderator"),
+  dashboardController.getUserComplianceReport,
+);
 
 // User Management Routes
 router.get("/users", userManagementController.getAllUsers);

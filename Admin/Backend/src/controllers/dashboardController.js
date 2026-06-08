@@ -197,3 +197,73 @@ exports.getAnalyticsSummary = async (req, res) => {
     res.status(500).json({ success: false, message: "Error fetching analytics statistics" });
   }
 };
+
+exports.getUserComplianceReport = async (req, res) => {
+  try {
+    const { search, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let whereClause = { isDeleted: false };
+    if (search) {
+      whereClause[Op.or] = [
+        { firstName: { [Op.like]: `%${search}%` } },
+        { lastName: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const { count, rows: users } = await User.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Profile,
+          as: "profile",
+          attributes: ["customId"],
+        },
+        {
+          model: PrivacySetting,
+          as: "privacySetting",
+          attributes: ["consentMatchmaking", "consentPhotoProcessing", "consentAnalytics"],
+        },
+        {
+          model: UserSession,
+          as: "sessions",
+          attributes: ["id"],
+        }
+      ],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [["createdAt", "DESC"]],
+      attributes: ["id", "firstName", "lastName", "isMobileVerified", "nomineeName"],
+    });
+
+    const reportData = users.map(user => {
+      const u = user.toJSON();
+      return {
+        id: u.id,
+        customId: u.profile?.customId || "N/A",
+        name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+        isMobileVerified: !!u.isMobileVerified,
+        hasNominee: !!u.nomineeName,
+        nomineeName: u.nomineeName || null,
+        consentMatchmaking: u.privacySetting ? !!u.privacySetting.consentMatchmaking : true,
+        consentPhotoProcessing: u.privacySetting ? !!u.privacySetting.consentPhotoProcessing : true,
+        consentAnalytics: u.privacySetting ? !!u.privacySetting.consentAnalytics : true,
+        activeSessions: u.sessions ? u.sessions.length : 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      data: reportData,
+      pagination: {
+        total: count,
+        pages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+      },
+    });
+  } catch (error) {
+    console.error("getUserComplianceReport Error:", error);
+    res.status(500).json({ success: false, message: "Error fetching compliance report" });
+  }
+};
