@@ -40,6 +40,7 @@ const globalLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: (req) => process.env.DISABLE_RATE_LIMIT === "true",
 });
 
 const authLimiter = rateLimit({
@@ -52,6 +53,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.DISABLE_RATE_LIMIT === "true",
 });
 
 // Strict limits for interactions (Spam prevention)
@@ -64,6 +66,7 @@ const interactionLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.DISABLE_RATE_LIMIT === "true",
 });
 
 const reportLimiter = rateLimit({
@@ -75,6 +78,7 @@ const reportLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => process.env.DISABLE_RATE_LIMIT === "true",
 });
 
 // Middleware

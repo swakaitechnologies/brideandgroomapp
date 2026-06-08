@@ -7,8 +7,8 @@ Sentry.init({
     nodeProfilingIntegration(),
   ],
   // Performance Monitoring
-  tracesSampleRate: 1.0, // Capture 100% of the transactions
+  tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || "0.0"), // Default to 0.0 (off) in local testing/dev
   // Set sampling rate for profiling - this is relative to tracesSampleRate
-  profilesSampleRate: 1.0,
+  profilesSampleRate: parseFloat(process.env.SENTRY_PROFILES_SAMPLE_RATE || "0.0"),
   environment: process.env.NODE_ENV || "development",
 });
