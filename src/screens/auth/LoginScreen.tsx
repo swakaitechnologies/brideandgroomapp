@@ -73,17 +73,9 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
       
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={["#160A29", "#0B0314", "#05010A"]}
-        style={StyleSheet.absoluteFillObject}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      {/* Decorative Ambient Glow Blobs */}
+      {/* Decorative Light Ambient Glow Blobs */}
       <View style={styles.ambientGlowTop} pointerEvents="none" />
       <View style={styles.ambientGlowBottom} pointerEvents="none" />
 
@@ -102,12 +94,11 @@ export default function LoginScreen() {
               source={require("../../../assets/images/logo.png")}
               style={styles.logo}
               resizeMode="contain"
-              tintColor="#FFFFFF" // Tint logo white for dark theme contrast
             />
             <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
-          {/* Glassmorphic Form Card */}
+          {/* Form Section */}
           <View style={styles.formSection}>
             <Text style={styles.formTitle}>Welcome back</Text>
             <Text style={styles.formSubtitle}>Sign in to access your elite matches</Text>
@@ -123,13 +114,13 @@ export default function LoginScreen() {
               >
                 <Mail
                   size={16}
-                  color={emailFocused ? palette.gold.main : "rgba(255, 255, 255, 0.4)"}
+                  color={emailFocused ? palette.gold.main : "rgba(107, 90, 128, 0.4)"}
                   style={styles.fieldIcon}
                 />
                 <TextInput
                   style={styles.textInput}
                   placeholder="name@domain.com"
-                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                  placeholderTextColor="rgba(163, 155, 176, 0.6)"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
@@ -159,13 +150,13 @@ export default function LoginScreen() {
               >
                 <Lock
                   size={16}
-                  color={passwordFocused ? palette.gold.main : "rgba(255, 255, 255, 0.4)"}
+                  color={passwordFocused ? palette.gold.main : "rgba(107, 90, 128, 0.4)"}
                   style={styles.fieldIcon}
                 />
                 <TextInput
                   style={styles.textInput}
                   placeholder="••••••••"
-                  placeholderTextColor="rgba(255, 255, 255, 0.3)"
+                  placeholderTextColor="rgba(163, 155, 176, 0.6)"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -179,9 +170,9 @@ export default function LoginScreen() {
                   activeOpacity={0.7}
                 >
                   {showPassword ? (
-                    <EyeOff size={16} color="rgba(255, 255, 255, 0.4)" />
+                    <EyeOff size={16} color="rgba(107, 90, 128, 0.4)" />
                   ) : (
-                    <Eye size={16} color="rgba(255, 255, 255, 0.4)" />
+                    <Eye size={16} color="rgba(107, 90, 128, 0.4)" />
                   )}
                 </TouchableOpacity>
               </View>
@@ -211,11 +202,11 @@ export default function LoginScreen() {
                   end={{ x: 1, y: 1 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#160A29" size="small" />
+                    <ActivityIndicator color={palette.purple.deep} size="small" />
                   ) : (
                     <>
                       <Text style={styles.signInText}>Sign In</Text>
-                      <ArrowRight size={16} color="#160A29" style={{ marginLeft: 4 }} />
+                      <ArrowRight size={16} color={palette.purple.deep} style={{ marginLeft: 4 }} />
                     </>
                   )}
                 </LinearGradient>
@@ -238,12 +229,12 @@ export default function LoginScreen() {
             {/* Premium Trust Badges */}
             <View style={styles.trustBadgesRow}>
               <View style={styles.badgeItem}>
-                <ShieldCheck size={14} color="rgba(255, 255, 255, 0.4)" />
+                <ShieldCheck size={14} color="rgba(107, 90, 128, 0.5)" />
                 <Text style={styles.badgeText}>100% Verified Profiles</Text>
               </View>
               <View style={styles.badgeDivider} />
               <View style={styles.badgeItem}>
-                <LockKeyhole size={14} color="rgba(255, 255, 255, 0.4)" />
+                <LockKeyhole size={14} color="rgba(107, 90, 128, 0.5)" />
                 <Text style={styles.badgeText}>Secured Access</Text>
               </View>
             </View>
@@ -257,7 +248,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#05010A",
+    backgroundColor: "#FFFFFF",
   },
   keyboardView: {
     flex: 1,
@@ -279,35 +270,35 @@ const styles = StyleSheet.create({
   },
   taglineText: {
     fontSize: 9,
-    color: palette.gold.main,
+    color: "rgba(107, 90, 128, 0.6)",
     letterSpacing: 2,
     ...fonts.semibold,
     textAlign: "center",
     marginTop: 15,
   },
   formSection: {
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: "#FFFFFF",
     borderRadius: 28,
     paddingHorizontal: 24,
     paddingVertical: 32,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    elevation: 6,
+    borderColor: "rgba(237, 230, 245, 0.6)",
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.04,
+    shadowRadius: 32,
+    elevation: 4,
   },
   formTitle: {
     fontSize: 24,
     ...fonts.semibold,
-    color: "#FFFFFF",
+    color: palette.purple.deep,
     marginBottom: 4,
     letterSpacing: -0.3,
   },
   formSubtitle: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(122, 111, 139, 0.7)",
     marginBottom: 26,
     ...fonts.regular,
   },
@@ -317,7 +308,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 11,
     ...fonts.semibold,
-    color: "rgba(255, 255, 255, 0.6)",
+    color: "rgba(107, 90, 128, 0.6)",
     marginBottom: 6,
   },
   passwordHeader: {
@@ -328,26 +319,26 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 11,
-    color: palette.gold.main,
+    color: palette.purple.deep,
     ...fonts.semibold,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    backgroundColor: "#FAF9FC",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(237, 230, 245, 0.8)",
     paddingHorizontal: 16,
     height: 52,
   },
   inputRowFocused: {
     borderColor: palette.gold.main,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "#FFFFFF",
     shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   fieldIcon: {
     marginRight: 10,
@@ -355,7 +346,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 14,
-    color: "#FFFFFF",
+    color: palette.purple.deep,
     ...fonts.medium,
     paddingVertical: 0,
   },
@@ -363,15 +354,15 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
   },
   errorBox: {
-    backgroundColor: "rgba(255, 77, 77, 0.1)",
+    backgroundColor: "#FFF4F4",
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 77, 77, 0.2)",
+    borderColor: "#FFE0E0",
   },
   errorText: {
-    color: "#FF4D4D",
+    color: palette.status.error,
     fontSize: 12,
     textAlign: "center",
     ...fonts.medium,
@@ -381,9 +372,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 6,
     shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
     elevation: 4,
   },
   signInGradient: {
@@ -396,7 +387,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   signInText: {
-    color: "#160A29",
+    color: palette.purple.deep,
     fontSize: 15,
     ...fonts.semibold,
   },
@@ -411,12 +402,12 @@ const styles = StyleSheet.create({
   },
   newHereText: {
     fontSize: 13,
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(122, 111, 139, 0.7)",
     ...fonts.regular,
   },
   createAccountText: {
     fontSize: 13,
-    color: palette.gold.main,
+    color: palette.purple.deep,
     ...fonts.semibold,
   },
   trustBadgesRow: {
@@ -433,11 +424,11 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(196, 192, 206, 0.8)",
   },
   badgeText: {
     fontSize: 10,
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "rgba(122, 111, 139, 0.7)",
     ...fonts.medium,
   },
   ambientGlowTop: {
@@ -447,7 +438,7 @@ const styles = StyleSheet.create({
     width: 500,
     height: 500,
     borderRadius: 250,
-    backgroundColor: "rgba(212, 175, 55, 0.03)",
+    backgroundColor: "rgba(212, 175, 55, 0.04)",
   },
   ambientGlowBottom: {
     position: "absolute",
@@ -456,6 +447,6 @@ const styles = StyleSheet.create({
     width: 450,
     height: 450,
     borderRadius: 225,
-    backgroundColor: "rgba(122, 111, 139, 0.04)",
+    backgroundColor: "rgba(46, 27, 68, 0.03)",
   },
 });
