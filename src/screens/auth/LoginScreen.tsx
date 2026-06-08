@@ -66,7 +66,7 @@ export default function LoginScreen() {
 
   const emailLabelTranslateY = emailAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [16, -9],
+    outputRange: [17, -9],
   });
 
   const emailLabelFontSize = emailAnim.interpolate({
@@ -85,7 +85,7 @@ export default function LoginScreen() {
 
   const passwordLabelTranslateY = passwordAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [16, -9],
+    outputRange: [17, -9],
   });
 
   const passwordLabelFontSize = passwordAnim.interpolate({
@@ -133,6 +133,11 @@ export default function LoginScreen() {
       <View style={styles.ambientGlowTop} pointerEvents="none" />
       <View style={styles.ambientGlowBottom} pointerEvents="none" />
 
+      {/* Exquisite Celestial/Orbital Union Rings */}
+      <View style={styles.orbitalRing1} pointerEvents="none" />
+      <View style={styles.orbitalRing2} pointerEvents="none" />
+      <View style={styles.orbitalRing3} pointerEvents="none" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
@@ -149,13 +154,16 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
+            <Text style={styles.taglineText}>
+              EXCLUSIVITY <Text style={{ color: palette.gold.main }}>✦</Text> ELEGANCE IN MATCHMAKING
+            </Text>
           </View>
 
           {/* Form Section */}
           <View style={styles.formSection}>
             <Text style={styles.formTitle}>Welcome back</Text>
             <Text style={styles.formSubtitle}>Sign in to access your elite matches</Text>
+            <View style={styles.formDivider} />
 
             {/* Email Address */}
             <View style={styles.fieldWrap}>
@@ -295,12 +303,11 @@ export default function LoginScreen() {
             {/* Premium Trust Badges */}
             <View style={styles.trustBadgesRow}>
               <View style={styles.badgeItem}>
-                <ShieldCheck size={14} color="rgba(107, 90, 128, 0.5)" />
+                <ShieldCheck size={12} color={palette.gold.main} />
                 <Text style={styles.badgeText}>100% Verified Profiles</Text>
               </View>
-              <View style={styles.badgeDivider} />
               <View style={styles.badgeItem}>
-                <LockKeyhole size={14} color="rgba(107, 90, 128, 0.5)" />
+                <LockKeyhole size={12} color={palette.gold.main} />
                 <Text style={styles.badgeText}>Secured Access</Text>
               </View>
             </View>
@@ -328,7 +335,8 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.045,
+    zIndex: 3,
   },
   logo: {
     width: width * 0.62,
@@ -336,24 +344,25 @@ const styles = StyleSheet.create({
   },
   taglineText: {
     fontSize: 9,
-    color: "rgba(107, 90, 128, 0.6)",
-    letterSpacing: 2,
-    ...fonts.semibold,
+    color: "rgba(107, 90, 128, 0.8)",
+    letterSpacing: 2.5,
+    ...fonts.bold,
     textAlign: "center",
     marginTop: 15,
   },
   formSection: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: 26,
+    paddingVertical: 36,
     borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.6)",
+    borderColor: "rgba(237, 230, 245, 0.7)",
     shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.04,
-    shadowRadius: 32,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.05,
+    shadowRadius: 40,
+    elevation: 6,
+    zIndex: 3,
   },
   formTitle: {
     fontSize: 24,
@@ -364,9 +373,16 @@ const styles = StyleSheet.create({
   },
   formSubtitle: {
     fontSize: 13,
-    color: "rgba(122, 111, 139, 0.7)",
-    marginBottom: 26,
+    color: "rgba(122, 111, 139, 0.8)",
+    marginBottom: 8,
     ...fonts.regular,
+  },
+  formDivider: {
+    width: 40,
+    height: 2,
+    backgroundColor: palette.gold.main,
+    marginBottom: 26,
+    borderRadius: 1,
   },
   fieldWrap: {
     marginBottom: 18,
@@ -394,20 +410,21 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FAF9FC",
+    backgroundColor: "#FAF9FD",
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.8)",
+    borderWidth: 1.2,
+    borderColor: "rgba(224, 215, 235, 0.8)",
     paddingHorizontal: 16,
-    height: 52,
+    height: 54,
   },
   inputRowFocused: {
     borderColor: palette.gold.main,
     backgroundColor: "#FFFFFF",
     shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   fieldIcon: {
     marginRight: 10,
@@ -437,12 +454,12 @@ const styles = StyleSheet.create({
     ...fonts.medium,
   },
   signInBtn: {
-    borderRadius: 14,
+    borderRadius: 26,
     overflow: "hidden",
     marginTop: 6,
     shadowColor: palette.gold.main,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 4,
   },
@@ -457,12 +474,14 @@ const styles = StyleSheet.create({
   },
   signInText: {
     color: palette.purple.deep,
-    fontSize: 15,
-    ...fonts.semibold,
+    fontSize: 14,
+    letterSpacing: 1.5,
+    ...fonts.bold,
   },
   bottomSection: {
     marginTop: 32,
     alignItems: "center",
+    zIndex: 3,
   },
   signupPromptRow: {
     flexDirection: "row",
@@ -476,18 +495,26 @@ const styles = StyleSheet.create({
   },
   createAccountText: {
     fontSize: 13,
-    color: palette.purple.deep,
-    ...fonts.semibold,
+    color: palette.gold.main,
+    ...fonts.bold,
   },
   trustBadgesRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 8,
   },
   badgeItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    backgroundColor: "#FAF9FC",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(237, 230, 245, 0.8)",
   },
   badgeDivider: {
     width: 3,
@@ -497,17 +524,18 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    color: "rgba(122, 111, 139, 0.7)",
-    ...fonts.medium,
+    color: "rgba(107, 90, 128, 0.8)",
+    ...fonts.semibold,
+    letterSpacing: 0.3,
   },
   ambientGlowTop: {
     position: "absolute",
-    top: -200,
-    right: -200,
+    top: -150,
+    right: -150,
     width: 500,
     height: 500,
     borderRadius: 250,
-    backgroundColor: "rgba(212, 175, 55, 0.04)",
+    backgroundColor: "rgba(212, 175, 55, 0.07)",
   },
   ambientGlowBottom: {
     position: "absolute",
@@ -516,6 +544,36 @@ const styles = StyleSheet.create({
     width: 450,
     height: 450,
     borderRadius: 225,
-    backgroundColor: "rgba(46, 27, 68, 0.03)",
+    backgroundColor: "rgba(126, 107, 143, 0.05)",
+  },
+  orbitalRing1: {
+    position: "absolute",
+    top: -100,
+    left: -100,
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.08)",
+  },
+  orbitalRing2: {
+    position: "absolute",
+    top: -50,
+    left: -50,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.06)",
+  },
+  orbitalRing3: {
+    position: "absolute",
+    bottom: -120,
+    right: -120,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.06)",
   },
 });
