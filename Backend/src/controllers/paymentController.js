@@ -4,6 +4,7 @@ const {
   Subscription,
   Payment,
   Coupon,
+  Profile,
 } = require("../models/associations");
 const {
   createOrder,
@@ -87,12 +88,17 @@ exports.createPaymentOrder = async (req, res) => {
     const gstAmount = Math.round(discountedBasePrice * 0.18);
     const totalPayable = discountedBasePrice + platformFee + gstAmount;
 
+    // Fetch user's profile to extract country
+    const profile = await Profile.findOne({ where: { userId } });
+    const userCountry = profile && profile.country ? profile.country.trim() : "India";
+
     // Create gateway order
     const order = await createOrder({
       amount: totalPayable,
       currency,
       planName: plan.name,
       userId,
+      country: userCountry,
       metadata: { 
         planId: plan.id,
         couponCode: appliedCoupon ? appliedCoupon.code : undefined,

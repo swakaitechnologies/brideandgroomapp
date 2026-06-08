@@ -81,7 +81,7 @@ export default function LoginScreen() {
 
   const emailLabelColor = emailFocused 
     ? palette.gold.main 
-    : (email !== "" ? "rgba(107, 90, 128, 0.6)" : "rgba(163, 155, 176, 0.6)");
+    : (email !== "" ? palette.purple.muted : "rgba(126, 107, 143, 0.6)");
 
   const passwordLabelTranslateY = passwordAnim.interpolate({
     inputRange: [0, 1],
@@ -100,7 +100,7 @@ export default function LoginScreen() {
 
   const passwordLabelColor = passwordFocused 
     ? palette.gold.main 
-    : (password !== "" ? "rgba(107, 90, 128, 0.6)" : "rgba(163, 155, 176, 0.6)");
+    : (password !== "" ? palette.purple.muted : "rgba(126, 107, 143, 0.6)");
 
   const handleLogin = async () => {
     Animated.sequence([
@@ -344,19 +344,19 @@ const styles = StyleSheet.create({
   },
   taglineText: {
     fontSize: 9,
-    color: "rgba(107, 90, 128, 0.8)",
+    color: palette.purple.muted,
     letterSpacing: 2.5,
     ...fonts.bold,
     textAlign: "center",
     marginTop: 15,
   },
   formSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.neutral.white,
     borderRadius: 28,
     paddingHorizontal: 26,
     paddingVertical: 36,
     borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.7)",
+    borderColor: palette.purple.border,
     shadowColor: palette.purple.deep,
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.05,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   },
   formSubtitle: {
     fontSize: 13,
-    color: "rgba(122, 111, 139, 0.8)",
+    color: palette.purple.muted,
     marginBottom: 8,
     ...fonts.regular,
   },
@@ -410,16 +410,16 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FAF9FD",
+    backgroundColor: palette.purple.light,
     borderRadius: 14,
     borderWidth: 1.2,
-    borderColor: "rgba(224, 215, 235, 0.8)",
+    borderColor: palette.purple.border,
     paddingHorizontal: 16,
     height: 54,
   },
   inputRowFocused: {
     borderColor: palette.gold.main,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.neutral.white,
     shadowColor: palette.gold.main,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
   newHereText: {
     fontSize: 13,
-    color: "rgba(122, 111, 139, 0.7)",
+    color: palette.purple.muted,
     ...fonts.regular,
   },
   createAccountText: {
@@ -509,12 +509,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#FAF9FC",
+    backgroundColor: palette.purple.light,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.8)",
+    borderColor: palette.purple.border,
   },
   badgeDivider: {
     width: 3,
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    color: "rgba(107, 90, 128, 0.8)",
+    color: palette.purple.muted,
     ...fonts.semibold,
     letterSpacing: 0.3,
   },

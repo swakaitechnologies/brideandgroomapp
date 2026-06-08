@@ -42,15 +42,18 @@ const getStripe = () => {
 /**
  * Determine which gateway to use based on currency/country.
  */
-const selectGateway = (currency) => {
-  return currency === "INR" ? "razorpay" : "stripe";
+const selectGateway = (currency, country) => {
+  if (country && country.trim().toLowerCase() === "india") {
+    return "razorpay";
+  }
+  return "stripe";
 };
 
 /**
  * Create a payment order/session.
  */
-const createOrder = async ({ amount, currency, planName, userId, metadata = {} }) => {
-  const gateway = selectGateway(currency);
+const createOrder = async ({ amount, currency, planName, userId, country, metadata = {} }) => {
+  const gateway = selectGateway(currency, country);
 
   if (gateway === "razorpay") {
     const rzp = getRazorpay();
