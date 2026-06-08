@@ -1,8 +1,12 @@
 // Contact Filter routes added - v1.2.8 - force nodemon restart - database created
-const cluster = require("cluster");
-const os = require("os");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "../.env") });
+
+// Initialize Sentry before other imports to allow proper instrumentation
+require("./instrument.js");
+
+const cluster = require("cluster");
+const os = require("os");
 const http = require("http");
 const app = require("./app");
 const server = http.createServer(app);

@@ -36,6 +36,16 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    // Handle 401 Unauthorized globally (session expired or invalid token)
+    if (error.response?.status === 401) {
+      localStorage.removeItem("adminUser");
+      localStorage.removeItem("adminToken");
+      // Redirect to login page to re-authenticate
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 403 && error.response?.data?.message?.includes("CSRF") && !originalRequest._csrfRetry) {
       originalRequest._csrfRetry = true;
       await api.get("/health");

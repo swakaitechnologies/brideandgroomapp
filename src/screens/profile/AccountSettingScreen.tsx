@@ -123,6 +123,9 @@ export default function AccountSettingScreen() {
   // Data Export States
   const [exportingData, setExportingData] = useState(false);
 
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'general' | 'privacy' | 'security'>('general');
+
   // Session Control States
   const [sessions, setSessions] = useState<any[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
@@ -691,622 +694,666 @@ export default function AccountSettingScreen() {
         <View style={{ width: 34 }} />
       </View>
 
+      {/* Tab Segment Controls */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'general' && styles.activeTabButton]} 
+          onPress={() => setActiveTab('general')}
+          activeOpacity={0.8}
+        >
+          <User size={16} color={activeTab === 'general' ? palette.gold.main : palette.purple.muted} style={{ marginRight: 6 }} />
+          <Text style={[styles.tabButtonText, activeTab === 'general' && styles.activeTabButtonText]}>General</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'privacy' && styles.activeTabButton]} 
+          onPress={() => setActiveTab('privacy')}
+          activeOpacity={0.8}
+        >
+          <Shield size={16} color={activeTab === 'privacy' ? palette.gold.main : palette.purple.muted} style={{ marginRight: 6 }} />
+          <Text style={[styles.tabButtonText, activeTab === 'privacy' && styles.activeTabButtonText]}>Privacy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'security' && styles.activeTabButton]} 
+          onPress={() => setActiveTab('security')}
+          activeOpacity={0.8}
+        >
+          <Lock size={16} color={activeTab === 'security' ? palette.gold.main : palette.purple.muted} style={{ marginRight: 6 }} />
+          <Text style={[styles.tabButtonText, activeTab === 'security' && styles.activeTabButtonText]}>Security</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* Section 1: Account Information display & update */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Account Details</Text>
-          </View>
-
-          {/* Read-Only Stats */}
-          {customId && (
-            <View style={styles.readOnlyRow}>
-              <View>
-                <Text style={styles.label}>Profile ID</Text>
-                <Text style={styles.readOnlyText}>{customId}</Text>
+        {activeTab === 'general' && (
+          <>
+            {/* Section 1: Account Information display & update */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Account Details</Text>
               </View>
-              <TouchableOpacity style={styles.copyBtn} onPress={copyToClipboard}>
-                {copied ? (
-                  <Check size={18} color="#4CAF50" />
-                ) : (
-                  <Copy size={18} color={palette.purple.muted} />
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
 
-          {memberSince && (
-            <View style={[styles.readOnlyRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-              <View>
-                <Text style={styles.label}>Member Since</Text>
-                <Text style={styles.readOnlyText}>{memberSince}</Text>
-              </View>
-              <Calendar size={18} color={palette.purple.muted} />
-            </View>
-          )}
-
-          <View style={styles.divider} />
-
-          {/* Editable Fields */}
-          <View style={styles.inputWrapper}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Email Address</Text>
-              {isEmailVerified ? (
-                <View style={styles.verifiedBadge}>
-                  <Text style={styles.verifiedText}>Verified</Text>
+              {/* Read-Only Stats */}
+              {customId && (
+                <View style={styles.readOnlyRow}>
+                  <View>
+                    <Text style={styles.label}>Profile ID</Text>
+                    <Text style={styles.readOnlyText}>{customId}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.copyBtn} onPress={copyToClipboard}>
+                    {copied ? (
+                      <Check size={18} color="#4CAF50" />
+                    ) : (
+                      <Copy size={18} color={palette.purple.muted} />
+                    )}
+                  </TouchableOpacity>
                 </View>
-              ) : resendingEmail ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={palette.gold.main} style={{ marginRight: 4 }} />
-                  <Text style={[styles.verifyLink, { color: palette.gold.main }]}>Sending...</Text>
-                </View>
-              ) : (
-                <TouchableOpacity onPress={handleResendEmail}>
-                  <Text style={styles.verifyLink}>Verify Email</Text>
-                </TouchableOpacity>
               )}
-            </View>
-            <TextInput
-              style={styles.textInput}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Mobile Number</Text>
-            <TextInput
-              style={styles.textInput}
-              keyboardType="phone-pad"
-              value={mobile}
-              onChangeText={setMobile}
-            />
-          </View>
+              {memberSince && (
+                <View style={[styles.readOnlyRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+                  <View>
+                    <Text style={styles.label}>Member Since</Text>
+                    <Text style={styles.readOnlyText}>{memberSince}</Text>
+                  </View>
+                  <Calendar size={18} color={palette.purple.muted} />
+                </View>
+              )}
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Confirm Current Password</Text>
-            <TextInput
-              style={styles.textInput}
-              secureTextEntry
-              placeholder="Required to save email/mobile"
-              placeholderTextColor="rgba(126, 107, 143, 0.4)"
-              value={infoPassword}
-              onChangeText={setInfoPassword}
-            />
-          </View>
+              <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.saveBtn} onPress={handleUpdateInfo} disabled={savingInfo}>
-            {savingInfo ? (
-              <ActivityIndicator size="small" color={palette.purple.deep} />
-            ) : (
-              <>
-                <Save size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
-                <Text style={styles.saveBtnText}>Update Info</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+              {/* Editable Fields */}
+              <View style={styles.inputWrapper}>
+                <View style={styles.labelRow}>
+                  <Text style={styles.label}>Email Address</Text>
+                  {isEmailVerified ? (
+                    <View style={styles.verifiedBadge}>
+                      <Text style={styles.verifiedText}>Verified</Text>
+                    </View>
+                  ) : resendingEmail ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color={palette.gold.main} style={{ marginRight: 4 }} />
+                      <Text style={[styles.verifyLink, { color: palette.gold.main }]}>Sending...</Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity onPress={handleResendEmail}>
+                      <Text style={styles.verifyLink}>Verify Email</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TextInput
+                  style={styles.textInput}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </View>
 
-        {/* Section 2: Change Password */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Lock size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Change Password</Text>
-          </View>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.label}>Mobile Number</Text>
+                <TextInput
+                  style={styles.textInput}
+                  keyboardType="phone-pad"
+                  value={mobile}
+                  onChangeText={setMobile}
+                />
+              </View>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Current Password</Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.passwordTextInput}
-                secureTextEntry={!showCurrentPassword}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeIconBtn}
-                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-              >
-                {showCurrentPassword ? (
-                  <EyeOff size={20} color={palette.purple.muted} />
+              <View style={styles.inputWrapper}>
+                <Text style={styles.label}>Confirm Current Password</Text>
+                <TextInput
+                  style={styles.textInput}
+                  secureTextEntry
+                  placeholder="Required to save email/mobile"
+                  placeholderTextColor="rgba(126, 107, 143, 0.4)"
+                  value={infoPassword}
+                  onChangeText={setInfoPassword}
+                />
+              </View>
+
+              <TouchableOpacity style={styles.saveBtn} onPress={handleUpdateInfo} disabled={savingInfo}>
+                {savingInfo ? (
+                  <ActivityIndicator size="small" color={palette.purple.deep} />
                 ) : (
-                  <Eye size={20} color={palette.purple.muted} />
+                  <>
+                    <Save size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                    <Text style={styles.saveBtnText}>Update Info</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>New Password</Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.passwordTextInput}
-                secureTextEntry={!showNewPassword}
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeIconBtn}
-                onPress={() => setShowNewPassword(!showNewPassword)}
-              >
-                {showNewPassword ? (
-                  <EyeOff size={20} color={palette.purple.muted} />
+            {/* Section 2: Change Password */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Lock size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Change Password</Text>
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Text style={styles.label}>Current Password</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.passwordTextInput}
+                    secureTextEntry={!showCurrentPassword}
+                    value={currentPassword}
+                    onChangeText={setCurrentPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIconBtn}
+                    onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff size={20} color={palette.purple.muted} />
+                    ) : (
+                      <Eye size={20} color={palette.purple.muted} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Text style={styles.label}>New Password</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.passwordTextInput}
+                    secureTextEntry={!showNewPassword}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIconBtn}
+                    onPress={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff size={20} color={palette.purple.muted} />
+                    ) : (
+                      <Eye size={20} color={palette.purple.muted} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputWrapper}>
+                <Text style={styles.label}>Confirm New Password</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.passwordTextInput}
+                    secureTextEntry={!showConfirmPassword}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIconBtn}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} color={palette.purple.muted} />
+                    ) : (
+                      <Eye size={20} color={palette.purple.muted} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword} disabled={savingPassword}>
+                {savingPassword ? (
+                  <ActivityIndicator size="small" color={palette.purple.deep} />
                 ) : (
-                  <Eye size={20} color={palette.purple.muted} />
+                  <>
+                    <Lock size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                    <Text style={styles.saveBtnText}>Update Password</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
-          </View>
-
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Confirm New Password</Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.passwordTextInput}
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeIconBtn}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff size={20} color={palette.purple.muted} />
-                ) : (
-                  <Eye size={20} color={palette.purple.muted} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.saveBtn} onPress={handleChangePassword} disabled={savingPassword}>
-            {savingPassword ? (
-              <ActivityIndicator size="small" color={palette.purple.deep} />
-            ) : (
-              <>
-                <Lock size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
-                <Text style={styles.saveBtnText}>Update Password</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+          </>
+        )}
 
         {/* Section 3: Privacy & Visibility Settings */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Privacy Settings</Text>
-          </View>
-
-          {/* Visibility Dropdown Fields */}
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Profile Visibility</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => openSinglePicker('Profile Visibility', VISIBILITY_OPTIONS, profileVisibility, 'profileVisibility')}
-            >
-              <Text style={styles.dropdownText}>{profileVisibility}</Text>
-              <ChevronDown size={20} color={palette.gold.main} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Photo Visibility</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => openSinglePicker('Photo Visibility', PHOTO_VISIBILITY_OPTIONS, photoVisibility, 'photoVisibility')}
-            >
-              <Text style={styles.dropdownText}>{photoVisibility}</Text>
-              <ChevronDown size={20} color={palette.gold.main} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Lock My Photos</Text>
-              <Text style={styles.toggleHint}>Require approval requests from viewers to unlock photos.</Text>
+        {activeTab === 'privacy' && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+              <Text style={styles.cardTitle}>Privacy Settings</Text>
             </View>
-            <Switch
-              value={photoLock}
-              onValueChange={(val) => {
-                setPhotoLock(val);
-                updateSetting({ photoLock: val });
-              }}
-              thumbColor={photoLock ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Phone Number Visibility</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => openSinglePicker('Phone Visibility', PHONE_VISIBILITY_OPTIONS, phoneVisibility, 'phoneVisibility')}
-            >
-              <Text style={styles.dropdownText}>{phoneVisibility}</Text>
-              <ChevronDown size={20} color={palette.gold.main} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Email ID Visibility</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => openSinglePicker('Email Visibility', EMAIL_VISIBILITY_OPTIONS, emailVisibility, 'emailVisibility')}
-            >
-              <Text style={styles.dropdownText}>{emailVisibility}</Text>
-              <ChevronDown size={20} color={palette.gold.main} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Two-Factor Authentication</Text>
-              <Text style={styles.toggleHint}>Secure your account updates with verification codes.</Text>
+            {/* Visibility Dropdown Fields */}
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Profile Visibility</Text>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => openSinglePicker('Profile Visibility', VISIBILITY_OPTIONS, profileVisibility, 'profileVisibility')}
+              >
+                <Text style={styles.dropdownText}>{profileVisibility}</Text>
+                <ChevronDown size={20} color={palette.gold.main} />
+              </TouchableOpacity>
             </View>
-            <Switch
-              value={twoFactorEnabled}
-              onValueChange={(val) => {
-                setTwoFactorEnabled(val);
-                updateSetting({ twoFactorEnabled: val });
-              }}
-              thumbColor={twoFactorEnabled ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          {/* Granular Consent Purposing */}
-          <View style={styles.divider} />
-          <Text style={[styles.label, { marginBottom: 10 }]}>Granular Consent PURPOSES (DPDP)</Text>
-          
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Matchmaking & Compatibility</Text>
-              <Text style={styles.toggleHint}>Process my bio and profile data for matchmaking suggestions and search feeds.</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Photo Visibility</Text>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => openSinglePicker('Photo Visibility', PHOTO_VISIBILITY_OPTIONS, photoVisibility, 'photoVisibility')}
+              >
+                <Text style={styles.dropdownText}>{photoVisibility}</Text>
+                <ChevronDown size={20} color={palette.gold.main} />
+              </TouchableOpacity>
             </View>
-            <Switch
-              value={consentMatchmaking}
-              onValueChange={(val) => {
-                setConsentMatchmaking(val);
-                updateSetting({ consentMatchmaking: val });
-              }}
-              thumbColor={consentMatchmaking ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Photo Analysis & Verification</Text>
-              <Text style={styles.toggleHint}>Process and scan my photos to verify identity, security, and matchmaking tags.</Text>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Lock My Photos</Text>
+                <Text style={styles.toggleHint}>Require approval requests from viewers to unlock photos.</Text>
+              </View>
+              <Switch
+                value={photoLock}
+                onValueChange={(val) => {
+                  setPhotoLock(val);
+                  updateSetting({ photoLock: val });
+                }}
+                thumbColor={photoLock ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
             </View>
-            <Switch
-              value={consentPhotoProcessing}
-              onValueChange={(val) => {
-                setConsentPhotoProcessing(val);
-                updateSetting({ consentPhotoProcessing: val });
-              }}
-              thumbColor={consentPhotoProcessing ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Usage Analytics Tracking</Text>
-              <Text style={styles.toggleHint}>Collect analytics telemetry to help us improve app features and fix bugs.</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Phone Number Visibility</Text>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => openSinglePicker('Phone Visibility', PHONE_VISIBILITY_OPTIONS, phoneVisibility, 'phoneVisibility')}
+              >
+                <Text style={styles.dropdownText}>{phoneVisibility}</Text>
+                <ChevronDown size={20} color={palette.gold.main} />
+              </TouchableOpacity>
             </View>
-            <Switch
-              value={consentAnalytics}
-              onValueChange={(val) => {
-                setConsentAnalytics(val);
-                setAnalyticsConsent(val);
-                updateSetting({ consentAnalytics: val });
-              }}
-              thumbColor={consentAnalytics ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
+
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Email ID Visibility</Text>
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => openSinglePicker('Email Visibility', EMAIL_VISIBILITY_OPTIONS, emailVisibility, 'emailVisibility')}
+              >
+                <Text style={styles.dropdownText}>{emailVisibility}</Text>
+                <ChevronDown size={20} color={palette.gold.main} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Two-Factor Authentication</Text>
+                <Text style={styles.toggleHint}>Secure your account updates with verification codes.</Text>
+              </View>
+              <Switch
+                value={twoFactorEnabled}
+                onValueChange={(val) => {
+                  setTwoFactorEnabled(val);
+                  updateSetting({ twoFactorEnabled: val });
+                }}
+                thumbColor={twoFactorEnabled ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
+            </View>
+
+            {/* Granular Consent Purposing */}
+            <View style={styles.divider} />
+            <Text style={[styles.label, { marginBottom: 10 }]}>Granular Consent PURPOSES (DPDP)</Text>
+            
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Matchmaking & Compatibility</Text>
+                <Text style={styles.toggleHint}>Process my bio and profile data for matchmaking suggestions and search feeds.</Text>
+              </View>
+              <Switch
+                value={consentMatchmaking}
+                onValueChange={(val) => {
+                  setConsentMatchmaking(val);
+                  updateSetting({ consentMatchmaking: val });
+                }}
+                thumbColor={consentMatchmaking ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
+            </View>
+
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Photo Analysis & Verification</Text>
+                <Text style={styles.toggleHint}>Process and scan my photos to verify identity, security, and matchmaking tags.</Text>
+              </View>
+              <Switch
+                value={consentPhotoProcessing}
+                onValueChange={(val) => {
+                  setConsentPhotoProcessing(val);
+                  updateSetting({ consentPhotoProcessing: val });
+                }}
+                thumbColor={consentPhotoProcessing ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
+            </View>
+
+            <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Usage Analytics Tracking</Text>
+                <Text style={styles.toggleHint}>Collect analytics telemetry to help us improve app features and fix bugs.</Text>
+              </View>
+              <Switch
+                value={consentAnalytics}
+                onValueChange={(val) => {
+                  setConsentAnalytics(val);
+                  setAnalyticsConsent(val);
+                  updateSetting({ consentAnalytics: val });
+                }}
+                thumbColor={consentAnalytics ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Section 4: Notifications Settings */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Bell size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Notification Preferences</Text>
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Interests Sent & Received</Text>
-              <Text style={styles.toggleHint}>Notify when another member shows interest in your profile.</Text>
+        {activeTab === 'privacy' && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Bell size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+              <Text style={styles.cardTitle}>Notification Preferences</Text>
             </View>
-            <Switch
-              value={notifyInterests}
-              onValueChange={(val) => {
-                setNotifyInterests(val);
-                updateSetting({ notifyInterests: val });
-              }}
-              thumbColor={notifyInterests ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Direct Messages</Text>
-              <Text style={styles.toggleHint}>Notify when you receive text chat messages.</Text>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Interests Sent & Received</Text>
+                <Text style={styles.toggleHint}>Notify when another member shows interest in your profile.</Text>
+              </View>
+              <Switch
+                value={notifyInterests}
+                onValueChange={(val) => {
+                  setNotifyInterests(val);
+                  updateSetting({ notifyInterests: val });
+                }}
+                thumbColor={notifyInterests ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
             </View>
-            <Switch
-              value={notifyMessages}
-              onValueChange={(val) => {
-                setNotifyMessages(val);
-                updateSetting({ notifyMessages: val });
-              }}
-              thumbColor={notifyMessages ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Contact Requests</Text>
-              <Text style={styles.toggleHint}>Notify when contact details are requested or shared.</Text>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Direct Messages</Text>
+                <Text style={styles.toggleHint}>Notify when you receive text chat messages.</Text>
+              </View>
+              <Switch
+                value={notifyMessages}
+                onValueChange={(val) => {
+                  setNotifyMessages(val);
+                  updateSetting({ notifyMessages: val });
+                }}
+                thumbColor={notifyMessages ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
             </View>
-            <Switch
-              value={notifyContactRequests}
-              onValueChange={(val) => {
-                setNotifyContactRequests(val);
-                updateSetting({ notifyContactRequests: val });
-              }}
-              thumbColor={notifyContactRequests ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
-          </View>
 
-          <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Shortlists Alerts</Text>
-              <Text style={styles.toggleHint}>Notify when you are added to a member's shortlist.</Text>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Contact Requests</Text>
+                <Text style={styles.toggleHint}>Notify when contact details are requested or shared.</Text>
+              </View>
+              <Switch
+                value={notifyContactRequests}
+                onValueChange={(val) => {
+                  setNotifyContactRequests(val);
+                  updateSetting({ notifyContactRequests: val });
+                }}
+                thumbColor={notifyContactRequests ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
             </View>
-            <Switch
-              value={notifyShortlists}
-              onValueChange={(val) => {
-                setNotifyShortlists(val);
-                updateSetting({ notifyShortlists: val });
-              }}
-              thumbColor={notifyShortlists ? palette.gold.main : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
-            />
+
+            <View style={[styles.toggleRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Shortlists Alerts</Text>
+                <Text style={styles.toggleHint}>Notify when you are added to a member's shortlist.</Text>
+              </View>
+              <Switch
+                value={notifyShortlists}
+                onValueChange={(val) => {
+                  setNotifyShortlists(val);
+                  updateSetting({ notifyShortlists: val });
+                }}
+                thumbColor={notifyShortlists ? palette.gold.main : '#E8E0F0'}
+                trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Section 4.5: Blocked Profiles */}
-        <View style={styles.card}>
-          <TouchableOpacity 
-            style={[styles.cardHeader, { marginBottom: blockedExpanded ? 15 : 0 }]} 
-            onPress={toggleBlockedSection}
-            activeOpacity={0.7}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <Ban size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-              <Text style={styles.cardTitle}>Blocked Profiles</Text>
-            </View>
-            <ChevronDown 
-              size={20} 
-              color={palette.purple.muted} 
-              style={{ transform: [{ rotate: blockedExpanded ? '180deg' : '0deg' }] }} 
-            />
-          </TouchableOpacity>
+        {activeTab === 'privacy' && (
+          <View style={styles.card}>
+            <TouchableOpacity 
+              style={[styles.cardHeader, { marginBottom: blockedExpanded ? 15 : 0 }]} 
+              onPress={toggleBlockedSection}
+              activeOpacity={0.7}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <Ban size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Blocked Profiles</Text>
+              </View>
+              <ChevronDown 
+                size={20} 
+                color={palette.purple.muted} 
+                style={{ transform: [{ rotate: blockedExpanded ? '180deg' : '0deg' }] }} 
+              />
+            </TouchableOpacity>
 
-          {blockedExpanded && (
-            <View style={{ marginTop: 10 }}>
-              {blockedLoading ? (
-                <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
-              ) : blockedUsers.length === 0 ? (
-                <Text style={styles.noBlockedText}>No blocked profiles found.</Text>
-              ) : (
-                blockedUsers.map((item) => {
-                  const name = item.profile 
-                    ? `${item.profile.firstName || ''} ${item.profile.lastName || ''}`.trim() 
-                    : 'Blocked User';
-                  const customId = item.profile?.customId || `ID: ${item.userId}`;
-                  
-                  return (
-                    <View key={item.userId} style={styles.blockedRow}>
-                      <View style={{ flex: 1, marginRight: 10 }}>
-                        <Text style={styles.blockedName}>{name}</Text>
-                        <Text style={styles.blockedIdText}>{customId}</Text>
+            {blockedExpanded && (
+              <View style={{ marginTop: 10 }}>
+                {blockedLoading ? (
+                  <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
+                ) : blockedUsers.length === 0 ? (
+                  <Text style={styles.noBlockedText}>No blocked profiles found.</Text>
+                ) : (
+                  blockedUsers.map((item) => {
+                    const name = item.profile 
+                      ? `${item.profile.firstName || ''} ${item.profile.lastName || ''}`.trim() 
+                      : 'Blocked User';
+                    const customId = item.profile?.customId || `ID: ${item.userId}`;
+                    
+                    return (
+                      <View key={item.userId} style={styles.blockedRow}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                          <Text style={styles.blockedName}>{name}</Text>
+                          <Text style={styles.blockedIdText}>{customId}</Text>
+                        </View>
+                        <TouchableOpacity 
+                          style={styles.unblockBtn} 
+                          onPress={() => handleUnblockUser(item.userId)}
+                        >
+                          <Text style={styles.unblockBtnText}>Unblock</Text>
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity 
-                        style={styles.unblockBtn} 
-                        onPress={() => handleUnblockUser(item.userId)}
-                      >
-                        <Text style={styles.unblockBtnText}>Unblock</Text>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })
-              )}
-            </View>
-          )}
-        </View>
+                    );
+                  })
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Section 4.7: Matrimonial Nominee Setup (DPDP Section 14 Right to Nominate) */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Matrimonial Nominee Setup</Text>
-          </View>
-          
-          <Text style={styles.toggleHint}>
-            Under Section 14 of the DPDP Act 2023, you have the right to nominate any individual to operate or manage your account profile in the event of death or incapacity.
-          </Text>
-          
-          <View style={[styles.inputWrapper, { marginTop: 15 }]}>
-            <Text style={styles.label}>Nominee Full Name</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter nominee name"
-              placeholderTextColor="rgba(126, 107, 143, 0.4)"
-              value={nomineeName}
-              onChangeText={setNomineeName}
-            />
-          </View>
-          
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Nominee Contact Info (Email or Phone)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter email address or mobile number"
-              placeholderTextColor="rgba(126, 107, 143, 0.4)"
-              value={nomineeContact}
-              onChangeText={setNomineeContact}
-            />
-          </View>
-          
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNominee} disabled={savingNominee}>
-            {savingNominee ? (
-              <ActivityIndicator size="small" color={palette.purple.deep} />
-            ) : (
-              <>
-                <Save size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
-                <Text style={styles.saveBtnText}>Save Nominee Info</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Section 4.8: Data Portability (DPDP Right to Access / Export) */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Data Portability (Right to Access)</Text>
-          </View>
-          
-          <Text style={styles.toggleHint}>
-            Under Section 11 of the DPDP Act 2023, you have the right to access and download a portable copy of all personal data we process about you.
-          </Text>
-          
-          <TouchableOpacity 
-            style={[styles.saveBtn, { backgroundColor: palette.purple.deep, marginTop: 15 }]} 
-            onPress={handleDownloadData} 
-            disabled={exportingData}
-          >
-            {exportingData ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Copy size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                <Text style={[styles.saveBtnText, { color: '#FFFFFF' }]}>Export & Copy My Data</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Section 4.9: Active Login Sessions */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Monitor size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
-            <Text style={styles.cardTitle}>Active Login Sessions</Text>
-          </View>
-          
-          <Text style={styles.toggleHint}>
-            Manage and review your active login sessions on different devices. You can log out of all other devices if you notice any unrecognized activity.
-          </Text>
-          
-          {sessionsLoading ? (
-            <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
-          ) : (
-            <View style={{ marginTop: 15 }}>
-              {sessions.map((session) => {
-                const isCurrent = session.isCurrent;
-                const formattedDate = new Date(session.lastActive).toLocaleString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                });
-                return (
-                  <View key={session.id} style={styles.sessionRow}>
-                    <View style={styles.sessionIconWrapper}>
-                      <Smartphone size={20} color={isCurrent ? palette.gold.main : palette.purple.muted} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.sessionDevice} numberOfLines={1}>
-                          {session.deviceSignature || 'Unknown Device'}
-                        </Text>
-                        {isCurrent && (
-                          <View style={styles.currentSessionBadge}>
-                            <Text style={styles.currentSessionText}>Current</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.sessionMeta}>
-                        IP: {session.ipAddress || 'Unknown'} • Active: {formattedDate}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-              
-              {sessions.length > 1 && (
-                <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: palette.purple.border, marginTop: 15 }]}
-                  onPress={handleLogoutOthers}
-                  disabled={terminatingOthers}
-                >
-                  {terminatingOthers ? (
-                    <ActivityIndicator size="small" color={palette.purple.deep} />
-                  ) : (
-                    <>
-                      <LogOut size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
-                      <Text style={styles.saveBtnText}>Log Out Other Devices</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+        {activeTab === 'general' && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+              <Text style={styles.cardTitle}>Matrimonial Nominee Setup</Text>
+            </View>
+            
+            <Text style={styles.toggleHint}>
+              Under Section 14 of the DPDP Act 2023, you have the right to nominate any individual to operate or manage your account profile in the event of death or incapacity.
+            </Text>
+            
+            <View style={[styles.inputWrapper, { marginTop: 15 }]}>
+              <Text style={styles.label}>Nominee Full Name</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter nominee name"
+                placeholderTextColor="rgba(126, 107, 143, 0.4)"
+                value={nomineeName}
+                onChangeText={setNomineeName}
+              />
+            </View>
+            
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Nominee Contact Info (Email or Phone)</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter email address or mobile number"
+                placeholderTextColor="rgba(126, 107, 143, 0.4)"
+                value={nomineeContact}
+                onChangeText={setNomineeContact}
+              />
+            </View>
+            
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNominee} disabled={savingNominee}>
+              {savingNominee ? (
+                <ActivityIndicator size="small" color={palette.purple.deep} />
+              ) : (
+                <>
+                  <Save size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                  <Text style={styles.saveBtnText}>Save Nominee Info</Text>
+                </>
               )}
-            </View>
-          )}
-        </View>
-
-        {/* Section 5: Danger Zone */}
-        <View style={[styles.card, styles.dangerCard]}>
-          <View style={styles.cardHeader}>
-            <AlertTriangle size={20} color={palette.status.error} style={{ marginRight: 8 }} />
-            <Text style={[styles.cardTitle, { color: palette.status.error }]}>Danger Zone</Text>
-          </View>
-
-          {/* Account Deactivation */}
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleLabel}>Deactivate Profile</Text>
-              <Text style={styles.toggleHint}>Temporarily hide profile from match feeds, search results, and details pages.</Text>
-            </View>
-            <Switch
-              value={isDeactivated}
-              onValueChange={handleDeactivateToggle}
-              thumbColor={isDeactivated ? palette.status.error : '#E8E0F0'}
-              trackColor={{ false: '#E8E0F0', true: 'rgba(255, 77, 77, 0.4)' }}
-            />
-          </View>
-
-          {/* Account Deletion */}
-          <View style={{ marginTop: 20 }}>
-            <Text style={styles.toggleLabel}>Permanently Delete Account</Text>
-            <Text style={[styles.toggleHint, { marginBottom: 12 }]}>All your profile details, chat records, photos, and match list history will be permanently erased. This operation cannot be undone.</Text>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModalVisible(true)}>
-              <Trash2 size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text style={styles.deleteBtnText}>Delete Account</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        )}
+
+        {/* Section 4.8: Data Portability (DPDP Right to Access / Export) */}
+        {activeTab === 'security' && (
+          <>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Data Portability (Right to Access)</Text>
+              </View>
+              
+              <Text style={styles.toggleHint}>
+                Under Section 11 of the DPDP Act 2023, you have the right to access and download a portable copy of all personal data we process about you.
+              </Text>
+              
+              <TouchableOpacity 
+                style={[styles.saveBtn, { backgroundColor: palette.purple.deep, marginTop: 15 }]} 
+                onPress={handleDownloadData} 
+                disabled={exportingData}
+              >
+                {exportingData ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Copy size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[styles.saveBtnText, { color: '#FFFFFF' }]}>Export & Copy My Data</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Section 4.9: Active Login Sessions */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Monitor size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Active Login Sessions</Text>
+              </View>
+              
+              <Text style={styles.toggleHint}>
+                Manage and review your active login sessions on different devices. You can log out of all other devices if you notice any unrecognized activity.
+              </Text>
+              
+              {sessionsLoading ? (
+                <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
+              ) : (
+                <View style={{ marginTop: 15 }}>
+                  {sessions.map((session) => {
+                    const isCurrent = session.isCurrent;
+                    const formattedDate = new Date(session.lastActive).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    return (
+                      <View key={session.id} style={styles.sessionRow}>
+                        <View style={styles.sessionIconWrapper}>
+                          <Smartphone size={20} color={isCurrent ? palette.gold.main : palette.purple.muted} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Text style={styles.sessionDevice} numberOfLines={1}>
+                              {session.deviceSignature || 'Unknown Device'}
+                            </Text>
+                            {isCurrent && (
+                              <View style={styles.currentSessionBadge}>
+                                <Text style={styles.currentSessionText}>Current</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.sessionMeta}>
+                            IP: {session.ipAddress || 'Unknown'} • Active: {formattedDate}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                  
+                  {sessions.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.saveBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: palette.purple.border, marginTop: 15 }]}
+                      onPress={handleLogoutOthers}
+                      disabled={terminatingOthers}
+                    >
+                      {terminatingOthers ? (
+                        <ActivityIndicator size="small" color={palette.purple.deep} />
+                      ) : (
+                        <>
+                          <LogOut size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                          <Text style={styles.saveBtnText}>Log Out Other Devices</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
+
+            {/* Section 5: Danger Zone */}
+            <View style={[styles.card, styles.dangerCard]}>
+              <View style={styles.cardHeader}>
+                <AlertTriangle size={20} color={palette.status.error} style={{ marginRight: 8 }} />
+                <Text style={[styles.cardTitle, { color: palette.status.error }]}>Danger Zone</Text>
+              </View>
+
+              {/* Account Deactivation */}
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.toggleLabel}>Deactivate Profile</Text>
+                  <Text style={styles.toggleHint}>Temporarily hide profile from match feeds, search results, and details pages.</Text>
+                </View>
+                <Switch
+                  value={isDeactivated}
+                  onValueChange={handleDeactivateToggle}
+                  thumbColor={isDeactivated ? palette.status.error : '#E8E0F0'}
+                  trackColor={{ false: '#E8E0F0', true: 'rgba(255, 77, 77, 0.4)' }}
+                />
+              </View>
+
+              {/* Account Deletion */}
+              <View style={{ marginTop: 20 }}>
+                <Text style={styles.toggleLabel}>Permanently Delete Account</Text>
+                <Text style={[styles.toggleHint, { marginBottom: 12 }]}>All your profile details, chat records, photos, and match list history will be permanently erased. This operation cannot be undone.</Text>
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModalVisible(true)}>
+                  <Trash2 size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.deleteBtnText}>Delete Account</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </>
+        )}
 
       </ScrollView>
 
@@ -1859,5 +1906,39 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 10,
     ...fonts.semibold,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FAF9FC',
+    borderRadius: 14,
+    padding: 4,
+    marginHorizontal: 20,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderColor: palette.purple.border,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  activeTabButton: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabButtonText: {
+    fontSize: 13,
+    ...fonts.semibold,
+    color: palette.purple.muted,
+  },
+  activeTabButtonText: {
+    color: palette.purple.deep,
   },
 });

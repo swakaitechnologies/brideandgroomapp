@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 2,
+  "appName": "BrideandGroom",
+  "themeId": "dreamy-pastel",
+  "connectedCanvas": true,
+  "locales": [
+    "en"
+  ],
+  "locale": "en",
+  "device": "android",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "slidesByDevice": {
+    "iphone": [
+      {
+        "id": "iphone-slide-1",
+        "layout": "hero",
+        "label": {
+          "en": "BRIDE & GROOM"
+        },
+        "headline": {
+          "en": "The *exclusive*\nmatchmaking app."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 170,
+            "y": 1050,
+            "width": 980,
+            "height": 1991,
+            "rotation": -1,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "iphone-slide-2",
+        "layout": "two-devices",
+        "label": {
+          "en": "MATCHES"
+        },
+        "headline": {
+          "en": "Discover *your*\nperfect companion."
+        },
+        "screenshot": "",
+        "screenshotSecondary": "",
+        "transforms": {
+          "deviceSecondary": {
+            "x": 680,
+            "y": 1020,
+            "width": 870,
+            "height": 1775,
+            "rotation": 9,
+            "zIndex": 2
+          },
+          "device": {
+            "x": 206.14303033418514,
+            "y": 891.2433166812624,
+            "width": 912,
+            "height": 1858,
+            "rotation": -4,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "iphone-slide-3",
+        "layout": "device-bottom",
+        "label": {
+          "en": "CHATS & CALLS"
+        },
+        "headline": {
+          "en": "Connect *instantly*\nvia voice & video."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 304.1978554874404,
+            "y": 844.558827831295,
+            "width": 980,
+            "height": 1991,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "iphone-slide-4",
+        "layout": "device-top",
+        "label": {
+          "en": "SAFETY"
+        },
+        "headline": {
+          "en": "*Verified* profiles\nfor secure dating."
+        },
+        "screenshot": "",
+        "inverted": true,
+        "transforms": {
+          "device": {
+            "x": 170,
+            "y": -120,
+            "width": 980,
+            "height": 1991,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "iphone-slide-5",
+        "layout": "device-bottom",
+        "label": {
+          "en": "PREMIUM"
+        },
+        "headline": {
+          "en": "Unlock *premium*\nfilters & access."
+        },
+        "screenshot": "",
+        "inverted": true,
+        "transforms": {
+          "device": {
+            "x": 170,
+            "y": 950,
+            "width": 980,
+            "height": 1991,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      }
+    ],
+    "android": [
+      {
+        "id": "s_mq2ag7n8_5",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Sell one\nidea per slide."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mq2ag7n8_6",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Your headline\nlives here."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mq2ag7n8_7",
+        "layout": "two-devices",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Show two\nscreens at once."
+        },
+        "screenshot": "",
+        "screenshotSecondary": ""
+      },
+      {
+        "id": "s_mq2ag7n8_8",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 03"
+        },
+        "headline": {
+          "en": "Flip the contrast\nfor visual rhythm."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mq2ag7n8_9",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
+    "ipad": [
+      {
+        "id": "ipad-slide-1",
+        "layout": "hero",
+        "label": {
+          "en": "BRIDE & GROOM"
+        },
+        "headline": {
+          "en": "The *exclusive*\nmatchmaking app."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "ipad-slide-2",
+        "layout": "device-bottom",
+        "label": {
+          "en": "MATCHES"
+        },
+        "headline": {
+          "en": "Discover *your*\nperfect companion."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "ipad-slide-3",
+        "layout": "device-top",
+        "label": {
+          "en": "CHATS"
+        },
+        "headline": {
+          "en": "Connect *instantly*\nvia voice & video."
+        },
+        "screenshot": "",
+        "inverted": true
+      }
+    ],
+    "android-7": [
+      {
+        "id": "android7-slide-1",
+        "layout": "hero",
+        "label": {
+          "en": "BRIDE & GROOM"
+        },
+        "headline": {
+          "en": "The *exclusive*\nmatchmaking app."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "android7-slide-2",
+        "layout": "split-landscape",
+        "label": {
+          "en": "MATCHES"
+        },
+        "headline": {
+          "en": "Discover *your*\nperfect companion."
+        },
+        "screenshot": ""
+      }
+    ],
+    "android-10": [
+      {
+        "id": "android10-slide-1",
+        "layout": "hero",
+        "label": {
+          "en": "BRIDE & GROOM"
+        },
+        "headline": {
+          "en": "The *exclusive*\nmatchmaking app."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "android10-slide-2",
+        "layout": "split-landscape",
+        "label": {
+          "en": "MATCHES"
+        },
+        "headline": {
+          "en": "Discover *your*\nperfect companion."
+        },
+        "screenshot": ""
+      }
+    ],
+    "feature-graphic": [
+      {
+        "id": "feature-graphic-slide-1",
+        "layout": "feature-graphic",
+        "label": {
+          "en": "BRIDE & GROOM"
+        },
+        "headline": {
+          "en": "BrideandGroom.\nFind *your* perfect match."
+        },
+        "screenshot": ""
+      }
+    ]
+  },
+  "crossScreenMockupsByDevice": {
+    "iphone": [],
+    "ipad": [],
+    "android": [],
+    "android-7": [],
+    "android-10": [],
+    "feature-graphic": []
+  }
+}

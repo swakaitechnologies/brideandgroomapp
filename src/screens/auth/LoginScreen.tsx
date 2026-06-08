@@ -12,7 +12,6 @@ import {
   Animated,
   View,
   Text,
-  StatusBar,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/src/store/authSlice";
@@ -20,9 +19,12 @@ import { RootState, AppDispatch } from "@/src/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
+  Mail,
+  Lock,
   ArrowRight,
   Eye,
   EyeOff,
+  Heart,
   ShieldCheck,
   LockKeyhole,
 } from "lucide-react-native";
@@ -45,62 +47,6 @@ export default function LoginScreen() {
 
   // Animations
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const emailAnim = useRef(new Animated.Value(email ? 1 : 0)).current;
-  const passwordAnim = useRef(new Animated.Value(password ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.timing(emailAnim, {
-      toValue: (emailFocused || email !== "") ? 1 : 0,
-      duration: 150,
-      useNativeDriver: false,
-    }).start();
-  }, [emailFocused, email]);
-
-  useEffect(() => {
-    Animated.timing(passwordAnim, {
-      toValue: (passwordFocused || password !== "") ? 1 : 0,
-      duration: 150,
-      useNativeDriver: false,
-    }).start();
-  }, [passwordFocused, password]);
-
-  const emailLabelTranslateY = emailAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [17, -9],
-  });
-
-  const emailLabelFontSize = emailAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [14, 11],
-  });
-
-  const emailLabelBgColor = emailAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["transparent", "#FFFFFF"],
-  });
-
-  const emailLabelColor = emailFocused 
-    ? palette.gold.main 
-    : (email !== "" ? palette.purple.muted : "rgba(126, 107, 143, 0.6)");
-
-  const passwordLabelTranslateY = passwordAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [17, -9],
-  });
-
-  const passwordLabelFontSize = passwordAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [14, 11],
-  });
-
-  const passwordLabelBgColor = passwordAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["transparent", "#FFFFFF"],
-  });
-
-  const passwordLabelColor = passwordFocused 
-    ? palette.gold.main 
-    : (password !== "" ? palette.purple.muted : "rgba(126, 107, 143, 0.6)");
 
   const handleLogin = async () => {
     Animated.sequence([
@@ -127,16 +73,19 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
-      
-      {/* Decorative Light Ambient Glow Blobs */}
-      <View style={styles.ambientGlowTop} pointerEvents="none" />
-      <View style={styles.ambientGlowBottom} pointerEvents="none" />
-
-      {/* Exquisite Celestial/Orbital Union Rings */}
-      <View style={styles.orbitalRing1} pointerEvents="none" />
-      <View style={styles.orbitalRing2} pointerEvents="none" />
-      <View style={styles.orbitalRing3} pointerEvents="none" />
+      {/* Decorative Background Hearts */}
+      <View style={styles.bgHeart1} pointerEvents="none" collapsable={false}>
+        <Heart size={140} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart2} pointerEvents="none" collapsable={false}>
+        <Heart size={80} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart3} pointerEvents="none" collapsable={false}>
+        <Heart size={100} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart4} pointerEvents="none" collapsable={false}>
+        <Heart size={60} color="#FF4D4D" />
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -146,6 +95,7 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
@@ -154,41 +104,39 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.taglineText}>
-              EXCLUSIVITY <Text style={{ color: palette.gold.main }}>✦</Text> ELEGANCE IN MATCHMAKING
-            </Text>
+            <View style={styles.taglineRow}>
+              <View style={styles.taglineLine} />
+              <Heart size={14} color={palette.purple.deep} fill={palette.purple.deep} />
+              <View style={styles.taglineLine} />
+            </View>
+            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
           {/* Form Section */}
           <View style={styles.formSection}>
             <Text style={styles.formTitle}>Welcome back</Text>
-            <Text style={styles.formSubtitle}>Sign in to access your elite matches</Text>
-            <View style={styles.formDivider} />
+            <Text style={styles.formSubtitle}>Sign in to discover your perfect match</Text>
 
             {/* Email Address */}
             <View style={styles.fieldWrap}>
+              <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
               <View
+                collapsable={false}
                 style={[
                   styles.inputRow,
                   emailFocused && styles.inputRowFocused,
                 ]}
               >
-                <Animated.Text
-                  style={[
-                    styles.floatingLabel,
-                    {
-                      transform: [{ translateY: emailLabelTranslateY }],
-                      fontSize: emailLabelFontSize,
-                      color: emailLabelColor,
-                      backgroundColor: emailLabelBgColor,
-                    },
-                  ]}
-                  pointerEvents="none"
-                >
-                  Email Address
-                </Animated.Text>
+                <Mail
+                  size={18}
+                  color={emailFocused ? palette.purple.deep : palette.purple.muted}
+                  style={styles.fieldIcon}
+                />
                 <TextInput
+                  collapsable={false}
                   style={styles.textInput}
+                  placeholder="name@domain.com"
+                  placeholderTextColor="#A39BB0"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
@@ -201,36 +149,32 @@ export default function LoginScreen() {
 
             {/* Password */}
             <View style={styles.fieldWrap}>
-              <View style={styles.forgotHeader}>
+              <View style={styles.passwordHeader}>
+                <Text style={styles.fieldLabel}>PASSWORD</Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate("ForgotPassword")}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.forgotText}>Forgot?</Text>
+                  <Text style={styles.forgotText}>Forgot password?</Text>
                 </TouchableOpacity>
               </View>
               <View
+                collapsable={false}
                 style={[
                   styles.inputRow,
                   passwordFocused && styles.inputRowFocused,
                 ]}
               >
-                <Animated.Text
-                  style={[
-                    styles.floatingLabel,
-                    {
-                      transform: [{ translateY: passwordLabelTranslateY }],
-                      fontSize: passwordLabelFontSize,
-                      color: passwordLabelColor,
-                      backgroundColor: passwordLabelBgColor,
-                    },
-                  ]}
-                  pointerEvents="none"
-                >
-                  Password
-                </Animated.Text>
+                <Lock
+                  size={18}
+                  color={passwordFocused ? palette.purple.deep : palette.purple.muted}
+                  style={styles.fieldIcon}
+                />
                 <TextInput
+                  collapsable={false}
                   style={styles.textInput}
+                  placeholder="Enter password"
+                  placeholderTextColor="#A39BB0"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -244,9 +188,9 @@ export default function LoginScreen() {
                   activeOpacity={0.7}
                 >
                   {showPassword ? (
-                    <EyeOff size={16} color="rgba(107, 90, 128, 0.4)" />
+                    <EyeOff size={18} color={palette.purple.muted} />
                   ) : (
-                    <Eye size={16} color="rgba(107, 90, 128, 0.4)" />
+                    <Eye size={18} color={palette.purple.muted} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -261,7 +205,7 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Sign In Button (Gold Gradient) */}
+            {/* Sign In Button */}
             <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
               <TouchableOpacity
                 style={[styles.signInBtn, loading && styles.btnDisabled]}
@@ -270,17 +214,17 @@ export default function LoginScreen() {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={[palette.gold.main, "#C59B27"]}
+                  colors={[palette.purple.deep, "#34005B"]}
                   style={styles.signInGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color={palette.purple.deep} size="small" />
+                    <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
                       <Text style={styles.signInText}>Sign In</Text>
-                      <ArrowRight size={16} color={palette.purple.deep} style={{ marginLeft: 4 }} />
+                      <ArrowRight size={16} color="#FFFFFF" />
                     </>
                   )}
                 </LinearGradient>
@@ -303,12 +247,13 @@ export default function LoginScreen() {
             {/* Premium Trust Badges */}
             <View style={styles.trustBadgesRow}>
               <View style={styles.badgeItem}>
-                <ShieldCheck size={12} color={palette.gold.main} />
+                <ShieldCheck size={14} color="#7A6F8B" />
                 <Text style={styles.badgeText}>100% Verified Profiles</Text>
               </View>
+              <View style={styles.badgeDivider} />
               <View style={styles.badgeItem}>
-                <LockKeyhole size={12} color={palette.gold.main} />
-                <Text style={styles.badgeText}>Secured Access</Text>
+                <LockKeyhole size={14} color="#7A6F8B" />
+                <Text style={styles.badgeText}>Highly Secured</Text>
               </View>
             </View>
           </View>
@@ -321,259 +266,224 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F8F5FC",
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 26,
+    paddingHorizontal: 28,
     justifyContent: "center",
     paddingBottom: 40,
-    paddingTop: Platform.OS === "ios" ? 60 : 80,
+    paddingTop: Platform.OS === "ios" ? 40 : 60,
   },
   headerSection: {
     alignItems: "center",
-    marginBottom: height * 0.045,
-    zIndex: 3,
+    marginBottom: height * 0.04,
   },
   logo: {
-    width: width * 0.62,
-    height: 60,
+    width: width * 0.65,
+    height: 70,
+  },
+  taglineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 12,
+  },
+  taglineLine: {
+    width: 32,
+    height: 1,
+    backgroundColor: palette.purple.muted,
+    opacity: 0.4,
+    marginHorizontal: 10,
   },
   taglineText: {
-    fontSize: 9,
-    color: palette.purple.muted,
-    letterSpacing: 2.5,
-    ...fonts.bold,
+    fontSize: 10,
+    color: "#6B5A80",
+    letterSpacing: 1.5,
+    ...fonts.semibold,
     textAlign: "center",
-    marginTop: 15,
   },
   formSection: {
-    backgroundColor: palette.neutral.white,
+    backgroundColor: "#FFFFFF",
     borderRadius: 28,
     paddingHorizontal: 26,
-    paddingVertical: 36,
-    borderWidth: 1,
-    borderColor: palette.purple.border,
+    paddingVertical: 32,
     shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.05,
-    shadowRadius: 40,
-    elevation: 6,
-    zIndex: 3,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 36,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "rgba(237, 230, 245, 0.6)",
   },
   formTitle: {
     fontSize: 24,
-    ...fonts.semibold,
+    ...fonts.bold,
     color: palette.purple.deep,
-    marginBottom: 4,
-    letterSpacing: -0.3,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   formSubtitle: {
-    fontSize: 13,
-    color: palette.purple.muted,
-    marginBottom: 8,
+    fontSize: 14,
+    color: "#7A6F8B",
+    marginBottom: 28,
     ...fonts.regular,
   },
-  formDivider: {
-    width: 40,
-    height: 2,
-    backgroundColor: palette.gold.main,
-    marginBottom: 26,
-    borderRadius: 1,
-  },
   fieldWrap: {
-    marginBottom: 18,
-    position: "relative",
+    marginBottom: 20,
   },
-  forgotHeader: {
+  fieldLabel: {
+    fontSize: 11,
+    ...fonts.semibold,
+    color: "#7A6F8B",
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  passwordHeader: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 6,
-    height: 16,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
   forgotText: {
-    fontSize: 11,
+    fontSize: 12,
     color: palette.purple.deep,
     ...fonts.semibold,
-  },
-  floatingLabel: {
-    position: "absolute",
-    left: 12,
-    top: 0,
-    paddingHorizontal: 4,
-    ...fonts.medium,
-    zIndex: 2,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: palette.purple.light,
-    borderRadius: 14,
-    borderWidth: 1.2,
-    borderColor: palette.purple.border,
+    backgroundColor: "#FDFDFD",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
     paddingHorizontal: 16,
-    height: 54,
+    height: 56,
   },
   inputRowFocused: {
-    borderColor: palette.gold.main,
-    backgroundColor: palette.neutral.white,
-    shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 2,
+    borderColor: palette.purple.deep,
+    backgroundColor: "#FFFFFF",
   },
   fieldIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   textInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: palette.purple.deep,
     ...fonts.medium,
     paddingVertical: 0,
   },
   eyeBtn: {
-    paddingLeft: 8,
+    paddingLeft: 10,
   },
   errorBox: {
-    backgroundColor: "#FFF4F4",
-    borderRadius: 10,
+    backgroundColor: "#FFF2F2",
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 18,
     borderWidth: 1,
-    borderColor: "#FFE0E0",
+    borderColor: "#FFE6E6",
   },
   errorText: {
-    color: palette.status.error,
-    fontSize: 12,
+    color: "#D32F2F",
+    fontSize: 13,
     textAlign: "center",
     ...fonts.medium,
   },
   signInBtn: {
-    borderRadius: 26,
+    borderRadius: 16,
     overflow: "hidden",
-    marginTop: 6,
-    shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 4,
+    marginTop: 8,
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 6,
   },
   signInGradient: {
-    height: 52,
+    height: 56,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 8,
   },
   btnDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   signInText: {
-    color: palette.purple.deep,
-    fontSize: 14,
-    letterSpacing: 1.5,
-    ...fonts.bold,
+    color: "#FFFFFF",
+    fontSize: 16,
+    ...fonts.semibold,
   },
   bottomSection: {
     marginTop: 32,
     alignItems: "center",
-    zIndex: 3,
   },
   signupPromptRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   newHereText: {
-    fontSize: 13,
-    color: palette.purple.muted,
+    fontSize: 14,
+    color: "#7A6F8B",
     ...fonts.regular,
   },
   createAccountText: {
-    fontSize: 13,
-    color: palette.gold.main,
-    ...fonts.bold,
+    fontSize: 14,
+    color: palette.purple.deep,
+    ...fonts.semibold,
   },
   trustBadgesRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginTop: 8,
+    gap: 12,
   },
   badgeItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: palette.purple.light,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: palette.purple.border,
   },
   badgeDivider: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: "rgba(196, 192, 206, 0.8)",
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#C4C0CE",
   },
   badgeText: {
-    fontSize: 10,
-    color: palette.purple.muted,
-    ...fonts.semibold,
-    letterSpacing: 0.3,
+    fontSize: 11,
+    color: "#7A6F8B",
+    ...fonts.medium,
   },
-  ambientGlowTop: {
+  bgHeart1: {
     position: "absolute",
-    top: -150,
-    right: -150,
-    width: 500,
-    height: 500,
-    borderRadius: 250,
-    backgroundColor: "rgba(212, 175, 55, 0.07)",
+    top: -20,
+    left: -40,
+    transform: [{ rotate: "-15deg" }],
+    opacity: 0.15,
   },
-  ambientGlowBottom: {
+  bgHeart2: {
     position: "absolute",
-    bottom: -150,
-    left: -150,
-    width: 450,
-    height: 450,
-    borderRadius: 225,
-    backgroundColor: "rgba(126, 107, 143, 0.05)",
+    top: height * 0.25,
+    right: -20,
+    transform: [{ rotate: "25deg" }],
+    opacity: 0.12,
   },
-  orbitalRing1: {
+  bgHeart3: {
     position: "absolute",
-    top: -100,
-    left: -100,
-    width: 360,
-    height: 360,
-    borderRadius: 180,
-    borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.08)",
+    bottom: height * 0.15,
+    left: -30,
+    transform: [{ rotate: "15deg" }],
+    opacity: 0.1,
   },
-  orbitalRing2: {
+  bgHeart4: {
     position: "absolute",
-    top: -50,
-    left: -50,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    borderWidth: 1,
-    borderColor: "rgba(59, 30, 84, 0.06)",
-  },
-  orbitalRing3: {
-    position: "absolute",
-    bottom: -120,
-    right: -120,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    borderWidth: 1,
-    borderColor: "rgba(212, 175, 55, 0.06)",
+    bottom: 40,
+    right: 30,
+    transform: [{ rotate: "-20deg" }],
+    opacity: 0.15,
   },
 });

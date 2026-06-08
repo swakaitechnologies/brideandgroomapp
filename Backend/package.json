@@ -16,7 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1061.0",
     "@aws-sdk/s3-request-presigner": "^3.1061.0",
-    "@sentry/node": "^10.53.1",
+    "@sentry/node": "^10.56.0",
     "@sentry/profiling-node": "^10.53.1",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
