@@ -12,6 +12,7 @@ import {
   PermissionsAndroid,
   Linking,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -43,15 +44,24 @@ export default function MyVideoIntroScreen() {
   const deepPurple = '#3B1E54';
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [hasVideoIntroFeature, setHasVideoIntroFeature] = useState(false);
   const [videoPaused, setVideoPaused] = useState(true);
 
-  const checkEligibility = async () => {
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await checkEligibility(false);
+    setRefreshing(false);
+  }, []);
+
+  const checkEligibility = async (showScreenLoader = true) => {
     try {
-      setLoading(true);
+      if (showScreenLoader) {
+        setLoading(true);
+      }
       const [profileRes, subRes] = await Promise.all([
         getProfile(),
         getMySubscription()
@@ -78,7 +88,9 @@ export default function MyVideoIntroScreen() {
       console.error("Check Video Eligibility Error:", error);
       showToast("Error checking subscription status.");
     } finally {
-      setLoading(false);
+      if (showScreenLoader) {
+        setLoading(false);
+      }
     }
   };
 
@@ -254,7 +266,17 @@ export default function MyVideoIntroScreen() {
           <View style={styles.topBarBtn} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.lockedScroll}>
+        <ScrollView
+          contentContainerStyle={styles.lockedScroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[palette.purple.deep]}
+              tintColor={palette.purple.deep}
+            />
+          }
+        >
           <View style={styles.lockedCard}>
             <View style={styles.iconOutline}>
               <Lock size={44} color={accentGold} />
@@ -352,7 +374,17 @@ export default function MyVideoIntroScreen() {
         <View style={styles.topBarBtn} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollBody}>
+      <ScrollView
+        contentContainerStyle={styles.scrollBody}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[palette.purple.deep]}
+            tintColor={palette.purple.deep}
+          />
+        }
+      >
         {/* Status Badge */}
         {hasVideo && (
           <View style={styles.statusSection}>
