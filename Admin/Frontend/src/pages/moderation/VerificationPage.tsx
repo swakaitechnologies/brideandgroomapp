@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   RefreshCw,
   History,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/button";
@@ -45,7 +46,7 @@ interface ModerationLog {
 }
 
 const VerificationPage = () => {
-  const [activeTab, setActiveTab] = useState<"profiles" | "photos" | "history">(
+  const [activeTab, setActiveTab] = useState<"profiles" | "photos" | "videos" | "history">(
     "profiles",
   );
   const [photoSubTab, setPhotoSubTab] = useState<"pending" | "history">("pending");
@@ -53,6 +54,9 @@ const VerificationPage = () => {
   const [photos, setPhotos] = useState<PendingPhoto[]>([]);
   const [photoHistory, setPhotoHistory] = useState<PendingPhoto[]>([]);
   const [logs, setLogs] = useState<ModerationLog[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
+  const [videoHistory, setVideoHistory] = useState<any[]>([]);
+  const [videoSubTab, setVideoSubTab] = useState<"pending" | "history">("pending");
   const [loading, setLoading] = useState(true);
   const [previewPhoto, setPreviewPhoto] = useState<PendingPhoto | null>(null);
 
@@ -81,6 +85,14 @@ const VerificationPage = () => {
           const res = await api.get("/moderation/photos/history");
           setPhotoHistory(res.data.data);
         }
+      } else if (activeTab === "videos") {
+        if (videoSubTab === "pending") {
+          const res = await api.get("/moderation/videos");
+          setVideos(res.data.data);
+        } else {
+          const res = await api.get("/moderation/videos/history");
+          setVideoHistory(res.data.data);
+        }
       } else {
         const res = await api.get("/logs?limit=100");
         setLogs(res.data.data);
@@ -90,7 +102,7 @@ const VerificationPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, photoSubTab]);
+  }, [activeTab, photoSubTab, videoSubTab]);
 
   useEffect(() => {
     fetchData();
@@ -393,6 +405,131 @@ const VerificationPage = () => {
       );
     }
 
+    if (activeTab === "videos") {
+      const activeVideos = videoSubTab === "pending" ? videos : videoHistory;
+      return (
+        <div className="space-y-6">
+          {/* Segmented Sub-Tab Control */}
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-6 border border-slate-200/60 shadow-sm">
+            <button
+              onClick={() => setVideoSubTab("pending")}
+              className={cn(
+                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-all duration-300",
+                videoSubTab === "pending"
+                  ? "bg-white text-primary shadow-md transform scale-[1.02]"
+                  : "text-slate-600 hover:text-primary hover:bg-white/50"
+              )}
+            >
+              <Clock size={14} />
+              Pending Queue
+            </button>
+            <button
+              onClick={() => setVideoSubTab("history")}
+              className={cn(
+                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-all duration-300",
+                videoSubTab === "history"
+                  ? "bg-white text-primary shadow-md transform scale-[1.02]"
+                  : "text-slate-600 hover:text-primary hover:bg-white/50"
+              )}
+            >
+              <History size={14} />
+              Moderation History
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {activeVideos.map((profile) => (
+              <div
+                key={profile.id}
+                className="border border-border rounded-3xl p-6 hover:shadow-xl transition-all bg-white flex flex-col group relative"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                    {profile.firstName ? profile.firstName[0] : "?"}
+                  </div>
+                  <span
+                    className={cn(
+                      "text-[9px] font-bold px-2 py-1 rounded-lg border",
+                      profile.introVideoStatus === "approved"
+                        ? "bg-green-50 border-green-200 text-green-600"
+                        : profile.introVideoStatus === "rejected"
+                        ? "bg-red-50 border-red-200 text-red-600"
+                        : "bg-amber-50 border-amber-200 text-amber-600"
+                    )}
+                  >
+                    {profile.introVideoStatus ? profile.introVideoStatus.toUpperCase() : "PENDING"}
+                  </span>
+                </div>
+
+                <h4 className="font-medium text-base text-foreground mb-1">
+                  {profile.firstName} {profile.lastName}
+                </h4>
+                <p className="text-xs font-mono text-black mb-4">
+                  {profile.customId}
+                </p>
+
+                {/* Video Player */}
+                <div className="w-full h-52 bg-black rounded-2xl overflow-hidden mb-6 relative border border-slate-200 shadow-inner">
+                  <video
+                    src={profile.introVideoUrl}
+                    controls
+                    className="w-full h-full object-cover"
+                    preload="metadata"
+                  />
+                </div>
+
+                {videoSubTab === "pending" ? (
+                  <div className="flex gap-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      className="flex-1 rounded-xl h-10 text-xs font-medium"
+                      onClick={() => handleVerifyVideo(profile.id, "rejected")}
+                    >
+                      <XCircle size={14} className="mr-2 text-red-500" />
+                      Reject
+                    </Button>
+                    <Button
+                      className="flex-1 rounded-xl h-10 text-xs font-medium bg-green-600 hover:bg-green-700 shadow-lg shadow-green-100"
+                      onClick={() => handleVerifyVideo(profile.id, "approved")}
+                    >
+                      <CheckCircle2 size={14} className="mr-2" />
+                      Approve
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex mt-auto justify-end">
+                    {profile.introVideoStatus === "approved" ? (
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-xl h-10 text-xs font-medium text-red-600 hover:bg-red-50 hover:border-red-200"
+                        onClick={() => handleVerifyVideo(profile.id, "rejected")}
+                      >
+                        <XCircle size={14} className="mr-2 text-red-500" />
+                        Reject Video
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full rounded-xl h-10 text-xs font-medium bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleVerifyVideo(profile.id, "approved")}
+                      >
+                        <CheckCircle2 size={14} className="mr-2" />
+                        Approve Video
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+            {activeVideos.length === 0 && (
+              <div className="col-span-full text-center py-12 text-black font-medium">
+                {videoSubTab === "pending" ? "No pending videos" : "No video history found"}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -491,6 +628,25 @@ const VerificationPage = () => {
     }
   };
 
+  const handleVerifyVideo = async (
+    profileId: string,
+    status: "approved" | "rejected",
+  ) => {
+    let reason = "";
+    if (status === "rejected") {
+      reason = window.prompt("Reason for rejection:") || "";
+      if (!reason) return;
+    }
+
+    try {
+      await api.post(`/moderation/videos/${profileId}/verify`, { status, reason });
+      toast.success(`Video ${status}`);
+      fetchData();
+    } catch {
+      toast.error("Moderation failed");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
@@ -544,6 +700,18 @@ const VerificationPage = () => {
               Photos
             </button>
             <button
+              onClick={() => setActiveTab("videos")}
+              className={cn(
+                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
+                activeTab === "videos"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  : "text-black hover:bg-gray-50"
+              )}
+            >
+              <Video size={14} />
+              Videos
+            </button>
+            <button
               onClick={() => setActiveTab("history")}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
@@ -567,14 +735,18 @@ const VerificationPage = () => {
               ? "Pending Profiles"
               : activeTab === "photos"
                 ? (photoSubTab === "pending" ? "Pending Photos" : "Photo Moderation History")
-                : "History"}
+                : activeTab === "videos"
+                  ? (videoSubTab === "pending" ? "Pending Videos" : "Video Moderation History")
+                  : "History"}
           </h3>
           <span className="ml-auto bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-medium ">
             {activeTab === "profiles"
               ? profiles.length
               : activeTab === "photos"
                 ? (photoSubTab === "pending" ? photos.length : photoHistory.length)
-                : logs.length}{" "}
+                : activeTab === "videos"
+                  ? (videoSubTab === "pending" ? videos.length : videoHistory.length)
+                  : logs.length}{" "}
             items
           </span>
         </div>

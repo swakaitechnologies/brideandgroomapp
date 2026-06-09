@@ -327,3 +327,106 @@ exports.updateSuccessStoryStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Error updating story" });
   }
 };
+
+exports.getPendingVideos = async (req, res) => {
+  try {
+    const profiles = await Profile.findAll({
+      where: {
+        introVideoStatus: "pending",
+        introVideoUrl: {
+          [Op.and]: [
+            { [Op.ne]: null },
+            { [Op.ne]: "" }
+          ]
+        },
+      },
+      include: [
+        { model: User, as: "user", attributes: ["firstName", "lastName", "email"] },
+      ],
+    });
+    res.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error("Error fetching pending videos:", error);
+    res.status(500).json({ success: false, message: "Error fetching pending videos" });
+  }
+};
+
+exports.getVideoHistory = async (req, res) => {
+  try {
+    const profiles = await Profile.findAll({
+      where: {
+        introVideoStatus: {
+          [Op.in]: ["approved", "rejected"],
+        },
+        introVideoUrl: {
+          [Op.and]: [
+            { [Op.ne]: null },
+            { [Op.ne]: "" }
+          ]
+        },
+      },
+      include: [
+        { model: User, as: "user", attributes: ["firstName", "lastName", "email"] },
+      ],
+      order: [["updatedAt", "DESC"]],
+      limit: 100,
+    });
+    res.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error("Error fetching video history:", error);
+    res.status(500).json({ success: false, message: "Error fetching video history" });
+  }
+};
+
+exports.verifyVideo = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+    const adminId = req.admin.id;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status, must be approved or rejected" });
+    }
+
+    const profile = await Profile.findByPk(id);
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    await profile.update({
+      introVideoStatus: status,
+    });
+
+    try {
+      await Notification.create({
+        userId: profile.userId,
+        type: "SYSTEM",
+        message: status === "approved"
+          ? "Your 15-second video introduction has been approved and is now active on your profile."
+          : `Your 15-second video introduction was rejected. Reason: ${reason || "Does not comply with community guidelines."}`,
+      });
+    } catch (notifErr) {
+      console.error("Failed to send moderation notification:", notifErr.message);
+    }
+
+    await logAdminAction(
+      adminId,
+      `Video ${status}`,
+      "ProfileVideo",
+      id,
+      { status, reason },
+      req.ip
+    );
+
+    if (redisClient.isReady) {
+      await redisClient.del(`profile:${profile.userId}`);
+      await redisClient.del(`profile:public:${profile.userId}`);
+      await redisClient.del(`profile:public:${profile.customId}`);
+    }
+
+    res.json({ success: true, message: `Video ${status} successfully` });
+  } catch (error) {
+    console.error("Error verifying video:", error);
+    res.status(500).json({ success: false, message: "Error verifying video" });
+  }
+};

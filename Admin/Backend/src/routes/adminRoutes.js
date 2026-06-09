@@ -90,6 +90,13 @@ router.post(
   authorize("superadmin", "moderator"),
   moderationController.verifyPhoto,
 );
+router.get("/moderation/videos", authorize("superadmin", "moderator"), moderationController.getPendingVideos);
+router.get("/moderation/videos/history", authorize("superadmin", "moderator"), moderationController.getVideoHistory);
+router.post(
+  "/moderation/videos/:id/verify",
+  authorize("superadmin", "moderator"),
+  moderationController.verifyVideo,
+);
 router.get("/moderation/reports", moderationController.getAllReports);
 router.post(
   "/moderation/reports/:id/resolve",
