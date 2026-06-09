@@ -173,6 +173,19 @@ const connectDB = async () => {
       unique: true,
     });
 
+    // Programmatically ensure referredByUserId column exists in Users
+    await ensureColumn("Users", "referredByUserId", {
+      type: Sequelize.UUID,
+      allowNull: true,
+    });
+
+    // Programmatically ensure referralCode column exists in Users
+    await ensureColumn("Users", "referralCode", {
+      type: Sequelize.STRING,
+      allowNull: true,
+      unique: true,
+    });
+
     // Programmatically ensure introVideoUrl and introVideoStatus columns exist in Profiles
     await ensureColumn("Profiles", "introVideoUrl", {
       type: Sequelize.STRING,

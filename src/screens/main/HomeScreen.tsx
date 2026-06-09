@@ -546,8 +546,8 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                     </Text>
                   </View>
                 </View>
-                <TouchableOpacity style={styles.promoBtn}>
-                  <Text style={styles.promoBtnText}>View Stories</Text>
+                <TouchableOpacity style={styles.promoBtn} onPress={() => navigation.navigate('SubmitStory')}>
+                  <Text style={styles.promoBtnText}>Share Story</Text>
                 </TouchableOpacity>
               </View>
             )}

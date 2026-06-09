@@ -1996,8 +1996,272 @@ exports.redirectSharedProfile = async (req, res) => {
       return res.redirect("https://brideandgroom.co.in");
     }
 
-    // Redirect to the public web profile page
-    res.redirect(`https://brideandgroom.co.in/profile/${profile.customId || "user"}`);
+    const host = req.get("host");
+    const protocol = req.protocol;
+
+    // Calculate age
+    let age = "N/A";
+    if (profile.dob) {
+      const birthDate = new Date(profile.dob);
+      const today = new Date();
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      age = calculatedAge;
+    }
+
+    // Serve a premium glassmorphic public preview HTML landing page
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View ${profile.firstName}'s Profile on Bride & Groom</title>
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${protocol}://${host}/api/profile/share/public/${shareToken}">
+  <meta property="og:title" content="Connect with ${profile.firstName} (${age} yrs) on Bride & Groom">
+  <meta property="og:description" content="${profile.gender || 'Candidate'} (${profile.maritalStatus || 'Never Married'}) - ${profile.religion || 'Matrimony Member'}${profile.caste ? ' / ' + profile.caste : ''} | ${profile.profession || ''} | Download our App to view full profile & connect.">
+  <meta property="og:image" content="https://brideandgroom.co.in/og-default.png">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #3B1E54;
+      --secondary: #9B72AA;
+      --accent: #E2BCB7;
+      --bg: #EEEEEE;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --text-main: #3B1E54;
+      --text-muted: #6B5B7B;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-main);
+    }
+    
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 480px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .avatar-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 20px auto;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      border: 4px solid var(--accent);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-blur {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, var(--secondary) 0%, var(--accent) 100%);
+      filter: blur(8px);
+      opacity: 0.8;
+    }
+    
+    .avatar-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: #fff;
+    }
+    
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+    
+    .tagline {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+    
+    .info-item {
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .info-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    .cta-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .cta-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    
+    .btn-primary:hover {
+      background: var(--secondary);
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: #fff;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(59, 30, 84, 0.05);
+      transform: translateY(-2px);
+    }
+    
+    .badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--primary);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="badge">Verified Candidate</div>
+    <div class="avatar-container">
+      <div class="avatar-blur"></div>
+      <div class="avatar-icon">❤</div>
+    </div>
+    
+    <h1>${profile.firstName} (${age} yrs)</h1>
+    <div class="tagline">${profile.gender || 'MEMBER'} | ${profile.city || 'India'}</div>
+    
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Marital Status</div>
+        <div class="info-value">${profile.maritalStatus || 'Never Married'}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Religion / Caste</div>
+        <div class="info-value">${profile.religion || 'Hindu'}${profile.caste ? ' / ' + profile.caste : ''}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Profession</div>
+        <div class="info-value">${profile.profession || 'Self Employed'}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Highest Degree</div>
+        <div class="info-value">${profile.highestDegree || 'Bachelor Degree'}</div>
+      </div>
+    </div>
+    
+    <div class="cta-container">
+      <div class="cta-title">To view full profile details and connect:</div>
+      <a href="https://play.google.com/store/apps/details?id=com.swakaitechnologies.brideandgroom" class="btn btn-primary">
+        <span>Get it on Google Play</span>
+      </a>
+      <a href="https://apps.apple.com/app/bride-and-groom-matrimony/id1234567890" class="btn btn-secondary">
+        <span>Download on the App Store</span>
+      </a>
+    </div>
+  </div>
+  
+  <div class="footer">
+    © 2026 Bride & Groom Matrimony. All rights reserved.
+  </div>
+
+</body>
+</html>`);
   } catch (error) {
     console.error("RESOLVE SHARE LINK ERROR:", error);
     res.redirect("https://brideandgroom.co.in");

@@ -87,7 +87,7 @@ exports.register = async (req, res) => {
   if (logBody.password) logBody.password = "[MASKED]";
   logger.info(`=== REGISTER REQ BODY === ${JSON.stringify(logBody)}`);
   try {
-    const { firstName, lastName, email, password, mobile, createdBy, agreedToTerms, is18Plus, dateOfBirth, gender, country } =
+    const { firstName, lastName, email, password, mobile, createdBy, agreedToTerms, is18Plus, dateOfBirth, gender, country, referredByCode } =
       req.body;
 
     const existingUserByEmail = await User.findOne({
@@ -124,6 +124,18 @@ exports.register = async (req, res) => {
       }
     }
 
+    let referredByUserId = null;
+    if (referredByCode) {
+      const referrer = await User.findOne({ where: { referralCode: referredByCode.trim().toUpperCase() } });
+      if (referrer) {
+        referredByUserId = referrer.id;
+      }
+    }
+
+    // Generate unique referral code for user
+    const crypto = require("crypto");
+    const referralCode = `${(firstName || "BG").substring(0, 2).toUpperCase().padEnd(2, "X")}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+
     const mobileOtpCode = generateOTP();
     const otpExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -147,6 +159,8 @@ exports.register = async (req, res) => {
           dateOfBirth,
           consentIp: registrationIp,
           consentAt: new Date(),
+          referredByUserId,
+          referralCode,
         },
         { transaction: t },
       );
@@ -200,6 +214,7 @@ exports.register = async (req, res) => {
         mobile: newUser.mobile,
         isEmailVerified: newUser.isEmailVerified,
         isMobileVerified: false,
+        referralCode: newUser.referralCode,
       },
     });
   } catch (error) {
@@ -262,6 +277,7 @@ exports.login = async (req, res) => {
         isEmailVerified: user.isEmailVerified,
         isMobileVerified: user.isMobileVerified,
         isBlocked: user.isBlocked,
+        referralCode: user.referralCode,
       },
     });
   } catch (error) {
@@ -341,6 +357,8 @@ exports.getMe = async (req, res) => {
         "createdAt",
         "nomineeName",
         "nomineeContact",
+        "referralCode",
+        "referredByUserId",
       ],
     });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -348,6 +366,44 @@ exports.getMe = async (req, res) => {
     res.json(userJson);
   } catch {
     res.status(500).json({ message: "Server error" });
+  }
+};
+exports.getReferralStats = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const user = await User.findByPk(userId, {
+      attributes: ["id", "referralCode"],
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const referees = await User.findAll({
+      where: { referredByUserId: userId },
+      attributes: ["id", "firstName", "lastName", "isMobileVerified", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    });
+
+    const totalReferred = referees.length;
+    const verifiedReferred = referees.filter(r => r.isMobileVerified).length;
+    const premiumDaysEarned = verifiedReferred * 15;
+
+    res.json({
+      success: true,
+      referralCode: user.referralCode,
+      totalReferred,
+      verifiedReferred,
+      premiumDaysEarned,
+      referees: referees.map(r => ({
+        firstName: r.firstName,
+        lastName: r.lastName ? `${r.lastName.substring(0, 1)}.` : "",
+        isVerified: r.isMobileVerified,
+        joinedAt: r.createdAt,
+      })),
+    });
+  } catch (error) {
+    logger.error("Error fetching referral stats:", error);
+    res.status(500).json({ message: "Server error fetching referral stats" });
   }
 };
 exports.forgotPassword = async (req, res) => {
@@ -800,6 +856,15 @@ exports.verifyOTP = async (req, res) => {
     // Track successful OTP verification
     trackBackendEvent(user.id, "mobile_otp_verified", { mobile: user.mobile });
 
+    // Process referral and welcome early-adopter rewards
+    try {
+      const { processReferral, processWelcomeTrial } = require("../utils/referralPromoHelper");
+      await processWelcomeTrial(user.id);
+      await processReferral(user.id);
+    } catch (promoErr) {
+      logger.error("Error processing promo rewards on OTP verify:", promoErr);
+    }
+
     res.json({
       success: true,
       message: "Mobile verified successfully.",
@@ -811,6 +876,7 @@ exports.verifyOTP = async (req, res) => {
         mobile: user.mobile,
         isEmailVerified: user.isEmailVerified,
         isMobileVerified: true,
+        referralCode: user.referralCode,
       }
     });
   } catch (error) {

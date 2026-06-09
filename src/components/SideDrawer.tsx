@@ -591,7 +591,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               <MenuItem icon={HelpCircle} label="Help & Support" onPress={() => { onClose(); navigation.navigate('HelpSupport'); }} />
               <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
               <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
-              <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} isLast={true} />
+              <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} />
+              <MenuItem icon={Heart} label="Share Success Story" onPress={() => { onClose(); navigation.navigate('SubmitStory'); }} isLast={true} />
             </View>
           </View>
 

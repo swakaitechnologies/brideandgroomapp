@@ -44,6 +44,7 @@ router.post("/forgot-password", mailerLimiter, authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
 router.post("/change-password", authMiddleware, authController.changePassword);
 router.get("/me", authMiddleware, authController.getMe);
+router.get("/referral-stats", authMiddleware, authController.getReferralStats);
 router.put("/update-info", authMiddleware, authController.updateAccountInfo);
 router.delete("/delete-account", authMiddleware, authController.deleteAccount);
 router.post("/verify-otp", authMiddleware, authController.verifyOTP);

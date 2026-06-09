@@ -35,6 +35,10 @@ User.hasOne(Profile, {
 });
 Profile.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+// User <-> User (Referral self-reference)
+User.belongsTo(User, { foreignKey: "referredByUserId", as: "referrer" });
+User.hasMany(User, { foreignKey: "referredByUserId", as: "referees" });
+
 // User <-> UserSession
 User.hasMany(UserSession, {
   foreignKey: "userId",

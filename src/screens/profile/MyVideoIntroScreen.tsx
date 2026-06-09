@@ -17,7 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
   ArrowLeft, Video, Trash2, Play, Pause,
-  ShieldAlert, Check, X, Camera, Info, Sparkles, Lock, ShieldCheck, Clock
+  ShieldAlert, Check, X, Camera, Info, Sparkles, Lock, ShieldCheck, Clock, Gift
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { getProfile, getMySubscription, uploadIntroVideo, deleteIntroVideo } from '../../services/api';
@@ -279,6 +279,39 @@ export default function MyVideoIntroScreen() {
                 <Sparkles size={18} color={accentGold} />
                 <Text style={[styles.benefitText, { color: textColor }]}>Celestial Premium Diamond & Platinum Exclusive</Text>
               </View>
+            </View>
+
+            {/* Referral Promotion Callout */}
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: 'rgba(214, 175, 55, 0.08)',
+              padding: 12,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(214, 175, 55, 0.3)',
+              marginBottom: 20,
+              width: '100%',
+              gap: 10
+            }}>
+              <Gift size={22} color="#D4AF37" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, ...fonts.bold, color: textColor }}>Get Premium Free!</Text>
+                <Text style={{ fontSize: 11, color: mutedText, marginTop: 2 }}>
+                  Invite a friend using your referral code and get 15 days of free Premium!
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("ReferralDashboard")}
+                style={{
+                  backgroundColor: '#3B1E54',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8
+                }}
+              >
+                <Text style={{ color: '#FFF', fontSize: 11, ...fonts.bold }}>Invite</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity

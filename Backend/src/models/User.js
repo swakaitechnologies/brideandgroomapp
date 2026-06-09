@@ -134,6 +134,15 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    referredByUserId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
+    referralCode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
   },
   {
     timestamps: true,

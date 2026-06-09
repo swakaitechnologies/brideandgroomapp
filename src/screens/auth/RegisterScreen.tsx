@@ -32,6 +32,7 @@ import {
   EyeOff,
   Shield,
   Heart,
+  Gift,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
@@ -62,6 +63,7 @@ export default function RegisterScreen() {
     dateOfBirth: "",
     gender: "",
     country: "India",
+    referredByCode: "",
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
@@ -334,6 +336,9 @@ export default function RegisterScreen() {
       )}
       {renderField("mobile", Phone, "Mobile number", formData.mobile, (v) =>
         setFormData({ ...formData, mobile: v })
+      )}
+      {renderField("referredByCode", Gift, "Referral code (Optional)", formData.referredByCode, (v) =>
+        setFormData({ ...formData, referredByCode: v })
       )}
 
       <Text style={s.fieldLabel}>COUNTRY</Text>

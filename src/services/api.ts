@@ -156,6 +156,29 @@ export const getMySubscription = async () => {
   }
 };
 
+// Referral Stats
+export const getReferralStats = async () => {
+  try {
+    return await apiRequest('/auth/referral-stats');
+  } catch (error) {
+    console.error("getReferralStats error:", error);
+    throw error;
+  }
+};
+
+// Submit Success Story
+export const submitSuccessStory = async (formData: FormData) => {
+  try {
+    return await apiRequest('/stories/submit', {
+      method: 'POST',
+      body: formData as any,
+    });
+  } catch (error) {
+    console.error("submitSuccessStory error:", error);
+    throw error;
+  }
+};
+
 // Create Payment Order
 export const createPaymentOrder = async (planId: string, currency: string = 'INR', couponCode?: string) => {
   try {

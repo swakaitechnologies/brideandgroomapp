@@ -33,6 +33,8 @@ import EditProfileScreen from './src/screens/profile/EditProfileScreen';
 import PartnerPreferenceScreen from './src/screens/profile/PartnerPreferenceScreen';
 import ContactFilterScreen from './src/screens/profile/ContactFilterScreen';
 import AccountSettingScreen from './src/screens/profile/AccountSettingScreen';
+import ReferralDashboardScreen from './src/screens/profile/ReferralDashboardScreen';
+import SubmitStoryScreen from './src/screens/profile/SubmitStoryScreen';
 import HelpSupportScreen from './src/screens/profile/HelpSupportScreen';
 import CheckoutScreen from './src/screens/checkout/CheckoutScreen';
 import ModalScreen from './src/screens/core/ModalScreen';
@@ -137,6 +139,8 @@ function App() {
             <Stack.Screen name="PartnerPreference" component={PartnerPreferenceScreen} />
             <Stack.Screen name="ContactFilter" component={ContactFilterScreen} />
             <Stack.Screen name="AccountSetting" component={AccountSettingScreen} />
+            <Stack.Screen name="ReferralDashboard" component={ReferralDashboardScreen} />
+            <Stack.Screen name="SubmitStory" component={SubmitStoryScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             <Stack.Screen name="Checkout" component={CheckoutScreen} />
             <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />

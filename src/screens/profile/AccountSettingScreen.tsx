@@ -21,7 +21,8 @@ import {
   Lock, User, Shield, Bell, AlertTriangle,
   CheckCircle, XCircle, AlertCircle, HelpCircle,
   Copy, Check, Mail, Phone, Calendar, Trash2,
-  Eye, EyeOff, Ban, Monitor, Smartphone, LogOut
+  Eye, EyeOff, Ban, Monitor, Smartphone, LogOut,
+  Gift, Share2
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { API_BASE_URL, getBlockedUsers, unblockUser } from '../../services/api';
@@ -906,6 +907,26 @@ export default function AccountSettingScreen() {
                     <Text style={styles.saveBtnText}>Update Password</Text>
                   </>
                 )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Section 3: Referral Program */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Gift size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.cardTitle}>Referral Program</Text>
+              </View>
+
+              <Text style={{ color: '#7E6B8F', fontSize: 13, marginBottom: 16, lineHeight: 18, ...fonts.medium }}>
+                Invite friends to join Bride & Groom Matrimony. Both of you will get 15 days of free premium features when they sign up and verify their account!
+              </Text>
+
+              <TouchableOpacity 
+                style={[styles.saveBtn, { backgroundColor: palette.gold.main, borderColor: palette.gold.main }]} 
+                onPress={() => navigation.navigate('ReferralDashboard')}
+              >
+                <Share2 size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
+                <Text style={[styles.saveBtnText, { color: palette.purple.deep }]}>Invite & Earn Premium</Text>
               </TouchableOpacity>
             </View>
           </>

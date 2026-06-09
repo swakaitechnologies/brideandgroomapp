@@ -40,6 +40,7 @@ const registerSchema = z.object({
   }, "You must be at least 18 years old to register"),
   country: z.string().trim().optional(),
   gender: z.string().trim().optional(),
+  referredByCode: z.string().trim().optional(),
 });
 
 const loginSchema = z.object({
