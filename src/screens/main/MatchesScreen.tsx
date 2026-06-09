@@ -37,11 +37,14 @@ import {
   BadgeCheck,
   Briefcase,
   Ban,
+  Plus,
+  Play,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
-import api, { resolvePhotoUrl } from "../../services/api";
+import api, { resolvePhotoUrl, getVideoReels } from "../../services/api";
 import { showToast } from "../../utils/toast";
 import { ProfileCard } from "../../components/ProfileCard";
+import LinearGradient from "react-native-linear-gradient";
 import { fonts } from "@/src/theme";
 
 const { width, height } = Dimensions.get("window");
@@ -73,6 +76,7 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
   const [allProfiles, setAllProfiles] = useState<any[]>([]);
   const [dailyPicks, setDailyPicks] = useState<any[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
+  const [reelsProfiles, setReelsProfiles] = useState<any[]>([]);
   
   // Navigation & Query States
   const [activeTab, setActiveTab] = useState<"new" | "daily" | "premium" | "my" | "near">("new");
@@ -92,9 +96,10 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
 
   const fetchData = async () => {
     try {
-      const [ownRes, allRes] = await Promise.all([
+      const [ownRes, allRes, reelsRes] = await Promise.all([
         api.get("/profile").catch(() => ({ data: { success: false, data: null } })),
         api.get("/profile/all").catch(() => ({ data: { success: false, data: [] } })),
+        getVideoReels().catch(() => null),
       ]);
 
       if (ownRes.data?.success && ownRes.data?.data) {
@@ -102,6 +107,9 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
       }
       if (allRes.data?.success && allRes.data?.data) {
         setAllProfiles(allRes.data.data);
+      }
+      if (reelsRes?.data?.success && reelsRes.data?.data) {
+        setReelsProfiles(reelsRes.data.data);
       }
     } catch (error) {
       console.error("Fetch Matches Data Error:", error);
@@ -119,6 +127,81 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
     } catch (e) {
       console.warn("Failed to load recently viewed IDs:", e);
     }
+  };
+
+  const renderReelsRow = () => {
+    if (reelsProfiles.length === 0) return null;
+    
+    return (
+      <View style={styles.reelsRowContainer}>
+        <View style={styles.reelsRowHeader}>
+          <Text style={styles.reelsRowTitle}>Video Intros</Text>
+          <Sparkles size={12} color={palette.gold.main} fill={palette.gold.main} />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.reelsScrollContent}
+        >
+          {/* Bubble #1: Own Video Intro */}
+          <TouchableOpacity
+            style={styles.reelBubbleWrapper}
+            onPress={() => navigation.navigate("MyVideoIntro")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.ownReelOutline}>
+              <Image
+                source={{
+                  uri: resolvePhotoUrl(
+                    ownProfile?.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                    ownProfile?.photos?.[0]?.url ||
+                    `https://api.dicebear.com/7.x/avataaars/png?seed=me`
+                  )
+                }}
+                style={styles.reelBubbleAvatar}
+              />
+              <View style={styles.addReelBadge}>
+                <Plus size={10} color="#FFFFFF" strokeWidth={3} />
+              </View>
+            </View>
+            <Text style={styles.reelBubbleName} numberOfLines={1}>Your Intro</Text>
+          </TouchableOpacity>
+
+          {/* Matches Video Intros */}
+          {reelsProfiles.map((item, index) => {
+            const avatarUrl = item.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url || item.photos?.[0]?.url;
+            return (
+              <TouchableOpacity
+                key={item.userId || item.id}
+                style={styles.reelBubbleWrapper}
+                onPress={() => navigation.navigate("VideoReels", { reels: reelsProfiles, startIndex: index })}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#D4AF37', '#3B1E54']}
+                  style={styles.matchReelOutline}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.innerReelCircle}>
+                    <Image
+                      source={{
+                        uri: resolvePhotoUrl(avatarUrl || `https://api.dicebear.com/7.x/avataaars/png?seed=${item.firstName}`)
+                      }}
+                      style={styles.reelBubbleAvatar}
+                    />
+                  </View>
+                  <View style={styles.playReelBadge}>
+                    <Play size={8} color="#FFFFFF" fill="#FFFFFF" />
+                  </View>
+                </LinearGradient>
+                <Text style={styles.reelBubbleName} numberOfLines={1}>{item.firstName}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
   };
 
   const loadDailyPicks = useCallback(async () => {
@@ -787,6 +870,7 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
           keyExtractor={(item) => item.id || item.userId || Math.random().toString()}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={renderReelsRow()}
           ListEmptyComponent={renderEmptyState()}
           refreshControl={
             <RefreshControl
@@ -1518,5 +1602,97 @@ const styles = StyleSheet.create({
     color: "#D4AF37",
     textDecorationLine: "underline",
     textAlign: "center",
+  },
+  reelsRowContainer: {
+    marginVertical: 10,
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  reelsRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    gap: 6,
+  },
+  reelsRowTitle: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: '#3B1E54',
+  },
+  reelsScrollContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  reelBubbleWrapper: {
+    alignItems: 'center',
+    gap: 4,
+    width: 68,
+  },
+  ownReelOutline: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#E8E0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    backgroundColor: '#FFFFFF',
+  },
+  addReelBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3B1E54',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  matchReelOutline: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  innerReelCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  reelBubbleAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  playReelBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#D4AF37',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  reelBubbleName: {
+    fontSize: 10,
+    ...fonts.semibold,
+    color: '#7E6B8F',
+    textAlign: 'center',
+    width: '100%',
   },
 });

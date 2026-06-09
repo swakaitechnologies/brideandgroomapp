@@ -179,6 +179,16 @@ export const submitSuccessStory = async (formData: FormData) => {
   }
 };
 
+// Get approved video reels for matching
+export const getVideoReels = async () => {
+  try {
+    return await apiRequest('/profile/video-reels');
+  } catch (error) {
+    console.error("getVideoReels error:", error);
+    throw error;
+  }
+};
+
 // Create Payment Order
 export const createPaymentOrder = async (planId: string, currency: string = 'INR', couponCode?: string) => {
   try {

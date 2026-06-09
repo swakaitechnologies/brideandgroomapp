@@ -1291,6 +1291,121 @@ exports.requestMobileChange = async (req, res) => {
   }
 };
 
+exports.getVideoReels = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // 1. Get current user's profile to find their gender
+    const userProfile = await Profile.findOne({ where: { userId } });
+
+    let genderFilter = {};
+    if (userProfile && userProfile.gender) {
+      genderFilter = {
+        gender: userProfile.gender.toLowerCase() === "male" ? "Female" : "Male",
+      };
+    }
+
+    // Check for Premium status once for the whole list
+    const { Subscription, Block } = require("../models/associations");
+    const sub = await Subscription.findOne({
+      where: { userId, status: "active", endDate: { [Op.gt]: new Date() } }
+    });
+    const viewerIsPremium = !!sub;
+
+    // Fetch block records
+    const blockedByRecords = await Block.findAll({
+      where: { blockedId: userId },
+      attributes: ["blockerId"]
+    });
+    const blockedByUserIds = blockedByRecords.map(r => r.blockerId);
+
+    const blockedRecords = await Block.findAll({
+      where: { blockerId: userId },
+      attributes: ["blockedId"]
+    });
+    const blockedUserIds = blockedRecords.map(r => r.blockedId);
+
+    const excludeIds = [userId, ...blockedByUserIds, ...blockedUserIds];
+    const userExcludeFilter = {
+      [Op.notIn]: excludeIds
+    };
+
+    // Fetch opposite-gender profiles who have approved video reels
+    const profiles = await Profile.findAll({
+      where: {
+        userId: userExcludeFilter,
+        verificationStatus: "approved",
+        introVideoStatus: "approved",
+        introVideoUrl: {
+          [Op.and]: [
+            { [Op.ne]: null },
+            { [Op.ne]: "" }
+          ]
+        },
+        ...genderFilter,
+      },
+      include: [
+        {
+          model: User,
+          as: "user",
+          where: { isDeleted: false, isBlocked: false },
+          attributes: ["isOnline", "lastSeen"],
+          include: [
+            {
+              model: Subscription,
+              as: "subscriptions",
+              required: false,
+              where: {
+                status: "active",
+                endDate: { [Op.gt]: new Date() }
+              }
+            }
+          ]
+        },
+        { model: PhotoModel, as: "photos" },
+        {
+          model: PrivacySetting,
+          as: "privacySettings",
+          required: false,
+        },
+      ],
+      limit: 50,
+      order: [["updatedAt", "DESC"]],
+    });
+
+    const filteredProfiles = profiles
+      .filter((p) => {
+        const settings = p.privacySettings;
+        return !settings || (!settings.isDeactivated && !settings.isProfilePaused);
+      })
+      .map((p) => {
+        const pJson = maskProfilePrivacy(
+          p,
+          userId,
+          false,
+          viewerIsPremium,
+          false,
+          false
+        );
+        if (pJson) {
+          const activeSub = p.user?.subscriptions?.find(
+            (sub) => sub.status === "active" && new Date(sub.endDate) > new Date()
+          );
+          pJson.isPremium = !!activeSub;
+          pJson.accountType = activeSub ? "Premium" : "Free";
+          pJson.isBlockedByMe = blockedUserIds.includes(p.userId);
+        }
+        return pJson;
+      })
+      .filter((p) => p !== null);
+
+    res.status(200).json({ success: true, data: filteredProfiles });
+  } catch (error) {
+    console.error("GET VIDEO REELS ERROR:", error);
+    res.status(500).json({ success: false, message: "Error fetching video reels" });
+  }
+};
+
 exports.getDailyPicks = async (req, res) => {
   try {
     const userId = req.userId;

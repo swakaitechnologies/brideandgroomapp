@@ -23,6 +23,7 @@ import LottieView from "lottie-react-native";
 import LinearGradient from "react-native-linear-gradient";
 import {
   Plus,
+  Play,
   Edit2,
   ChevronRight,
   Crown,
@@ -51,6 +52,7 @@ import {
   resolvePhotoUrl,
   getKYCStatus,
   getMySubscription,
+  getVideoReels,
 } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ProfileCard } from "../../components/ProfileCard";
@@ -145,6 +147,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
   const [kycStatus, setKycStatus] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [reelsProfiles, setReelsProfiles] = useState<any[]>([]);
 
   // Theme-aware colors
   const themeBg = isDark ? "#0F0F0F" : "#FFFFFF";
@@ -155,7 +158,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
   const fetchData = async () => {
     try {
-      const [premiumRes, newRes, visitorsRes, profileRes, bannerRes, kycRes, subRes] =
+      const [premiumRes, newRes, visitorsRes, profileRes, bannerRes, kycRes, subRes, reelsRes] =
         await Promise.all([
           getDailyPicks().catch(() => null),
           getAllProfiles().catch(() => null),
@@ -164,6 +167,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
           getBanners().catch(() => null),
           getKYCStatus().catch(() => null),
           getMySubscription().catch(() => null),
+          getVideoReels().catch(() => null),
         ]);
 
       if (premiumRes?.data?.data || newRes?.data?.data) {
@@ -189,6 +193,9 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
       }
       if (bannerRes?.data?.data) {
         setBanners(bannerRes.data.data);
+      }
+      if (reelsRes?.data?.success && reelsRes.data?.data) {
+        setReelsProfiles(reelsRes.data.data);
       }
 
       if (kycRes?.data) {
@@ -368,6 +375,79 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
     }
   };
 
+  const renderReelsRow = () => {
+    return (
+      <View style={styles.reelsRowContainer}>
+        <View style={styles.reelsRowHeader}>
+          <Text style={styles.reelsRowTitle}>Video Intros</Text>
+          <Sparkles size={12} color={palette.gold.main} fill={palette.gold.main} />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.reelsScrollContent}
+        >
+          {/* Bubble #1: Own Video Intro */}
+          <TouchableOpacity
+            style={styles.reelBubbleWrapper}
+            onPress={() => navigation.navigate("MyVideoIntro")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.ownReelOutline}>
+              <Image
+                source={{
+                  uri: resolvePhotoUrl(
+                    userProfile?.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                    userProfile?.photos?.[0]?.url ||
+                    `https://api.dicebear.com/7.x/avataaars/png?seed=me`
+                  )
+                }}
+                style={styles.reelBubbleAvatar}
+              />
+              <View style={styles.addReelBadge}>
+                <Plus size={10} color="#FFFFFF" strokeWidth={3} />
+              </View>
+            </View>
+            <Text style={styles.reelBubbleName} numberOfLines={1}>Your Intro</Text>
+          </TouchableOpacity>
+
+          {/* Matches Video Intros */}
+          {reelsProfiles.map((item, index) => {
+            const avatarUrl = item.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url || item.photos?.[0]?.url;
+            return (
+              <TouchableOpacity
+                key={item.userId || item.id}
+                style={styles.reelBubbleWrapper}
+                onPress={() => navigation.navigate("VideoReels", { reels: reelsProfiles, startIndex: index })}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#D4AF37', '#3B1E54']}
+                  style={styles.matchReelOutline}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.innerReelCircle}>
+                    <Image
+                      source={{
+                        uri: resolvePhotoUrl(avatarUrl || `https://api.dicebear.com/7.x/avataaars/png?seed=${item.firstName}`)
+                      }}
+                      style={styles.reelBubbleAvatar}
+                    />
+                  </View>
+                  <View style={styles.playReelBadge}>
+                    <Play size={8} color="#FFFFFF" fill="#FFFFFF" />
+                  </View>
+                </LinearGradient>
+                <Text style={styles.reelBubbleName} numberOfLines={1}>{item.firstName}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
   const profileCompletion = userProfile?.profileCompletion || 0;
 
   return (
@@ -468,6 +548,8 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             </View>
           </TouchableOpacity>
         </View>
+
+        {renderReelsRow()}
 
         {/* Dashboard Quick Stats */}
         <View style={[styles.statsPanel, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}>
@@ -1368,5 +1450,96 @@ const styles = StyleSheet.create({
     color: "#D4AF37",
     textDecorationLine: "underline",
     textAlign: "center",
+  },
+  reelsRowContainer: {
+    marginVertical: 15,
+    backgroundColor: 'transparent',
+  },
+  reelsRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    gap: 6,
+  },
+  reelsRowTitle: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: '#3B1E54',
+  },
+  reelsScrollContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  reelBubbleWrapper: {
+    alignItems: 'center',
+    gap: 4,
+    width: 68,
+  },
+  ownReelOutline: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#E8E0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    backgroundColor: '#FFFFFF',
+  },
+  addReelBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3B1E54',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  matchReelOutline: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  innerReelCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  reelBubbleAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  playReelBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#D4AF37',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  reelBubbleName: {
+    fontSize: 10,
+    ...fonts.semibold,
+    color: '#7E6B8F',
+    textAlign: 'center',
+    width: '100%',
   },
 });

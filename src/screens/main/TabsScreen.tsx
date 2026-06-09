@@ -7,7 +7,7 @@ import MatchesScreen from "./MatchesScreen";
 import ChatsScreen from "./ChatsScreen";
 import PremiumScreen from "./PremiumScreen";
 import UpdatesScreen from "./UpdatesScreen";
-import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Sparkles, Search } from "lucide-react-native";
+import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Sparkles, Search, Play } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import SideDrawer from "../../components/SideDrawer";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -17,6 +17,7 @@ import { getChatList, getProfile } from "../../services/api";
 import { setupPushNotifications, listenToTokenRefresh, setupNotificationListeners } from "../../services/pushNotification";
 import { useNotificationSocket } from "../../hooks/useNotificationSocket";
 import { fonts } from "@/src/theme";
+import LinearGradient from "react-native-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
@@ -246,6 +247,23 @@ export default function TabsScreen() {
       {/* Active Screen */}
       <View style={styles.screenContainer}>{renderActiveScreen()}</View>
 
+      {!hideTabBar && (
+        <TouchableOpacity
+          style={[styles.floatingReelsBtn, { bottom: Math.max(insets.bottom + 80, 95) }]}
+          onPress={() => navigation.navigate("VideoReels")}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#3B1E54', '#D4AF37']}
+            style={styles.reelsBtnGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Play size={20} color="#FFFFFF" fill="#FFFFFF" />
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+
       <Animated.View
         pointerEvents={hideTabBar ? "none" : "auto"}
         style={[
@@ -465,5 +483,36 @@ const styles = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 0.5,
     textTransform: "uppercase",
+  },
+  floatingReelsBtn: {
+    position: "absolute",
+    right: 20,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 99,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3B1E54",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  reelsBtnGradient: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 27,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(212, 175, 55, 0.6)",
   },
 });

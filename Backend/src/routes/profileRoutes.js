@@ -13,6 +13,7 @@ router.get("/download/pdf", protect, profileController.downloadProfilePdf);
 router.get("/all", protect, profileController.getAllProfiles);
 router.get("/search", protect, profileController.searchProfiles);
 router.get("/daily-picks", protect, profileController.getDailyPicks);
+router.get("/video-reels", protect, profileController.getVideoReels);
 router.get("/viewers", protect, profileController.getProfileViewers);
 router.get("/metadata", protect, profileController.getMetadata);
 router.post("/share", protect, profileController.shareProfile);
