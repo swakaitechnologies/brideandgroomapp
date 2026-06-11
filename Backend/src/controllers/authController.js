@@ -229,14 +229,19 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ where: { email } });
+    const inputIdentifier = email?.trim().toLowerCase();
+
+    let user = await User.findOne({ where: { email: inputIdentifier } });
+    if (!user) {
+      user = await User.findOne({ where: { mobile: inputIdentifier } });
+    }
 
     if (!user) {
       return res.status(404).json({ message: "User does not exist" });
     }
 
     if (!(await bcrypt.compare(password, user.password))) {
-      await recordFailedAttempt(email);
+      await recordFailedAttempt(inputIdentifier);
       return res.status(401).json({ message: "Invalid password" });
     }
 
@@ -248,7 +253,13 @@ exports.login = async (req, res) => {
     }
 
     // Clear failed attempts on successful login
-    await clearFailedAttempts(email);
+    await clearFailedAttempts(inputIdentifier);
+    if (user.email && user.email.toLowerCase() !== inputIdentifier) {
+      await clearFailedAttempts(user.email);
+    }
+    if (user.mobile && user.mobile.toLowerCase() !== inputIdentifier) {
+      await clearFailedAttempts(user.mobile);
+    }
 
     // Update online status
     try {

@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Dimensions,
   ScrollView,
   Text,
@@ -23,13 +22,12 @@ import {
   XCircle,
   ArrowRight,
   Link as LinkIcon,
-  Heart,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
 import { fonts } from "@/src/theme";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 export default function VerifyEmailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -86,6 +84,7 @@ export default function VerifyEmailScreen() {
     if (initialToken) {
       performVerification(initialToken);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialToken]);
 
   return (
@@ -123,15 +122,7 @@ export default function VerifyEmailScreen() {
           keyboardShouldPersistTaps="handled"
           removeClippedSubviews={false}
         >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <Image
-              source={require("../../../assets/images/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
-          </View>
+
 
           {/* Form Card */}
           <View style={styles.formSection}>
@@ -296,47 +287,25 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingTop: Platform.OS === "ios" ? 40 : 60,
   },
-  headerSection: {
-    alignItems: "center",
-    marginBottom: height * 0.04,
-  },
-  logo: {
-    width: width * 0.65,
-    height: 70,
-  },
-  taglineText: {
-    fontSize: 10,
-    color: "#6B5A80",
-    letterSpacing: 1.5,
-    ...fonts.semibold,
-    textAlign: "center",
-    marginTop: 8,
-  },
   formSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 30,
-    paddingHorizontal: 26,
-    paddingVertical: 36,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.05,
-    shadowRadius: 30,
-    elevation: 6,
+    backgroundColor: "transparent",
+    width: "100%",
   },
   formTitle: {
-    fontSize: 26,
+    fontSize: 32,
     ...fonts.bold,
     color: palette.purple.deep,
-    marginBottom: 6,
+    marginBottom: 8,
     letterSpacing: -0.5,
     textAlign: "left",
   },
   formSubtitle: {
-    fontSize: 14,
-    color: "#7A6F8B",
-    marginBottom: 30,
+    fontSize: 15,
+    color: palette.purple.muted,
+    marginBottom: 32,
     ...fonts.regular,
     textAlign: "left",
+    lineHeight: 22,
   },
   fieldWrap: {
     marginBottom: 20,
@@ -351,10 +320,10 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F6F2FC",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: "#EDE6F5",
     paddingHorizontal: 18,
     height: 58,
   },

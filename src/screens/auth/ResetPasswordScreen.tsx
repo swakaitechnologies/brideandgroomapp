@@ -6,8 +6,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
-  Dimensions,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,7 +25,6 @@ import { API_BASE_URL } from "../../services/api";
 import LinearGradient from "react-native-linear-gradient";
 import { fonts } from "@/src/theme";
 
-const { width } = Dimensions.get("window");
 
 export default function ResetPasswordScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -115,13 +112,7 @@ export default function ResetPasswordScreen() {
             end={{ x: 1, y: 1 }}
           />
 
-          <View style={styles.header}>
-            <Image
-              source={require("../../../assets/images/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+
 
           <View style={styles.formCard}>
             <View style={styles.titleContainer}>
@@ -255,15 +246,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     justifyContent: "center",
   },
-  header: {
-    alignItems: "center",
-    marginBottom: 40,
-    backgroundColor: "transparent",
-  },
-  logo: {
-    width: width * 0.7,
-    height: 100,
-  },
   bgGradientTop: {
     position: "absolute",
     top: -60,
@@ -283,14 +265,8 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   formCard: {
-    backgroundColor: palette.neutral.white,
-    borderRadius: 25,
-    padding: 25,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
+    backgroundColor: "transparent",
+    width: "100%",
   },
   titleContainer: {
     alignItems: "center",
@@ -298,8 +274,8 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   cardTitle: {
-    fontSize: 26,
-    ...fonts.semibold,
+    fontSize: 32,
+    ...fonts.bold,
     color: palette.purple.deep,
     textAlign: "center",
   },
@@ -308,11 +284,11 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: palette.purple.muted,
     textAlign: "center",
     marginTop: 8,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   label: {
     fontSize: 10,
@@ -326,9 +302,9 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FDFBFF",
-    borderWidth: 1,
-    borderColor: palette.purple.border,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
     borderRadius: 15,
     marginBottom: 20,
     paddingHorizontal: 15,

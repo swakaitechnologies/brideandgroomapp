@@ -6,11 +6,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Dimensions,
   ScrollView,
   View,
   Text,
+  StatusBar,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { register } from "@/src/store/authSlice";
@@ -82,7 +82,14 @@ export default function RegisterScreen() {
   }, []);
 
   const updateDOB = (day: string, month: string, year: string) => {
-    if (day && month && year && year.length === 4) {
+    const dVal = parseInt(day, 10);
+    const mVal = parseInt(month, 10);
+    const yVal = parseInt(year, 10);
+    if (
+      !isNaN(dVal) && dVal >= 1 && dVal <= 31 &&
+      !isNaN(mVal) && mVal >= 1 && mVal <= 12 &&
+      year && year.length === 4 && !isNaN(yVal) && yVal > 1900
+    ) {
       setFormData((prev) => ({
         ...prev,
         dateOfBirth: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
@@ -94,7 +101,7 @@ export default function RegisterScreen() {
 
   const handleDayChange = (val: string) => {
     const c = val.replace(/[^0-9]/g, "");
-    if (c === "" || (parseInt(c, 10) >= 1 && parseInt(c, 10) <= 31)) {
+    if (c === "" || c === "0" || (parseInt(c, 10) >= 1 && parseInt(c, 10) <= 31)) {
       setDobDay(c);
       updateDOB(c, dobMonth, dobYear);
     }
@@ -102,7 +109,7 @@ export default function RegisterScreen() {
 
   const handleMonthChange = (val: string) => {
     const c = val.replace(/[^0-9]/g, "");
-    if (c === "" || (parseInt(c, 10) >= 1 && parseInt(c, 10) <= 12)) {
+    if (c === "" || c === "0" || (parseInt(c, 10) >= 1 && parseInt(c, 10) <= 12)) {
       setDobMonth(c);
       updateDOB(dobDay, c, dobYear);
     }
@@ -530,6 +537,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={s.root}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* Ambient Background Glows */}
       <LinearGradient
         colors={["rgba(59, 30, 84, 0.12)", "rgba(59, 30, 84, 0)"]}
@@ -565,11 +573,6 @@ export default function RegisterScreen() {
         >
           {/* Header Section */}
           <View style={s.headerSection}>
-            <Image
-              source={require("../../../assets/images/logo.png")}
-              style={s.logo}
-              resizeMode="contain"
-            />
             {/* Step Indicators Row */}
             <View style={s.stepIndicatorsRow}>
               {stepsData.map((item, i) => {
@@ -749,31 +752,25 @@ const s = StyleSheet.create({
     borderRadius: 140,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 30,
-    paddingHorizontal: 26,
-    paddingVertical: 24,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.05,
-    shadowRadius: 30,
-    elevation: 6,
+    backgroundColor: "transparent",
+    width: "100%",
     marginBottom: 8,
   },
   cardTitle: {
-    fontSize: 26,
+    fontSize: 32,
     ...fonts.bold,
     color: palette.purple.deep,
-    marginBottom: 4,
+    marginBottom: 8,
     letterSpacing: -0.5,
     textAlign: "left",
   },
   cardSubtitle: {
-    fontSize: 14,
-    color: "#7A6F8B",
-    marginBottom: 16,
+    fontSize: 15,
+    color: palette.purple.muted,
+    marginBottom: 24,
     ...fonts.regular,
     textAlign: "left",
+    lineHeight: 22,
   },
   fieldWrap: {
     marginBottom: 14,
@@ -788,10 +785,10 @@ const s = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F6F2FC",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: "#EDE6F5",
     paddingHorizontal: 18,
     height: 50,
   },
@@ -813,9 +810,13 @@ const s = StyleSheet.create({
     color: palette.purple.deep,
     ...fonts.medium,
     paddingVertical: 0,
+    height: "100%",
+    textAlignVertical: "center",
   },
   eyeBtn: {
     paddingLeft: 10,
+    height: "100%",
+    justifyContent: "center",
   },
   dobRow: {
     flexDirection: "row",
@@ -825,10 +826,10 @@ const s = StyleSheet.create({
   },
   dobField: {
     flex: 1,
-    backgroundColor: "#F6F2FC",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: "#EDE6F5",
     height: 44,
     justifyContent: "center",
   },
@@ -867,8 +868,8 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "transparent",
-    backgroundColor: "#F6F2FC",
+    borderColor: "#EDE6F5",
+    backgroundColor: "#FFFFFF",
   },
   chipActive: {
     backgroundColor: palette.purple.deep,

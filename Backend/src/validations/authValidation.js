@@ -44,7 +44,14 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().email("Invalid email address").toLowerCase(),
+  email: z.string().trim().toLowerCase().refine(
+    (val) => {
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+      const isMobile = /^\+?[\d\s-]{10,}$/.test(val);
+      return isEmail || isMobile;
+    },
+    { message: "Must be a valid email address or mobile number" }
+  ),
   password: z.string().min(1, "Password is required"),
 });
 

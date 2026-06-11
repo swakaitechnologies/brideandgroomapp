@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -6,12 +6,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Dimensions,
   ScrollView,
   Animated,
   View,
   Text,
+  StatusBar,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/src/store/authSlice";
@@ -19,7 +19,7 @@ import { RootState, AppDispatch } from "@/src/store";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
-  Mail,
+  User,
   Lock,
   ArrowRight,
   Eye,
@@ -31,7 +31,7 @@ import { palette } from "@/src/theme/colors";
 import { fonts } from "@/src/theme";
 import LinearGradient from "react-native-linear-gradient";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -72,6 +72,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       {/* Ambient Background Glows */}
       <LinearGradient
         colors={["rgba(59, 30, 84, 0.12)", "rgba(59, 30, 84, 0)"]}
@@ -105,24 +106,14 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           removeClippedSubviews={false}
         >
-          {/* Header Section */}
-          <View style={styles.headerSection}>
-            <Image
-              source={require("../../../assets/images/logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
-          </View>
-
           {/* Form Section */}
           <View style={styles.formSection}>
             <Text style={styles.formTitle}>Welcome back</Text>
             <Text style={styles.formSubtitle}>Sign in to discover your perfect match</Text>
 
-            {/* Email Address */}
+            {/* Email or Mobile Number */}
             <View style={styles.fieldWrap}>
-              <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+              <Text style={styles.fieldLabel}>EMAIL OR MOBILE NUMBER</Text>
               <View
                 collapsable={false}
                 style={[
@@ -130,7 +121,7 @@ export default function LoginScreen() {
                   emailFocused && styles.inputRowFocused,
                 ]}
               >
-                <Mail
+                <User
                   size={18}
                   color={emailFocused ? palette.purple.deep : palette.purple.muted}
                   style={styles.fieldIcon}
@@ -138,12 +129,12 @@ export default function LoginScreen() {
                 <TextInput
                   collapsable={false}
                   style={styles.textInput}
-                  placeholder="name@domain.com"
+                  placeholder="Email or mobile number"
                   placeholderTextColor="#A39BB0"
                   value={email}
                   onChangeText={setEmail}
                   autoCapitalize="none"
-                  keyboardType="email-address"
+                  keyboardType="default"
                   onFocus={() => setEmailFocused(true)}
                   onBlur={() => setEmailFocused(false)}
                 />
@@ -281,47 +272,25 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingTop: Platform.OS === "ios" ? 40 : 60,
   },
-  headerSection: {
-    alignItems: "center",
-    marginBottom: height * 0.04,
-  },
-  logo: {
-    width: width * 0.65,
-    height: 70,
-  },
-  taglineText: {
-    fontSize: 10,
-    color: "#6B5A80",
-    letterSpacing: 1.5,
-    ...fonts.semibold,
-    textAlign: "center",
-    marginTop: 8,
-  },
   formSection: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 30,
-    paddingHorizontal: 26,
-    paddingVertical: 36,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.05,
-    shadowRadius: 30,
-    elevation: 6,
+    backgroundColor: "transparent",
+    width: "100%",
   },
   formTitle: {
-    fontSize: 26,
+    fontSize: 32,
     ...fonts.bold,
     color: palette.purple.deep,
-    marginBottom: 6,
+    marginBottom: 8,
     letterSpacing: -0.5,
     textAlign: "left",
   },
   formSubtitle: {
-    fontSize: 14,
-    color: "#7A6F8B",
-    marginBottom: 30,
+    fontSize: 15,
+    color: palette.purple.muted,
+    marginBottom: 32,
     ...fonts.regular,
     textAlign: "left",
+    lineHeight: 22,
   },
   fieldWrap: {
     marginBottom: 20,
@@ -347,10 +316,10 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F6F2FC",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "transparent",
+    borderColor: "#EDE6F5",
     paddingHorizontal: 18,
     height: 58,
   },
@@ -372,9 +341,13 @@ const styles = StyleSheet.create({
     color: palette.purple.deep,
     ...fonts.medium,
     paddingVertical: 0,
+    height: "100%",
+    textAlignVertical: "center",
   },
   eyeBtn: {
     paddingLeft: 10,
+    height: "100%",
+    justifyContent: "center",
   },
   errorBox: {
     backgroundColor: "#FFF2F2",

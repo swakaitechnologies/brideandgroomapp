@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, TouchableOpacity, Dimensions, Platform, Image, Alert, Animated } from "react-native";
+import { StyleSheet, TouchableOpacity, Platform, Image, Animated } from "react-native";
 import { Text, View } from "@/components/Themed";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeScreen from "./HomeScreen";
@@ -7,19 +7,16 @@ import MatchesScreen from "./MatchesScreen";
 import ChatsScreen from "./ChatsScreen";
 import PremiumScreen from "./PremiumScreen";
 import UpdatesScreen from "./UpdatesScreen";
-import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Sparkles, Search, Play } from "lucide-react-native";
+import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Search, Play } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import SideDrawer from "../../components/SideDrawer";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { getChatList, getProfile } from "../../services/api";
 import { setupPushNotifications, listenToTokenRefresh, setupNotificationListeners } from "../../services/pushNotification";
 import { useNotificationSocket } from "../../hooks/useNotificationSocket";
 import { fonts } from "@/src/theme";
 import LinearGradient from "react-native-linear-gradient";
-
-const { width } = Dimensions.get("window");
 
 type TabType = "Home" | "Matches" | "Chat" | "Premium" | "Updates";
 
@@ -86,7 +83,7 @@ export default function TabsScreen() {
       }
       navigation.setParams({ screen: undefined });
     }
-  }, [route.params?.screen]);
+  }, [route.params?.screen, navigation]);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,7 +136,7 @@ export default function TabsScreen() {
           const totalUnread = chatsData.reduce((sum: number, chat: any) => sum + (chat.unreadCount || 0), 0);
           setUnreadMessagesCount(totalUnread);
         }
-      } catch (error) {
+      } catch {
         // Suppress
       }
     };
@@ -191,7 +188,7 @@ export default function TabsScreen() {
     { id: "Home", label: "Home", icon: Home },
     { id: "Chat", label: "Chat", icon: MessageSquare },
     { id: "Matches", label: "Matches", icon: Heart },
-    { id: "Updates", label: "Updates", icon: Sparkles },
+    { id: "Updates", label: "Updates", icon: Bell },
     { id: "Premium", label: "Premium", icon: Crown },
   ];
 

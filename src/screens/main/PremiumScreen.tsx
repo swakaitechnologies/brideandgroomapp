@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   TouchableOpacity,
@@ -11,18 +11,16 @@ import {
   StatusBar,
   View,
   Text,
-  ActivityIndicator,
   RefreshControl,
   Alert,
   Modal,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Crown,
   Check,
-  Bell,
   ShieldCheck,
   Award,
   HelpCircle,
@@ -30,23 +28,27 @@ import {
   Mail,
   MessageCircle,
   ChevronRight,
-  Zap,
   Headphones,
   Ticket,
 } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { palette } from "../../theme/colors";
 import {
-  getBanners,
   getSubscriptionPlans,
   getMySubscription,
-  resolvePhotoUrl,
   getActivePromoBanner,
 } from "../../services/api";
 import { fonts } from "@/src/theme";
 import { Skeleton } from "../../components/Skeleton";
 
 const { width } = Dimensions.get("window");
+const TIER_ORDER = ["Silver", "Gold", "Diamond", "Platinum"];
+const TIER_COLORS: Record<string, string> = {
+  Silver: "#B4B4B4",
+  Gold: "#3B1E54",
+  Diamond: "#D4AF37",
+  Platinum: "#5A3280",
+};
 
 export default function PremiumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -64,7 +66,6 @@ export default function PremiumScreen() {
   
   const [subscription, setSubscription] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
-  const [banners, setBanners] = useState<any[]>([]);
   const [promoCoupon, setPromoCoupon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,18 +73,10 @@ export default function PremiumScreen() {
   const [showActivePlanModal, setShowActivePlanModal] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<any>(null);
 
-  const TIER_ORDER = ["Silver", "Gold", "Diamond"];
-  const TIER_COLORS: Record<string, string> = {
-    Silver: "#B4B4B4",
-    Gold: "#3B1E54",
-    Diamond: "#D4AF37",
-  };
-
-  const fetchPremiumData = async () => {
+  const fetchPremiumData = useCallback(async () => {
     try {
-      const [plansRes, bannersRes, subRes, promoRes] = await Promise.all([
+      const [plansRes, subRes, promoRes] = await Promise.all([
         getSubscriptionPlans(),
-        getBanners(),
         getMySubscription(),
         getActivePromoBanner(),
       ]);
@@ -122,10 +115,6 @@ export default function PremiumScreen() {
         }
       }
 
-      if (bannersRes.data.success) {
-        setBanners(bannersRes.data.data);
-      }
-
       if (subRes.data.success) {
         setSubscription(subRes.data.subscription);
       }
@@ -141,12 +130,12 @@ export default function PremiumScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       fetchPremiumData();
-    }, [])
+    }, [fetchPremiumData])
   );
 
   const onRefresh = () => {
