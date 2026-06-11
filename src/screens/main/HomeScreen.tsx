@@ -44,6 +44,7 @@ import {
   getKYCStatus,
   getMySubscription,
   getFeaturedSuccessStories,
+  getApprovedSuccessStories,
 } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ProfileCard } from "../../components/ProfileCard";
@@ -203,13 +204,26 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
       // Fetch featured success stories
       try {
         const featuredStoriesRes = await getFeaturedSuccessStories();
+        let storyFound = null;
         if (featuredStoriesRes?.data && Array.isArray(featuredStoriesRes.data) && featuredStoriesRes.data.length > 0) {
-          setFeaturedStory(featuredStoriesRes.data[0]);
+          storyFound = featuredStoriesRes.data[0];
         } else if (featuredStoriesRes?.data?.stories && Array.isArray(featuredStoriesRes.data.stories) && featuredStoriesRes.data.stories.length > 0) {
-          setFeaturedStory(featuredStoriesRes.data.stories[0]);
+          storyFound = featuredStoriesRes.data.stories[0];
         }
+
+        // If no featured story, try to fetch approved success stories
+        if (!storyFound) {
+          const approvedStoriesRes = await getApprovedSuccessStories();
+          if (approvedStoriesRes?.data && Array.isArray(approvedStoriesRes.data) && approvedStoriesRes.data.length > 0) {
+            storyFound = approvedStoriesRes.data[0];
+          } else if (approvedStoriesRes?.data?.stories && Array.isArray(approvedStoriesRes.data.stories) && approvedStoriesRes.data.stories.length > 0) {
+            storyFound = approvedStoriesRes.data.stories[0];
+          }
+        }
+        setFeaturedStory(storyFound);
       } catch (err) {
         console.warn("Failed to fetch featured stories in HomeScreen:", err);
+        setFeaturedStory(null);
       }
     } catch (error) {
       console.error("Error fetching home data:", error);
@@ -769,61 +783,63 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
         )}
 
         {/* Success Story Spotlight Teaser */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={[styles.sectionHeading, { color: textColor }]}>
-                Destiny Matches
-              </Text>
-              <Text style={[styles.sectionSub, { color: mutedText }]}>
-                Real couples, real success stories
-              </Text>
+        {featuredStory && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionHeading, { color: textColor }]}>
+                  Destiny Matches
+                </Text>
+                <Text style={[styles.sectionSub, { color: mutedText }]}>
+                  Real couples, real success stories
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate("SuccessStories")}>
+                <Text style={styles.seeAll}>See All</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate("SuccessStories")}>
-              <Text style={styles.seeAll}>See All</Text>
+
+            <TouchableOpacity
+              style={[styles.featuredStoryCard, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}
+              onPress={() => navigation.navigate("SuccessStories")}
+              activeOpacity={0.9}
+            >
+              <View style={styles.featuredStoryHeader}>
+                <View style={styles.featuredStoryBadge}>
+                  <Sparkles size={10} color="#D4AF37" fill="#D4AF37" />
+                  <Text style={styles.featuredStoryBadgeText}>FEATURED STORY</Text>
+                </View>
+                <Sparkles size={16} color="#D4AF37" />
+              </View>
+
+              <View style={styles.featuredStoryContent}>
+                {featuredStory.imageUrl ? (
+                  <Image
+                    source={{ uri: resolvePhotoUrl(featuredStory.imageUrl) }}
+                    style={styles.featuredStoryThumb}
+                  />
+                ) : (
+                  <View style={[styles.featuredStoryThumb, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF9FC' }]}>
+                    <Sparkles size={24} color="rgba(212, 175, 55, 0.4)" />
+                  </View>
+                )}
+                <View style={styles.featuredStoryTextContainer}>
+                  <Text style={[styles.featuredStoryCouple, { color: textColor }]}>
+                    {featuredStory.coupleName}
+                  </Text>
+                  <Text style={[styles.featuredStoryQuote, { color: mutedText }]} numberOfLines={2}>
+                    "{featuredStory.story}"
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.featuredStoryFooter}>
+                <Text style={styles.featuredStoryLinkText}>Read Success Story</Text>
+                <ChevronRight size={14} color="#3B1E54" />
+              </View>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={[styles.featuredStoryCard, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}
-            onPress={() => navigation.navigate("SuccessStories")}
-            activeOpacity={0.9}
-          >
-            <View style={styles.featuredStoryHeader}>
-              <View style={styles.featuredStoryBadge}>
-                <Sparkles size={10} color="#D4AF37" fill="#D4AF37" />
-                <Text style={styles.featuredStoryBadgeText}>FEATURED STORY</Text>
-              </View>
-              <Sparkles size={16} color="#D4AF37" />
-            </View>
-
-            <View style={styles.featuredStoryContent}>
-              <Image
-                source={
-                  featuredStory?.imageUrl
-                    ? { uri: resolvePhotoUrl(featuredStory.imageUrl) }
-                    : require("../../../assets/images/welcome_couple_ai.png")
-                }
-                style={styles.featuredStoryThumb}
-              />
-              <View style={styles.featuredStoryTextContainer}>
-                <Text style={[styles.featuredStoryCouple, { color: textColor }]}>
-                  {featuredStory?.coupleName || "Simran & Raj"}
-                </Text>
-                <Text style={[styles.featuredStoryQuote, { color: mutedText }]} numberOfLines={2}>
-                  {featuredStory?.story 
-                    ? `"${featuredStory.story}"` 
-                    : `"Bride & Groom made it possible to find each other across cities. We are starting our beautiful journey together!"`}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.featuredStoryFooter}>
-              <Text style={styles.featuredStoryLinkText}>Read Success Story</Text>
-              <ChevronRight size={14} color="#3B1E54" />
-            </View>
-          </TouchableOpacity>
-        </View>
+        )}
 
         {/* Brand Footer */}
         <View style={styles.footer}>
