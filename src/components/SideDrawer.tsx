@@ -24,7 +24,7 @@ import {
   Star, BadgeCheck, Copy, X,
   LogOut, Crown, Ticket, ChevronRight,
   ShieldCheck, Edit3, Download, Share2, User,
-  FileText, EyeOff
+  FileText, EyeOff, Sparkles
 } from 'lucide-react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
@@ -592,7 +592,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               <MenuItem icon={Star} label="Rate the App" onPress={() => { onClose(); Alert.alert("Rate App", "Thank you for using Bride & Groom! Rating popup is coming soon."); }} />
               <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
               <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} />
-              <MenuItem icon={Heart} label="Share Success Story" onPress={() => { onClose(); navigation.navigate('SubmitStory'); }} isLast={true} />
+              <MenuItem icon={Heart} label="Share Success Story" onPress={() => { onClose(); navigation.navigate('SubmitStory'); }} />
+              <MenuItem icon={Sparkles} label="Success Stories" onPress={() => { onClose(); navigation.navigate('SuccessStories'); }} isLast={true} />
             </View>
           </View>
 

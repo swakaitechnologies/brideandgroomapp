@@ -49,6 +49,7 @@ import SplashScreen from './src/screens/core/SplashScreen';
 import IncomingCallScreen from './src/screens/main/IncomingCallScreen';
 import VideoCallScreen from './src/screens/main/VideoCallScreen';
 import SearchProfilesScreen from './src/screens/main/SearchProfilesScreen';
+import SuccessStoriesScreen from './src/screens/main/SuccessStoriesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -142,6 +143,7 @@ function App() {
             <Stack.Screen name="AccountSetting" component={AccountSettingScreen} />
             <Stack.Screen name="ReferralDashboard" component={ReferralDashboardScreen} />
             <Stack.Screen name="SubmitStory" component={SubmitStoryScreen} />
+            <Stack.Screen name="SuccessStories" component={SuccessStoriesScreen} />
             <Stack.Screen name="VideoReels" component={VideoReelsScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             <Stack.Screen name="Checkout" component={CheckoutScreen} />

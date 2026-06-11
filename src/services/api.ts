@@ -199,6 +199,16 @@ export const getMySuccessStory = async () => {
   }
 };
 
+// Get Approved Success Stories
+export const getApprovedSuccessStories = async () => {
+  try {
+    return await apiRequest('/stories/approved');
+  } catch (error) {
+    console.error("getApprovedSuccessStories error:", error);
+    throw error;
+  }
+};
+
 // Get approved video reels for matching
 export const getVideoReels = async () => {
   try {

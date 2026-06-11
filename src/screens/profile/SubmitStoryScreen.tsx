@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   ActivityIndicator,
   Image,
   Dimensions,
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
-import { submitSuccessStory, getMySuccessStory } from '../../services/api';
+import { submitSuccessStory, getMySuccessStory, resolvePhotoUrl } from '../../services/api';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { showToast } from '../../utils/toast';
@@ -45,22 +46,8 @@ export default function SubmitStoryScreen() {
   const [success, setSuccess] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    const checkSubmission = async () => {
-      try {
-        const res = await getMySuccessStory();
-        if (res.data.success && res.data.story) {
-          setSuccess(true);
-        }
-      } catch (err) {
-        console.error("Error checking story submission:", err);
-      } finally {
-        setChecking(false);
-      }
-    };
-    checkSubmission();
-  }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  const [submittedStory, setSubmittedStory] = useState<any>(null);
 
   const handleResetForm = useCallback(() => {
     setCoupleName('');
@@ -71,6 +58,45 @@ export default function SubmitStoryScreen() {
     setYear('');
     setImage(null);
     setSuccess(false);
+    setSubmittedStory(null);
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await getMySuccessStory();
+      if (res.data.success && res.data.story) {
+        setSubmittedStory(res.data.story);
+        setSuccess(true);
+      } else {
+        setSubmittedStory(null);
+        setSuccess(false);
+      }
+    } catch (err) {
+      console.error("Error refreshing story submission:", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkSubmission = async () => {
+      try {
+        const res = await getMySuccessStory();
+        if (res.data.success && res.data.story) {
+          setSubmittedStory(res.data.story);
+          setSuccess(true);
+        } else {
+          setSubmittedStory(null);
+          setSuccess(false);
+        }
+      } catch (err) {
+        console.error("Error checking story submission:", err);
+      } finally {
+        setChecking(false);
+      }
+    };
+    checkSubmission();
   }, []);
 
   const handleSelectImage = async () => {
@@ -153,6 +179,7 @@ export default function SubmitStoryScreen() {
 
       const res = await submitSuccessStory(formData);
       if (res.data.success) {
+        setSubmittedStory(res.data.story);
         setSuccess(true);
       } else {
         showToast(res.data.message || "Failed to submit story.");
@@ -174,42 +201,158 @@ export default function SubmitStoryScreen() {
     );
   }
 
-  if (success) {
-    return (
-      <SafeAreaView style={[styles.container, styles.centered]} edges={['top', 'left', 'right', 'bottom']}>
-        <StatusBar barStyle="dark-content" />
-        <View style={styles.successCard}>
-          <View style={styles.successIconCircle}>
-            <CheckCircle2 size={48} color="#4CAF50" />
-          </View>
-          <Text style={styles.successTitle}>Story Submitted for Review!</Text>
-          <Text style={styles.successSubtitle}>
-            Thank you for sharing your beautiful journey with us! Your success story is pending review and will be featured on the platform once approved.
-          </Text>
-          
-          <TouchableOpacity
-            style={styles.addAnotherBtn}
-            onPress={handleResetForm}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#3B1E54', '#5A2A82']}
-              style={styles.gradientBtn}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.addAnotherBtnText}>Add Another Story</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+  if (success && submittedStory) {
+    const isPending = submittedStory.status === 'pending';
+    const isApproved = submittedStory.status === 'approved';
+    const isRejected = submittedStory.status === 'rejected';
 
-          <TouchableOpacity
-            style={styles.outlineBtn}
-            onPress={() => navigation.replace("Tabs")}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.outlineBtnText}>Back to Dashboard</Text>
-          </TouchableOpacity>
-        </View>
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar barStyle="dark-content" />
+        <ScrollView
+          contentContainerStyle={[styles.scrollBody, styles.centeredContent]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#3B1E54']}
+              tintColor="#3B1E54"
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {isPending && (
+            <View style={styles.successCard}>
+              <View style={styles.successIconCircle}>
+                <CheckCircle2 size={48} color="#4CAF50" />
+              </View>
+              <Text style={styles.successTitle}>Story Submitted for Review!</Text>
+              <Text style={styles.successSubtitle}>
+                Thank you for sharing your beautiful journey with us! Your success story is pending review and will be featured on the platform once approved.
+              </Text>
+              
+              <TouchableOpacity
+                style={styles.addAnotherBtn}
+                onPress={handleResetForm}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#3B1E54', '#5A2A82']}
+                  style={styles.gradientBtn}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.addAnotherBtnText}>Add Another Story</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.outlineBtn}
+                onPress={() => navigation.replace("Tabs")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.outlineBtnText}>Back to Dashboard</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {isApproved && (
+            <View style={styles.approvedCard}>
+              <View style={styles.liveBadge}>
+                <Sparkles size={14} color="#D4AF37" />
+                <Text style={styles.liveBadgeText}>APPROVED & LIVE</Text>
+              </View>
+              
+              {submittedStory.imageUrl && (
+                <View style={styles.approvedImageWrapper}>
+                  <Image 
+                    source={{ uri: resolvePhotoUrl(submittedStory.imageUrl) }} 
+                    style={styles.approvedImage} 
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
+
+              <Text style={styles.approvedCouple}>{submittedStory.coupleName}</Text>
+              
+              {submittedStory.weddingDate && (
+                <View style={styles.weddingDateRow}>
+                  <Calendar size={14} color="#7E6B8F" />
+                  <Text style={styles.weddingDateText}>
+                    Married on {new Date(submittedStory.weddingDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.divider} />
+
+              <Text style={styles.approvedTitle}>{submittedStory.title}</Text>
+              <Text style={styles.approvedStoryText}>{submittedStory.story}</Text>
+
+              <TouchableOpacity
+                style={styles.addAnotherBtn}
+                onPress={handleResetForm}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#3B1E54', '#5A2A82']}
+                  style={styles.gradientBtn}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.addAnotherBtnText}>Add Another Story</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.outlineBtn}
+                onPress={() => navigation.replace("Tabs")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.outlineBtnText}>Back to Dashboard</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {isRejected && (
+            <View style={styles.successCard}>
+              <View style={[styles.successIconCircle, styles.errorIconCircle]}>
+                <X size={48} color="#D32F2F" />
+              </View>
+              <Text style={styles.successTitle}>Story Not Approved</Text>
+              <Text style={styles.successSubtitle}>
+                Unfortunately, your submitted success story did not meet our community moderation guidelines. You can submit another story for review.
+              </Text>
+              
+              <TouchableOpacity
+                style={styles.addAnotherBtn}
+                onPress={handleResetForm}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#3B1E54', '#5A2A82']}
+                  style={styles.gradientBtn}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.addAnotherBtnText}>Add Story Again</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.outlineBtn}
+                onPress={() => navigation.replace("Tabs")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.outlineBtnText}>Back to Dashboard</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -231,7 +374,18 @@ export default function SubmitStoryScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollBody}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#3B1E54']}
+              tintColor="#3B1E54"
+            />
+          }
+        >
           {/* Top Banner Card */}
           <LinearGradient
             colors={['#3B1E54', '#5A2A82']}
@@ -684,5 +838,99 @@ const styles = StyleSheet.create({
     color: '#3B1E54',
     fontSize: 15,
     ...fonts.bold,
+  },
+  centeredContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  approvedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    width: width - 48,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 30, 84, 0.06)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+    marginBottom: 16,
+  },
+  liveBadgeText: {
+    color: '#D4AF37',
+    fontSize: 11,
+    ...fonts.bold,
+    letterSpacing: 0.5,
+  },
+  approvedImageWrapper: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  approvedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  approvedCouple: {
+    fontSize: 20,
+    ...fonts.bold,
+    color: '#3B1E54',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  weddingDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 16,
+  },
+  weddingDateText: {
+    fontSize: 13,
+    color: '#7E6B8F',
+    ...fonts.medium,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#EDE6F5',
+    marginVertical: 14,
+  },
+  approvedTitle: {
+    fontSize: 16,
+    ...fonts.bold,
+    color: '#3B1E54',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  approvedStoryText: {
+    fontSize: 14,
+    color: '#555555',
+    lineHeight: 22,
+    ...fonts.regular,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  errorIconCircle: {
+    backgroundColor: 'rgba(211, 47, 47, 0.1)',
   }
 });
