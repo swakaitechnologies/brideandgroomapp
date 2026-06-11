@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Dimensions,
@@ -8,12 +8,15 @@ import {
   Platform,
   View,
   Text,
+  Image,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Heart, ShieldCheck, Crown, ArrowRight, ChevronRight } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fonts } from "@/src/theme";
+import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,6 +27,7 @@ const SLIDES = [
     title: 'Find Your\nPerfect Match',
     subtitle: 'Browse thousands of verified profiles tailored to your preferences. Our smart algorithm learns what you love.',
     accent: '#3B1E54',
+    image: require('../../../assets/images/onboarding_match.png'),
   },
   {
     id: '2',
@@ -31,6 +35,7 @@ const SLIDES = [
     title: 'Verified &\nTrustworthy',
     subtitle: 'Every profile undergoes rigorous KYC verification. Connect with genuine people who share your values.',
     accent: '#3B1E54',
+    image: require('../../../assets/images/onboarding_trust.png'),
   },
   {
     id: '3',
@@ -38,6 +43,7 @@ const SLIDES = [
     title: 'Premium\nExperience',
     subtitle: 'Unlock direct contact reveals, unlimited messaging, and priority matching with our premium plans.',
     accent: '#3B1E54',
+    image: require('../../../assets/images/onboarding_premium.png'),
   },
 ];
 
@@ -47,23 +53,31 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  const handleNext = () => {
+  // Optimize Animated.event to prevent recreation on every render pass
+  const onScrollEvent = useRef(
+    Animated.event(
+      [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+      { useNativeDriver: false }
+    )
+  ).current;
+
+  const finishOnboarding = useCallback(async () => {
+    await AsyncStorage.setItem('onboardingDone', 'true');
+    navigation.replace('Welcome');
+  }, [navigation]);
+
+  const handleNext = useCallback(() => {
     if (currentIndex < SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
       finishOnboarding();
     }
-  };
+  }, [currentIndex, finishOnboarding]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     finishOnboarding();
-  };
-
-  const finishOnboarding = async () => {
-    await AsyncStorage.setItem('onboardingDone', 'true');
-    navigation.replace('Welcome');
-  };
+  }, [finishOnboarding]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -71,71 +85,100 @@ export default function OnboardingScreen() {
     }
   }).current;
 
-  const renderSlide = ({ item, index }: { item: typeof SLIDES[0]; index: number }) => {
-    const IconComponent = item.icon;
+  const renderSlide = useCallback(({ item, index }: { item: typeof SLIDES[0]; index: number }) => {
+    const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+
+    // Content text parallax slide (slides in opposite direction)
+    const contentTranslateX = scrollX.interpolate({
+      inputRange,
+      outputRange: [width * 0.5, 0, -width * 0.5],
+      extrapolate: 'clamp',
+    });
+
+    // Content text fade transition
+    const contentOpacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0, 1, 0],
+      extrapolate: 'clamp',
+    });
+
     return (
       <View style={styles.slide}>
-        {/* Background decoration */}
-        <View style={styles.bgCircle1} />
-        <View style={styles.bgCircle2} />
-
-        <View style={styles.slideContent}>
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <IconComponent size={48} color="#3B1E54" />
-          </View>
-
+        <Animated.View 
+          style={[
+            styles.slideContent,
+            {
+              opacity: contentOpacity,
+              transform: [{ translateX: contentTranslateX }]
+            }
+          ]}
+        >
           {/* Title */}
           <Text style={styles.slideTitle}>{item.title}</Text>
 
           {/* Subtitle */}
           <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
-        </View>
+        </Animated.View>
       </View>
     );
-  };
+  }, [scrollX]);
 
   const isLastSlide = currentIndex === SLIDES.length - 1;
 
   return (
     <View style={styles.container}>
-      <Animated.FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        renderItem={renderSlide}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      {/* Sticky background image */}
+      <Image 
+        source={require('../../../assets/images/onboarding_match.png')} 
+        style={styles.backgroundImage} 
+        resizeMode="cover" 
       />
+
+      {/* Premium ambient light gradient overlay fading background image to clean white/light purple */}
+      <LinearGradient
+        colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.95)', '#FFFFFF']}
+        locations={[0, 0.52, 0.85, 1.0]}
+        style={styles.gradientOverlay}
+      >
+        <Animated.FlatList
+          ref={flatListRef}
+          data={SLIDES}
+          renderItem={renderSlide}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item.id}
+          onScroll={onScrollEvent}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ viewAreaCoveragePercentThreshold: 50 }}
+        />
+      </LinearGradient>
+
+      {/* Skip button at top right corner */}
+      {!isLastSlide && (
+        <SafeAreaView style={styles.skipContainer} edges={['top']}>
+          <TouchableOpacity style={styles.topSkipBtn} onPress={handleSkip} activeOpacity={0.7}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
 
       {/* Bottom controls */}
       <SafeAreaView style={styles.controls} edges={['bottom']}>
-        {/* Skip button */}
-        {!isLastSlide && (
-          <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Dot indicators */}
+        {/* Dot indicators on bottom left */}
         <View style={styles.dotsContainer}>
           {SLIDES.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
             const dotWidth = scrollX.interpolate({
               inputRange,
-              outputRange: [8, 28, 8],
+              outputRange: [8, 24, 8],
               extrapolate: 'clamp',
             });
             const dotOpacity = scrollX.interpolate({
               inputRange,
-              outputRange: [0.3, 1, 0.3],
+              outputRange: [0.4, 1, 0.4],
               extrapolate: 'clamp',
             });
             return (
@@ -146,7 +189,7 @@ export default function OnboardingScreen() {
                   {
                     width: dotWidth,
                     opacity: dotOpacity,
-                    backgroundColor: currentIndex === i ? '#3B1E54' : '#E0D6EC',
+                    backgroundColor: currentIndex === i ? '#3B1E54' : '#EDE6F5',
                   },
                 ]}
               />
@@ -154,21 +197,21 @@ export default function OnboardingScreen() {
           })}
         </View>
 
-        {/* Next / Get Started button */}
+        {/* Next / Get Started button on bottom right */}
         <TouchableOpacity
           style={styles.nextBtn}
           onPress={handleNext}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
           {isLastSlide ? (
             <>
-              <Text style={styles.nextBtnText}>Get Started</Text>
-              <ArrowRight size={20} color="#D4AF37" />
+              <Text style={styles.getStartedBtnText}>Get Started</Text>
+              <ArrowRight size={14} color="#D4AF37" />
             </>
           ) : (
             <>
               <Text style={styles.nextBtnText}>Next</Text>
-              <ChevronRight size={20} color="#D4AF37" />
+              <ChevronRight size={14} color="#D4AF37" />
             </>
           )}
         </TouchableOpacity>
@@ -180,63 +223,50 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8F5FC',
   },
   slide: {
     width,
     height,
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'flex-end',
   },
-  bgCircle1: {
+  backgroundImage: {
     position: 'absolute',
-    width: width * 1.5,
-    height: width * 1.5,
-    borderRadius: width * 0.75,
-    backgroundColor: 'rgba(59, 30, 84, 0.03)',
-    top: -width * 0.4,
-    right: -width * 0.4,
+    top: 0,
+    left: -75,
+    width: width + 110,
+    height: '100%',
   },
-  bgCircle2: {
+  gradientOverlay: {
     position: 'absolute',
-    width: width,
-    height: width,
-    borderRadius: width * 0.5,
-    backgroundColor: 'rgba(59, 30, 84, 0.02)',
-    bottom: -width * 0.2,
-    left: -width * 0.3,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'flex-end',
   },
   slideContent: {
     alignItems: 'center',
-    paddingHorizontal: 40,
-    marginBottom: 120,
+    paddingHorizontal: 35,
+    marginBottom: 155, // Safe margin for dots & controls overlay
   },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 40,
-    backgroundColor: 'rgba(59, 30, 84, 0.06)',
-  },
+
   slideTitle: {
-    fontSize: 38,
+    fontSize: 34,
     ...fonts.bold,
     color: '#3B1E54',
     textAlign: 'center',
-    lineHeight: 46,
-    letterSpacing: -1,
-    marginBottom: 20,
+    lineHeight: 42,
+    letterSpacing: -0.5,
+    marginBottom: 16,
   },
   slideSubtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#666666',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
     ...fonts.medium,
     maxWidth: 300,
   },
@@ -245,26 +275,38 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 30,
     paddingBottom: Platform.OS === 'android' ? 30 : 10,
-    alignItems: 'center',
   },
-  skipBtn: {
+  skipContainer: {
     position: 'absolute',
-    top: -60,
-    right: 30,
+    top: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  topSkipBtn: {
+    backgroundColor: 'rgba(15, 4, 25, 0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginTop: 10,
+    marginRight: 20,
   },
   skipText: {
-    color: '#3B1E54',
-    fontSize: 15,
-    ...fonts.semibold,
-    opacity: 0.7,
+    color: '#FFFFFF',
+    fontSize: 13,
+    ...fonts.bold,
+    letterSpacing: 0.5,
   },
   dotsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 30,
+    gap: 6,
   },
   dot: {
     height: 8,
@@ -274,20 +316,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    height: 58,
-    borderRadius: 29,
-    gap: 10,
+    width: 130,
+    height: 48,
+    borderRadius: 24,
+    gap: 6,
     backgroundColor: '#3B1E54',
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 12 },
-      android: { elevation: 4 },
+      ios: { shadowColor: '#3B1E54', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8 },
+      android: { elevation: 3 },
     }),
   },
   nextBtnText: {
-    fontSize: 17,
+    fontSize: 13,
     ...fonts.bold,
     color: '#FFFFFF',
     letterSpacing: 0.5,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+  },
+  getStartedBtnText: {
+    fontSize: 13,
+    ...fonts.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 });

@@ -110,3 +110,16 @@ exports.getFeaturedStories = async (req, res) => {
     res.status(500).json({ message: "Server error fetching featured stories" });
   }
 };
+
+exports.getMyStory = async (req, res) => {
+  try {
+    const story = await SuccessStory.findOne({
+      where: { userId: req.userId },
+      order: [["createdAt", "DESC"]],
+    });
+    res.json({ success: true, story });
+  } catch (error) {
+    console.error("GET MY STORY ERROR:", error);
+    res.status(500).json({ message: "Server error fetching user story" });
+  }
+};

@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "star": "node scripts/reverse-ports.js && react-native start",
     "reverse": "node scripts/reverse-ports.js",
-    "test": "je st"
+    "test": "jest"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.1",

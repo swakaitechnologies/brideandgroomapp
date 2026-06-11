@@ -5,9 +5,9 @@ import {
   ScrollView,
   Dimensions,
   FlatList,
-  Platform,
   Linking,
   Image,
+  ImageBackground,
   StatusBar,
   View,
   Text,
@@ -50,6 +50,28 @@ const TIER_COLORS: Record<string, string> = {
   Platinum: "#5A3280",
 };
 
+const ACTIVE_PLAN_WATERCOLORS: Record<string, any> = {
+  Silver: require("../../../assets/images/watercolor_silver_opt.png"),
+  Gold: require("../../../assets/images/watercolor_gold_opt.png"),
+  Diamond: require("../../../assets/images/watercolor_diamond_opt.png"),
+  Platinum: require("../../../assets/images/watercolor_platinum_opt.png"),
+};
+
+const ACTIVE_PLAN_HEADER_TEXT_COLORS: Record<string, string> = {
+  Silver: "#1C3F44",
+  Gold: "#FFFFFF",
+  Diamond: "#4E3600",
+  Platinum: "#FFFFFF",
+};
+
+const ACTIVE_PLAN_ACCENTS: Record<string, string> = {
+  Silver: "#3a707a",
+  Gold: "#8A2387",
+  Diamond: "#D4AF37",
+  Platinum: "#5A3280",
+};
+
+
 export default function PremiumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const insets = useSafeAreaInsets();
@@ -72,6 +94,10 @@ export default function PremiumScreen() {
   const [selectedTier, setSelectedTier] = useState<string>("Gold");
   const [showActivePlanModal, setShowActivePlanModal] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<any>(null);
+
+  const activePlanName = subscription?.plan?.name || "Gold";
+  const activeAccentColor = ACTIVE_PLAN_ACCENTS[activePlanName] || ACTIVE_PLAN_ACCENTS.Gold;
+  const activeHeaderTextColor = ACTIVE_PLAN_HEADER_TEXT_COLORS[activePlanName] || ACTIVE_PLAN_HEADER_TEXT_COLORS.Gold;
 
   const fetchPremiumData = useCallback(async () => {
     try {
@@ -250,13 +276,24 @@ export default function PremiumScreen() {
         {/* Active Subscription Dashboard */}
         {subscription && (
           <View style={styles.activeSubContainer}>
-            <View style={[styles.activeSubCard, { backgroundColor: deepPurple }]}>
+            <ImageBackground
+              source={ACTIVE_PLAN_WATERCOLORS[activePlanName] || ACTIVE_PLAN_WATERCOLORS.Gold}
+              style={styles.activeSubCard}
+              resizeMethod="resize"
+              imageStyle={{
+                resizeMode: "stretch",
+                left: -12,
+                top: -12,
+                right: -12,
+                bottom: -12,
+              }}
+            >
               <View style={styles.activeSubHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.activeSubTitle}>
-                    Current Plan: {subscription.plan?.name}
+                  <Text style={[styles.activeSubTitle, { color: activeHeaderTextColor }]}>
+                    Current Plan: {activePlanName}
                   </Text>
-                  <Text style={styles.activeSubExpiry}>
+                  <Text style={[styles.activeSubExpiry, { color: activeHeaderTextColor === "#FFFFFF" ? "rgba(255, 255, 255, 0.8)" : "rgba(28, 63, 68, 0.8)" }]}>
                     Valid until{" "}
                     {new Date(subscription.endDate).toLocaleDateString(
                       "en-IN",
@@ -264,7 +301,7 @@ export default function PremiumScreen() {
                     )}
                   </Text>
                 </View>
-                <Crown size={32} color={accentGold} />
+                <Crown size={32} color={activeHeaderTextColor} />
               </View>
 
               <View style={styles.usageGrid}>
@@ -272,6 +309,7 @@ export default function PremiumScreen() {
                   <Text
                     style={[
                       styles.usageValue,
+                      { color: activeAccentColor },
                       subscription.plan?.maxContacts === -1 && { fontSize: 15 },
                     ]}
                   >
@@ -289,6 +327,7 @@ export default function PremiumScreen() {
                   <Text
                     style={[
                       styles.usageValue,
+                      { color: activeAccentColor },
                       subscription.plan?.maxMessages === -1 && { fontSize: 15 },
                     ]}
                   >
@@ -301,7 +340,7 @@ export default function PremiumScreen() {
                 </View>
                 <View style={styles.usageDivider} />
                 <View style={styles.usageItem}>
-                  <Text style={styles.usageValue}>
+                  <Text style={[styles.usageValue, { color: activeAccentColor }]}>
                     {Math.max(
                       0,
                       Math.ceil(
@@ -316,12 +355,12 @@ export default function PremiumScreen() {
               </View>
 
               <View style={styles.activeSubFooter}>
-                <ShieldCheck size={16} color={accentGold} />
-                <Text style={styles.activeSubFooterText}>
+                <ShieldCheck size={16} color={activeAccentColor} />
+                <Text style={[styles.activeSubFooterText, { color: activeAccentColor }]}>
                   Your premium features are active
                 </Text>
               </View>
-            </View>
+            </ImageBackground>
           </View>
         )}
 
@@ -632,38 +671,31 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   activeSubContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     marginBottom: 25,
   },
   activeSubCard: {
-    borderRadius: 20,
-    padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#EDE6F5",
+    overflow: "hidden",
+    aspectRatio: 1.85,
+    justifyContent: "space-between",
   },
   activeSubHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
   },
   activeSubTitle: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 24,
     ...fonts.bold,
     letterSpacing: -0.5,
   },
   activeSubExpiry: {
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255, 255, 255, 0.8)",
     fontSize: 13,
     marginTop: 4,
     ...fonts.semibold,
@@ -671,24 +703,18 @@ const styles = StyleSheet.create({
   usageGrid: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 16,
-    paddingVertical: 18,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    paddingVertical: 12,
   },
   usageItem: {
     flex: 1,
     alignItems: "center",
   },
   usageValue: {
-    color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 22,
     ...fonts.bold,
   },
   usageLabel: {
-    color: "rgba(255,255,255,0.65)",
+    color: "#7A6F8B",
     fontSize: 11,
     ...fonts.semibold,
     marginTop: 4,
@@ -698,19 +724,15 @@ const styles = StyleSheet.create({
   usageDivider: {
     width: 1,
     height: 35,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(59, 30, 84, 0.08)",
   },
   activeSubFooter: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.15)",
-    paddingVertical: 8,
-    borderRadius: 12,
   },
   activeSubFooterText: {
-    color: "#D4AF37",
     fontSize: 13,
     ...fonts.bold,
   },

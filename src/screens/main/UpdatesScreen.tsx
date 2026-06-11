@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   RefreshControl,
   Platform,
@@ -16,19 +15,15 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import {
-  Sparkles,
   Heart,
   BadgeCheck,
   Crown,
-  User,
-  Languages,
   Briefcase,
   MapPin,
   CheckCircle2,
   XCircle,
   MessageSquare,
   Clock,
-  ChevronRight,
   PhoneCall,
   Eye,
   ImageIcon,
@@ -42,20 +37,16 @@ import {
   getPhotoRequests,
   getProfileViewers,
   handleInterestResponse,
-  handleContactResponse,
-  handlePhotoRequestResponse,
   resolvePhotoUrl,
   getShortlisted,
   sendInterest,
   getAllProfiles,
   getLikes,
-  toggleLike,
 } from "../../services/api";
 import { showToast } from "../../utils/toast";
 import { fonts } from "@/src/theme";
 import { Skeleton } from "../../components/Skeleton";
 
-const { width } = Dimensions.get("window");
 
 type MainTabType = "Received" | "Accepted" | "Likes" | "Shortlist" | "Contact" | "Sent" | "More";
 type AcceptedSubTabType = "byThem" | "byMe";
@@ -89,7 +80,7 @@ interface ConnectionItem {
   };
 }
 
-export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: string) => void }) {
+export default function UpdatesScreen({ setActiveTab: _setActiveTab }: { setActiveTab?: (tab: string) => void }) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const topPadding = insets.top + 80;
@@ -356,39 +347,6 @@ export default function UpdatesScreen({ setActiveTab }: { setActiveTab?: (tab: s
     }
   };
 
-  const handleContactAction = async (id: string, status: "accepted" | "declined") => {
-    try {
-      setActionLoadingId(id);
-      const res = await handleContactResponse(id, status);
-      if (res.data?.success) {
-        showToast(`Contact request ${status}!`);
-        fetchConnectionCenterData();
-      } else {
-        showToast(`Action failed. Please try again.`);
-      }
-    } catch {
-      showToast(`Something went wrong. Please check connection.`);
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
-  const handlePhotoAction = async (id: string, status: "accepted" | "declined") => {
-    try {
-      setActionLoadingId(id);
-      const res = await handlePhotoRequestResponse(id, status);
-      if (res.data?.success) {
-        showToast(`Photo access ${status}!`);
-        fetchConnectionCenterData();
-      } else {
-        showToast(`Action failed. Please try again.`);
-      }
-    } catch {
-      showToast(`Something went wrong. Please check connection.`);
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
 
   // Get active list to display based on selected tab and sub-tab
   const getActiveList = (): ConnectionItem[] => {

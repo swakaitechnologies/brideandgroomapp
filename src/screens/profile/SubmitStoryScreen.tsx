@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
-import { submitSuccessStory } from '../../services/api';
+import { submitSuccessStory, getMySuccessStory } from '../../services/api';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { showToast } from '../../utils/toast';
@@ -44,6 +44,34 @@ export default function SubmitStoryScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    const checkSubmission = async () => {
+      try {
+        const res = await getMySuccessStory();
+        if (res.data.success && res.data.story) {
+          setSuccess(true);
+        }
+      } catch (err) {
+        console.error("Error checking story submission:", err);
+      } finally {
+        setChecking(false);
+      }
+    };
+    checkSubmission();
+  }, []);
+
+  const handleResetForm = useCallback(() => {
+    setCoupleName('');
+    setTitle('');
+    setStory('');
+    setDay('');
+    setMonth('');
+    setYear('');
+    setImage(null);
+    setSuccess(false);
+  }, []);
 
   const handleSelectImage = async () => {
     try {
@@ -137,6 +165,15 @@ export default function SubmitStoryScreen() {
     }
   };
 
+  if (checking) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centered]} edges={['top', 'left', 'right', 'bottom']}>
+        <StatusBar barStyle="dark-content" />
+        <ActivityIndicator size="large" color="#3B1E54" />
+      </SafeAreaView>
+    );
+  }
+
   if (success) {
     return (
       <SafeAreaView style={[styles.container, styles.centered]} edges={['top', 'left', 'right', 'bottom']}>
@@ -145,14 +182,14 @@ export default function SubmitStoryScreen() {
           <View style={styles.successIconCircle}>
             <CheckCircle2 size={48} color="#4CAF50" />
           </View>
-          <Text style={styles.successTitle}>Story Submitted!</Text>
+          <Text style={styles.successTitle}>Story Submitted for Review!</Text>
           <Text style={styles.successSubtitle}>
             Thank you for sharing your beautiful journey with us! Your success story is pending review and will be featured on the platform once approved.
           </Text>
           
           <TouchableOpacity
-            style={styles.backHomeBtn}
-            onPress={() => navigation.replace("Tabs")}
+            style={styles.addAnotherBtn}
+            onPress={handleResetForm}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -161,8 +198,16 @@ export default function SubmitStoryScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.backHomeBtnText}>Back to Dashboard</Text>
+              <Text style={styles.addAnotherBtnText}>Add Another Story</Text>
             </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.outlineBtn}
+            onPress={() => navigation.replace("Tabs")}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.outlineBtnText}>Back to Dashboard</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -575,6 +620,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 30,
     alignItems: 'center',
+    width: width - 48,
     borderWidth: 1,
     borderColor: 'rgba(59, 30, 84, 0.06)',
     ...Platform.select({
@@ -603,6 +649,7 @@ const styles = StyleSheet.create({
     ...fonts.bold,
     color: '#3B1E54',
     marginBottom: 12,
+    textAlign: 'center',
   },
   successSubtitle: {
     fontSize: 14,
@@ -612,13 +659,29 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     ...fonts.medium,
   },
-  backHomeBtn: {
+  addAnotherBtn: {
     width: '100%',
     borderRadius: 14,
     overflow: 'hidden',
+    marginBottom: 12,
   },
-  backHomeBtnText: {
+  addAnotherBtnText: {
     color: '#FFFFFF',
+    fontSize: 15,
+    ...fonts.bold,
+  },
+  outlineBtn: {
+    width: '100%',
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#EDE6F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  outlineBtnText: {
+    color: '#3B1E54',
     fontSize: 15,
     ...fonts.bold,
   }

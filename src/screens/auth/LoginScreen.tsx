@@ -200,7 +200,7 @@ export default function LoginScreen() {
             )}
 
             {/* Sign In Button */}
-            <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <Animated.View style={{ transform: [{ scale: buttonScale }], alignSelf: 'flex-end' }}>
               <TouchableOpacity
                 style={[styles.signInBtn, loading && styles.btnDisabled]}
                 onPress={handleLogin}
@@ -364,7 +364,8 @@ const styles = StyleSheet.create({
     ...fonts.medium,
   },
   signInBtn: {
-    borderRadius: 28,
+    width: 140,
+    borderRadius: 24,
     overflow: "hidden",
     marginTop: 8,
     shadowColor: palette.purple.deep,
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   signInGradient: {
-    height: 56,
+    height: 48,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -385,8 +386,8 @@ const styles = StyleSheet.create({
   },
   signInText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    ...fonts.semibold,
+    fontSize: 14,
+    ...fonts.bold,
   },
   bottomSection: {
     marginTop: 32,

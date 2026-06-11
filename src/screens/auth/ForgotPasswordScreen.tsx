@@ -350,9 +350,11 @@ const styles = StyleSheet.create({
     ...fonts.medium,
   },
   signInBtn: {
-    borderRadius: 28,
+    width: 160,
+    borderRadius: 24,
     overflow: "hidden",
     marginTop: 8,
+    alignSelf: "flex-end",
     shadowColor: palette.purple.deep,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -360,7 +362,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   signInGradient: {
-    height: 56,
+    height: 48,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -371,8 +373,8 @@ const styles = StyleSheet.create({
   },
   signInText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    ...fonts.semibold,
+    fontSize: 14,
+    ...fonts.bold,
   },
   centerContainer: {
     alignItems: "center",
@@ -406,9 +408,9 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
   },
   outlineBtn: {
-    width: "100%",
-    height: 56,
-    borderRadius: 16,
+    width: 180,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1.5,
     borderColor: "#EDE6F5",
     justifyContent: "center",
@@ -418,8 +420,8 @@ const styles = StyleSheet.create({
   },
   outlineBtnText: {
     color: palette.purple.deep,
-    fontSize: 15,
-    ...fonts.semibold,
+    fontSize: 14,
+    ...fonts.bold,
   },
   footerLinks: {
     marginTop: 24,

@@ -387,7 +387,7 @@ export default function RegisterScreen() {
         >
           <ArrowLeft size={18} color={palette.purple.deep} />
         </TouchableOpacity>
-        <TouchableOpacity style={[s.primaryBtn, s.primaryBtnFlex]} onPress={handleNext} activeOpacity={0.9}>
+        <TouchableOpacity style={s.primaryBtn} onPress={handleNext} activeOpacity={0.9}>
           <LinearGradient
             colors={[palette.purple.deep, "#34005B"]}
             style={s.primaryGradient}
@@ -510,7 +510,7 @@ export default function RegisterScreen() {
           <ArrowLeft size={18} color={palette.purple.deep} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.primaryBtn, s.primaryBtnFlex, loading && s.primaryBtnDisabled]}
+          style={[s.primaryBtn, loading && s.primaryBtnDisabled]}
           onPress={handleRegister}
           disabled={loading}
           activeOpacity={0.9}
@@ -885,12 +885,15 @@ const s = StyleSheet.create({
   },
   btnRow: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 8,
   },
   primaryBtn: {
-    borderRadius: 25,
+    width: 150,
+    borderRadius: 24,
     overflow: "hidden",
+    alignSelf: "flex-end",
     shadowColor: palette.purple.deep,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -904,7 +907,7 @@ const s = StyleSheet.create({
     opacity: 0.6,
   },
   primaryGradient: {
-    height: 50,
+    height: 48,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -913,13 +916,13 @@ const s = StyleSheet.create({
   },
   primaryBtnText: {
     color: "#FFF",
-    fontSize: 16,
-    ...fonts.semibold,
+    fontSize: 14,
+    ...fonts.bold,
   },
   backBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 1.5,
     borderColor: "#EDE6F5",
     justifyContent: "center",

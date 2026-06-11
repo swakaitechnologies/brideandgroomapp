@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -55,9 +55,11 @@ export default function WelcomeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndexRef = useRef(0);
 
   const flatListRef = useRef<FlatList>(null);
   const timerRef = useRef<any>(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -65,27 +67,32 @@ export default function WelcomeScreen() {
   const coupleOpacityAnim = useRef(new Animated.Value(0)).current;
   const cardSlideAnim = useRef(new Animated.Value(150)).current;
 
-  const startAutoPlay = () => {
+  // Sync activeIndexRef with state
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  const startAutoPlay = useCallback(() => {
     stopAutoPlay();
     timerRef.current = setInterval(() => {
-      const nextIndex = (activeIndex + 1) % slides.length;
+      const nextIndex = (activeIndexRef.current + 1) % slides.length;
       flatListRef.current?.scrollToIndex({
         index: nextIndex,
         animated: true,
       });
       setActiveIndex(nextIndex);
     }, 4500);
-  };
+  }, []);
 
-  const stopAutoPlay = () => {
+  const stopAutoPlay = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  };
+  }, []);
 
+  // Entrance animations run exactly once on mount
   useEffect(() => {
-    // Entrance animations
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -117,38 +124,48 @@ export default function WelcomeScreen() {
         ]),
       ]),
     ]).start();
+  }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
 
+  // Autoplay lifecycle managed once on mount
+  useEffect(() => {
     startAutoPlay();
-
     return () => stopAutoPlay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex]);
+  }, [startAutoPlay, stopAutoPlay]);
 
-  const handleSignUp = () => {
+  const handleSignUp = useCallback(() => {
     navigation.navigate('Register');
-  };
+  }, [navigation]);
 
-  const handleLogin = () => {
+  const handleLogin = useCallback(() => {
     navigation.navigate('Login');
-  };
+  }, [navigation]);
 
-  const onScroll = (event: any) => {
-    const slideSize = event.nativeEvent.layoutMeasurement.width;
-    if (slideSize <= 0) return;
-    const index = event.nativeEvent.contentOffset.x / slideSize;
-    const roundIndex = Math.round(index);
-    if (roundIndex !== activeIndex) {
-      setActiveIndex(roundIndex);
-    }
-  };
+  // Handle slide scrolling and state synchronization smoothly
+  const onScrollEvent = useRef(
+    Animated.event(
+      [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+      {
+        useNativeDriver: false,
+        listener: (event: any) => {
+          const slideSize = event.nativeEvent.layoutMeasurement.width;
+          if (slideSize <= 0) return;
+          const index = event.nativeEvent.contentOffset.x / slideSize;
+          const roundIndex = Math.round(index);
+          if (roundIndex !== activeIndexRef.current) {
+            setActiveIndex(roundIndex);
+          }
+        },
+      }
+    )
+  ).current;
 
-  const onScrollBeginDrag = () => {
+  const onScrollBeginDrag = useCallback(() => {
     stopAutoPlay();
-  };
+  }, [stopAutoPlay]);
 
-  const onScrollEndDrag = () => {
+  const onScrollEndDrag = useCallback(() => {
     startAutoPlay();
-  };
+  }, [startAutoPlay]);
 
   const renderSlideItem = ({ item }: { item: SlideItem }) => {
     return (
@@ -210,14 +227,14 @@ export default function WelcomeScreen() {
         ]}
       >
         {/* Interactive Features Carousel */}
-        <FlatList
+        <Animated.FlatList
           ref={flatListRef}
           data={slides}
           renderItem={renderSlideItem}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onScroll={onScroll}
+          onScroll={onScrollEvent}
           scrollEventThrottle={16}
           onScrollBeginDrag={onScrollBeginDrag}
           onScrollEndDrag={onScrollEndDrag}
@@ -228,13 +245,32 @@ export default function WelcomeScreen() {
         {/* Slide Pagination Indicator */}
         <View style={styles.dotsContainer}>
           {slides.map((_, index) => {
-            const isActive = index === activeIndex;
+            const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+            
+            // Interpolate width smoothly
+            const dotWidth = scrollX.interpolate({
+              inputRange,
+              outputRange: [8, 20, 8],
+              extrapolate: 'clamp',
+            });
+
+            // Interpolate opacity smoothly
+            const dotOpacity = scrollX.interpolate({
+              inputRange,
+              outputRange: [0.4, 1, 0.4],
+              extrapolate: 'clamp',
+            });
+
             return (
-              <View
+              <Animated.View
                 key={index}
                 style={[
                   styles.dot,
-                  isActive ? styles.activeDot : styles.inactiveDot,
+                  {
+                    width: dotWidth,
+                    opacity: dotOpacity,
+                    backgroundColor: palette.purple.deep,
+                  },
                 ]}
               />
             );
@@ -309,8 +345,8 @@ const styles = StyleSheet.create({
   topBackgroundCoupleImage: {
     position: 'absolute',
     top: 0,
-    left: -85,
-    width: width + 150,
+    left: -45,
+    width: width + 90,
     height: height,
   },
   topImageGradientOverlay: {
@@ -366,14 +402,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
-  },
-  activeDot: {
-    width: 20,
-    backgroundColor: palette.purple.deep,
-  },
-  inactiveDot: {
-    width: 8,
-    backgroundColor: '#EDE6F5',
   },
   buttonContainer: {
     width: '100%',

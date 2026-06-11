@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 import { secureStorage } from './secureStorage';
 import { store } from '../store';
 import { logout } from '../store/authSlice';
@@ -15,7 +14,7 @@ const getDevHost = () => {
       if (address && address.match(/^\d+\.\d+\.\d+\.\d+$/)) {
         return address;
       }
-    } catch (e) {
+    } catch {
       // Fallback to local ip
     }
   }
@@ -78,7 +77,7 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     let data: any = {};
     try {
       data = await response.json();
-    } catch (jsonErr) {
+    } catch {
       // Ignore JSON parse errors for non-JSON or empty bodies
     }
 
@@ -186,6 +185,16 @@ export const submitSuccessStory = async (formData: FormData) => {
     });
   } catch (error) {
     console.error("submitSuccessStory error:", error);
+    throw error;
+  }
+};
+
+// Get My Success Story
+export const getMySuccessStory = async () => {
+  try {
+    return await apiRequest('/stories/my-story');
+  } catch (error) {
+    console.error("getMySuccessStory error:", error);
     throw error;
   }
 };
@@ -606,17 +615,6 @@ export const handleInterestResponse = async (interestId: string, status: 'accept
   }
 };
 
-// Handle Contact Response
-export const handleContactResponse = async (requestId: string, status: 'accepted' | 'declined') => {
-  try {
-    return await apiRequest('/contact-requests/response', {
-      method: 'POST',
-      body: JSON.stringify({ requestId, status }),
-    });
-  } catch {
-    return { data: { success: true } };
-  }
-};
 
 // Handle Photo Request Response
 export const handlePhotoRequestResponse = async (requestId: string, status: 'accepted' | 'declined') => {

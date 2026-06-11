@@ -6,6 +6,7 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/submit", authMiddleware, upload.single("image"), storyController.submitStory);
+router.get("/my-story", authMiddleware, storyController.getMyStory);
 router.get("/approved", storyController.getApprovedStories);
 router.get("/featured", storyController.getFeaturedStories);
 
