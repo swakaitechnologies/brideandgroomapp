@@ -90,19 +90,28 @@ export default function VerifyEmailScreen() {
 
   return (
     <View style={styles.root}>
-      {/* Decorative Background Hearts */}
-      <View style={styles.bgHeart1} pointerEvents="none" collapsable={false}>
-        <Heart size={140} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart2} pointerEvents="none" collapsable={false}>
-        <Heart size={80} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart3} pointerEvents="none" collapsable={false}>
-        <Heart size={100} color="#FF4D4D" />
-      </View>
-      <View style={styles.bgHeart4} pointerEvents="none" collapsable={false}>
-        <Heart size={60} color="#FF4D4D" />
-      </View>
+      {/* Ambient Background Glows */}
+      <LinearGradient
+        colors={["rgba(59, 30, 84, 0.12)", "rgba(59, 30, 84, 0)"]}
+        style={styles.bgBlob1}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["rgba(212, 175, 55, 0.08)", "rgba(212, 175, 55, 0)"]}
+        style={styles.bgBlob2}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["rgba(59, 30, 84, 0.1)", "rgba(59, 30, 84, 0)"]}
+        style={styles.bgBlob3}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        pointerEvents="none"
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -475,32 +484,28 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     marginTop: 30,
   },
-  bgHeart1: {
+  bgBlob1: {
     position: "absolute",
-    top: -20,
-    left: -40,
-    transform: [{ rotate: "-15deg" }],
-    opacity: 0.15,
+    top: -100,
+    left: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
   },
-  bgHeart2: {
+  bgBlob2: {
     position: "absolute",
-    top: height * 0.25,
-    right: -20,
-    transform: [{ rotate: "25deg" }],
-    opacity: 0.12,
+    top: height * 0.35,
+    right: -100,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
   },
-  bgHeart3: {
+  bgBlob3: {
     position: "absolute",
-    bottom: height * 0.15,
-    left: -30,
-    transform: [{ rotate: "15deg" }],
-    opacity: 0.1,
-  },
-  bgHeart4: {
-    position: "absolute",
-    bottom: 40,
-    right: 30,
-    transform: [{ rotate: "-20deg" }],
-    opacity: 0.15,
+    bottom: -80,
+    left: -80,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
   },
 });
