@@ -641,50 +641,48 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                 Recently joined members
               </Text>
             </View>
+            <TouchableOpacity onPress={() => navigateToTab("Matches")}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
           </View>
           {newMatches.length > 0 ? (
-            <>
-              <View style={styles.newProfilesGrid}>
-                {newMatches.slice(0, 4).map((item: any) => {
-                  const isBlocked = !!item.isBlockedByMe;
-                  return (
-                    <View key={item.id} style={{ position: "relative", width: (width - 50) / 2, marginBottom: 15 }}>
-                      <ProfileCard
-                        profile={item}
-                        type="grid"
-                        isDark={isDark}
-                        layout="vertical"
-                        style={{ width: "100%", marginBottom: 0 }}
-                        onPress={() => {
-                          if (!isBlocked) {
-                            navigation.navigate("ProfileDetail", { profile: item });
-                          }
-                        }}
-                      />
-                      {isBlocked && (
-                        <View style={[styles.homeBlockedOverlay, { borderRadius: 20 }]}>
-                          <Ban size={20} color="#FF3B30" />
-                          <Text style={styles.homeBlockedText}>Blocked Profile</Text>
-                          <TouchableOpacity 
-                            onPress={() => navigation.navigate("AccountSetting")}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={styles.homeBlockedLink}>Manage Blocks</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-              <TouchableOpacity
-                style={styles.loadMoreBtn}
-                onPress={() => navigateToTab("Matches")}
-              >
-                <Text style={styles.loadMoreText}>View All New Profiles</Text>
-                <ChevronRight size={16} color={accentColor} />
-              </TouchableOpacity>
-            </>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {newMatches.map((item: any) => {
+                const isBlocked = !!item.isBlockedByMe;
+                return (
+                  <View key={item.id} style={{ position: "relative", marginRight: 16 }}>
+                    <ProfileCard
+                      profile={item}
+                      type="grid"
+                      isDark={isDark}
+                      layout="vertical"
+                      style={{ width: 150, marginBottom: 0 }}
+                      onPress={() => {
+                        if (!isBlocked) {
+                          navigation.navigate("ProfileDetail", { profile: item });
+                        }
+                      }}
+                    />
+                    {isBlocked && (
+                      <View style={[styles.homeBlockedOverlay, { borderRadius: 20 }]}>
+                        <Ban size={20} color="#FF3B30" />
+                        <Text style={styles.homeBlockedText}>Blocked Profile</Text>
+                        <TouchableOpacity 
+                          onPress={() => navigation.navigate("AccountSetting")}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.homeBlockedLink}>Manage Blocks</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </ScrollView>
           ) : (
             <View style={[styles.emptyStateCard, { backgroundColor: isDark ? '#1E1E1E' : '#FAFAFA' }]}>
               <Users size={36} color={deepPurple} style={{ opacity: 0.5 }} />
