@@ -1205,13 +1205,15 @@ const styles = StyleSheet.create({
 
   // Footer
   footer: {
-    padding: 30,
-    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+    alignItems: "flex-start",
     justifyContent: "center",
   },
   madeWithLoveLogo: {
-    width: '100%',
-    height: 180,
+    width: 260,
+    height: 130,
   },
   copyright: {
     fontSize: 10,
