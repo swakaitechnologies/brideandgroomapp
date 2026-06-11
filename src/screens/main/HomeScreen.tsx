@@ -203,24 +203,58 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
       // Fetch featured success stories
       try {
+        let storiesList: any[] = [];
         const featuredStoriesRes = await getFeaturedSuccessStories();
-        let storyFound = null;
         if (featuredStoriesRes?.data && Array.isArray(featuredStoriesRes.data) && featuredStoriesRes.data.length > 0) {
-          storyFound = featuredStoriesRes.data[0];
+          storiesList = featuredStoriesRes.data;
         } else if (featuredStoriesRes?.data?.stories && Array.isArray(featuredStoriesRes.data.stories) && featuredStoriesRes.data.stories.length > 0) {
-          storyFound = featuredStoriesRes.data.stories[0];
+          storiesList = featuredStoriesRes.data.stories;
         }
 
-        // If no featured story, try to fetch approved success stories
-        if (!storyFound) {
+        // If no featured stories, try approved success stories
+        if (storiesList.length === 0) {
           const approvedStoriesRes = await getApprovedSuccessStories();
           if (approvedStoriesRes?.data && Array.isArray(approvedStoriesRes.data) && approvedStoriesRes.data.length > 0) {
-            storyFound = approvedStoriesRes.data[0];
+            storiesList = approvedStoriesRes.data;
           } else if (approvedStoriesRes?.data?.stories && Array.isArray(approvedStoriesRes.data.stories) && approvedStoriesRes.data.stories.length > 0) {
-            storyFound = approvedStoriesRes.data.stories[0];
+            storiesList = approvedStoriesRes.data.stories;
           }
         }
-        setFeaturedStory(storyFound);
+
+        if (storiesList.length > 0) {
+          // Implement 12-hour random selection rotation
+          const STORE_KEY_ID = "@home_featured_story_id";
+          const STORE_KEY_TIME = "@home_featured_story_time";
+
+          const storedId = await AsyncStorage.getItem(STORE_KEY_ID);
+          const storedTimeStr = await AsyncStorage.getItem(STORE_KEY_TIME);
+          const now = Date.now();
+          const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+          let selectedStory = null;
+
+          if (storedId && storedTimeStr) {
+            const storedTime = parseInt(storedTimeStr, 10);
+            if (now - storedTime < TWELVE_HOURS) {
+              // Try to find the stored story in our current list
+              selectedStory = storiesList.find(s => s.id.toString() === storedId);
+            }
+          }
+
+          if (!selectedStory) {
+            // Pick a random story from the list
+            const randomIndex = Math.floor(Math.random() * storiesList.length);
+            selectedStory = storiesList[randomIndex];
+            
+            // Persist the new choice and time
+            await AsyncStorage.setItem(STORE_KEY_ID, selectedStory.id.toString());
+            await AsyncStorage.setItem(STORE_KEY_TIME, now.toString());
+          }
+
+          setFeaturedStory(selectedStory);
+        } else {
+          setFeaturedStory(null);
+        }
       } catch (err) {
         console.warn("Failed to fetch featured stories in HomeScreen:", err);
         setFeaturedStory(null);
@@ -655,9 +689,6 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             </View>
           )}
         </View>
-
-
-
 
         {/* Section: New Profiles */}
         <View style={styles.section}>
