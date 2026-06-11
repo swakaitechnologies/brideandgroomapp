@@ -24,12 +24,8 @@ const getDevHost = () => {
 
 export const DEV_HOST = getDevHost();
 
-export const API_BASE_URL = __DEV__
-  ? `http://${DEV_HOST}:5000/api`
-  : 'https://brideandgroomapp-2.onrender.com/api';
-export const MAIN_SOCKET_URL = __DEV__
-  ? `http://${DEV_HOST}:5000`
-  : 'https://brideandgroomapp-2.onrender.com';
+export const API_BASE_URL = 'https://brideandgroomapp-2.onrender.com/api';
+export const MAIN_SOCKET_URL = 'https://brideandgroomapp-2.onrender.com';
 
 export const resolvePhotoUrl = (url: string) => {
   if (!url) return url;
