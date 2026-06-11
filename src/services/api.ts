@@ -81,6 +81,10 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       // Ignore JSON parse errors for non-JSON or empty bodies
     }
 
+    if (Array.isArray(data)) {
+      return { data };
+    }
+
     return { data: { success: response.ok, ...data } };
   } catch (error: any) {
     console.warn(`API Error for ${endpoint}:`, error.message);
