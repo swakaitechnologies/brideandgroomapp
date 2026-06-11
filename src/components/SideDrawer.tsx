@@ -424,7 +424,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
         <View style={[styles.header, { backgroundColor: headerBg }]}>
           <View style={styles.headerTop}>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={24} color={textColor} />
+              <X size={20} color={textColor} />
             </TouchableOpacity>
           </View>
 
@@ -446,10 +446,10 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
                   {profileData?.firstName || user?.firstName || "Valued"} {profileData?.lastName || user?.lastName || "Member"}
                 </Text>
                 {profileData?.verificationStatus === "approved" && (
-                  <ShieldCheck size={16} color="#4CAF50" style={{ marginLeft: 6 }} />
+                  <ShieldCheck size={14} color="#4CAF50" style={{ marginLeft: 6 }} />
                 )}
                 {profileData?.isKycVerified && (
-                  <BadgeCheck size={16} color={palette.gold.main} style={{ marginLeft: 4 }} />
+                  <BadgeCheck size={14} color={palette.gold.main} style={{ marginLeft: 4 }} />
                 )}
               </View>
               <View style={styles.badgeRow}>
@@ -467,7 +467,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               </View>
               <TouchableOpacity onPress={copyToClipboard} style={styles.idBadge}>
                 <Text style={styles.idText}>ID: {profileData?.customId || user?.customId || "MEMBER"}</Text>
-                <Copy size={11} color={palette.purple.deep} style={{ marginLeft: 6 }} />
+                <Copy size={10} color={palette.purple.deep} style={{ marginLeft: 6 }} />
               </TouchableOpacity>
             </View>
           </View>
@@ -773,8 +773,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(59, 30, 84, 0.08)',
   },
@@ -782,82 +782,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   logoutTopBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 5,
+    padding: 4,
   },
   logoutTopText: {
-    fontSize: 14,
+    fontSize: 13,
     ...fonts.semibold,
     color: '#FF4D4D',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   closeBtn: {
-    padding: 5,
+    padding: 4,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 4,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
   },
   profileInfo: {
-    marginLeft: 15,
+    marginLeft: 12,
     flex: 1,
   },
   greetingText: {
-    fontSize: 12,
+    fontSize: 11,
     ...fonts.semibold,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 1,
   },
   userName: {
-    fontSize: 18,
+    fontSize: 15,
     ...fonts.bold,
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    gap: 3,
   },
   statusBadgeText: {
-    fontSize: 9,
+    fontSize: 8.5,
     ...fonts.bold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   idBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(212, 175, 55, 0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 4,
     alignSelf: 'flex-start',
   },
   idText: {
-    fontSize: 11,
+    fontSize: 10,
     ...fonts.bold,
     color: palette.purple.deep,
   },
@@ -865,48 +865,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    marginTop: 12,
-    paddingVertical: 10,
+    marginTop: 8,
+    paddingVertical: 8,
     backgroundColor: '#FAF9FC',
-    borderRadius: 10,
+    borderRadius: 8,
   },
   compactStatItem: {
     alignItems: 'center',
     flex: 1,
   },
   compactStatVal: {
-    fontSize: 14,
+    fontSize: 13,
     ...fonts.bold,
   },
   compactStatLabel: {
-    fontSize: 9,
-    marginTop: 2,
+    fontSize: 8.5,
+    marginTop: 1,
   },
   compactStatDivider: {
     width: 1,
-    height: 16,
+    height: 14,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    marginTop: 14,
+    marginTop: 8,
   },
   headerActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    gap: 6,
+    paddingVertical: 6,
+    gap: 4,
     flex: 1,
   },
   headerActionBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     ...fonts.semibold,
   },
   headerActionDivider: {
     width: 1,
-    height: 12,
+    height: 10,
   },
   scrollContent: {
     paddingTop: 15,
