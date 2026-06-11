@@ -191,7 +191,7 @@ exports.register = async (req, res) => {
       .then(() => logger.info(`[EMAIL] Verification sent to ${email}`))
       .catch((emailErr) => logger.error("EMAIL SEND ERROR:", emailErr));
 
-    sendOTP(mobile, mobileOtpCode)
+    sendOTP(mobile, mobileOtpCode, newUser.id)
       .then(() => logger.info(`[SMS] OTP verification sent to ${mobile}`))
       .catch((smsErr) => logger.error("SMS SEND ERROR:", smsErr));
 
@@ -657,7 +657,7 @@ exports.updateAccountInfo = async (req, res) => {
           { where: { userId }, transaction: t }
         );
 
-        sendOTP(mobile, mobileOtpCode)
+        sendOTP(mobile, mobileOtpCode, userId)
           .then(() => logger.info(`[SMS] OTP verification sent to ${mobile} on number update`))
           .catch((smsErr) => logger.error("SMS SEND ERROR ON UPDATE:", smsErr));
       }
@@ -844,7 +844,15 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ message: "Mobile number is already verified." });
     }
 
-    if (user.mobileOTP !== otp || user.otpExpiry < new Date()) {
+    let isValid = false;
+    if (process.env.SMS_GATEWAY_API_KEY && process.env.SMS_GATEWAY_OTP_ID) {
+      const { verifyOTP } = require("../utils/smsService");
+      isValid = await verifyOTP(user.mobileOTP, otp);
+    } else {
+      isValid = user.mobileOTP === otp && user.otpExpiry >= new Date();
+    }
+
+    if (!isValid) {
       return res.status(400).json({ message: "Invalid or expired OTP code." });
     }
 
@@ -857,9 +865,17 @@ exports.verifyOTP = async (req, res) => {
     trackBackendEvent(user.id, "mobile_otp_verified", { mobile: user.mobile });
 
     // Process referral and welcome early-adopter rewards
+    let earlyAdopterPromoAwarded = false;
+    let earlyAdopterPlanName = null;
+    let earlyAdopterDurationDays = null;
     try {
       const { processReferral, processWelcomeTrial } = require("../utils/referralPromoHelper");
-      await processWelcomeTrial(user.id);
+      const welcomeResult = await processWelcomeTrial(user.id);
+      if (welcomeResult && welcomeResult.awarded) {
+        earlyAdopterPromoAwarded = true;
+        earlyAdopterPlanName = welcomeResult.planName;
+        earlyAdopterDurationDays = welcomeResult.durationDays;
+      }
       await processReferral(user.id);
     } catch (promoErr) {
       logger.error("Error processing promo rewards on OTP verify:", promoErr);
@@ -868,6 +884,9 @@ exports.verifyOTP = async (req, res) => {
     res.json({
       success: true,
       message: "Mobile verified successfully.",
+      earlyAdopterPromoAwarded,
+      earlyAdopterPlanName,
+      earlyAdopterDurationDays,
       user: {
         id: user.id,
         firstName: user.firstName,

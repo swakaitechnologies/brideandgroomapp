@@ -112,6 +112,27 @@ const startServer = async () => {
   // Run once every 24 hours
   setInterval(purgeOldLogs, 24 * 60 * 60 * 1000);
 
+  // Subscription Expiry Scanner — runs daily at startup and every 24 hours
+  const { checkExpiries } = require("./jobs/subscriptionCron");
+  // Run once on startup (delayed 10s to let DB fully initialize)
+  setTimeout(checkExpiries, 10000);
+  // Run every 24 hours
+  setInterval(checkExpiries, 24 * 60 * 60 * 1000);
+
+  // Profile Completion Reminder — runs daily
+  const { checkProfileCompletionReminders } = require("./jobs/profileCompletionCron");
+  setTimeout(checkProfileCompletionReminders, 15000); // 15s delay
+  setInterval(checkProfileCompletionReminders, 24 * 60 * 60 * 1000);
+
+  // Weekly Match Digest — runs daily to check if it's Saturday
+  const { sendWeeklyMatches } = require("./jobs/weeklyMatchCron");
+  setTimeout(() => sendWeeklyMatches(false), 20000); // 20s delay
+  setInterval(() => sendWeeklyMatches(false), 24 * 60 * 60 * 1000);
+
+  // Inactive User Reminder — runs daily
+  const { checkInactivityReminders } = require("./jobs/inactivityCron");
+  setTimeout(checkInactivityReminders, 25000); // 25s delay
+  setInterval(checkInactivityReminders, 24 * 60 * 60 * 1000);
 
 
   if (process.env.NODE_ENV === "production" && cluster.isMaster) {

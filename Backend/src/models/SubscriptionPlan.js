@@ -34,7 +34,12 @@ const SubscriptionPlan = sequelize.define(
     features: {
       type: DataTypes.JSON,
       defaultValue: [],
-      comment: "Array of feature strings for display",
+      comment: "Array of feature key strings for backend gating",
+    },
+    displayFeatures: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+      comment: "Array of human-readable feature descriptions for plan card UI",
     },
     maxContacts: {
       type: DataTypes.INTEGER,

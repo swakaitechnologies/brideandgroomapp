@@ -11,8 +11,10 @@ interface Plan {
   durationDays: number;
   price: Record<string, number>;
   features: string[];
+  displayFeatures?: string[];
   maxContacts: number;
   maxMessages: number;
+  maxCalls?: number;
   priority: number;
   isActive: boolean;
   badge: string | null;
@@ -31,8 +33,10 @@ const PlanManagementPage = () => {
     name: "", slug: "", durationDays: 30,
     priceINR: 0, priceUSD: 0,
     features: "",
-    maxContacts: -1, maxMessages: -1,
+    displayFeatures: "",
+    maxContacts: -1, maxMessages: -1, maxCalls: -1,
     priority: 0, badge: "",
+    freeTrialDays: 0,
   });
 
   const fetchPlans = async () => {
@@ -50,7 +54,15 @@ const PlanManagementPage = () => {
   useEffect(() => { fetchPlans(); }, []);
 
   const resetForm = () => {
-    setForm({ name: "", slug: "", durationDays: 30, priceINR: 0, priceUSD: 0, features: "", maxContacts: -1, maxMessages: -1, priority: 0, badge: "" });
+    setForm({
+      name: "", slug: "", durationDays: 30,
+      priceINR: 0, priceUSD: 0,
+      features: "",
+      displayFeatures: "",
+      maxContacts: -1, maxMessages: -1, maxCalls: -1,
+      priority: 0, badge: "",
+      freeTrialDays: 0,
+    });
     setEditingPlan(null);
     setShowForm(false);
   };
@@ -61,8 +73,10 @@ const PlanManagementPage = () => {
       name: plan.name, slug: plan.slug, durationDays: plan.durationDays,
       priceINR: plan.price.INR || 0, priceUSD: plan.price.USD || 0,
       features: plan.features.join("\n"),
-      maxContacts: plan.maxContacts, maxMessages: plan.maxMessages,
+      displayFeatures: (plan.displayFeatures || []).join("\n"),
+      maxContacts: plan.maxContacts, maxMessages: plan.maxMessages, maxCalls: plan.maxCalls ?? -1,
       priority: plan.priority, badge: plan.badge || "",
+      freeTrialDays: plan.freeTrialDays || 0,
     });
     setShowForm(true);
   };
@@ -74,10 +88,11 @@ const PlanManagementPage = () => {
         name: form.name, slug: form.slug, durationDays: form.durationDays,
         price: { INR: form.priceINR, USD: form.priceUSD },
         features: form.features.split("\n").filter(Boolean),
-        maxContacts: form.maxContacts, maxMessages: form.maxMessages,
+        displayFeatures: form.displayFeatures.split("\n").filter(Boolean),
+        maxContacts: form.maxContacts, maxMessages: form.maxMessages, maxCalls: form.maxCalls,
         priority: form.priority, badge: form.badge || null,
         countryAvailability: ["ALL"],
-        freeTrialDays: 0,
+        freeTrialDays: form.freeTrialDays,
       };
 
       if (editingPlan) {
@@ -184,6 +199,14 @@ const PlanManagementPage = () => {
               <input className="input-admin" type="number" placeholder="e.g., 100 (-1 = unlimited)" value={form.maxMessages} onChange={e => setForm({...form, maxMessages: +e.target.value})} />
             </div>
             <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Max Calls</label>
+              <input className="input-admin" type="number" placeholder="e.g., 10 (-1 = unlimited)" value={form.maxCalls} onChange={e => setForm({...form, maxCalls: +e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Free Trial Days</label>
+              <input className="input-admin" type="number" placeholder="e.g., 7" value={form.freeTrialDays} onChange={e => setForm({...form, freeTrialDays: +e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Priority (Display Order)</label>
               <input className="input-admin" type="number" placeholder="e.g., 10" value={form.priority} onChange={e => setForm({...form, priority: +e.target.value})} />
             </div>
@@ -191,9 +214,15 @@ const PlanManagementPage = () => {
               <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Badge Label</label>
               <input className="input-admin" placeholder="e.g., Most Popular" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})} />
             </div>
-            <div className="md:col-span-2 lg:col-span-3 flex flex-col gap-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Features (one per line)</label>
-              <textarea className="input-admin w-full h-32" placeholder="Describe plan features..." value={form.features} onChange={e => setForm({...form, features: e.target.value})} />
+            <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Features Gating Keys (one per line)</label>
+                <textarea className="input-admin w-full h-32" placeholder="e.g.&#10;contacts&#10;messages&#10;calls" value={form.features} onChange={e => setForm({...form, features: e.target.value})} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Human-Readable Display Features (one per line)</label>
+                <textarea className="input-admin w-full h-32" placeholder="e.g.&#10;20 Contact Reveals&#10;50 Messages&#10;10 Audio/Video Calls" value={form.displayFeatures} onChange={e => setForm({...form, displayFeatures: e.target.value})} />
+              </div>
             </div>
             <div className="md:col-span-2 lg:col-span-3 flex gap-4">
               <button type="submit" className="px-8 py-3 bg-primary text-white rounded-2xl text-xs font-medium tracking-widest hover:bg-primary-hover">
@@ -216,7 +245,8 @@ const PlanManagementPage = () => {
                 <th className="px-8 py-6 text-[10px] font-medium tracking-widest text-black">PLAN</th>
                 <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">DURATION</th>
                 <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">PRICE (INR)</th>
-                <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">CONTACTS</th>
+                <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">LIMITS (CON/MSG/CALL)</th>
+                <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">TRIAL</th>
                 <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">STATUS</th>
                 <th className="px-4 py-6 text-[10px] font-medium tracking-widest text-black">ACTIONS</th>
               </tr>
@@ -237,7 +267,10 @@ const PlanManagementPage = () => {
                   </td>
                   <td className="px-4 py-5 text-sm font-medium">{plan.durationDays}d</td>
                   <td className="px-4 py-5 text-sm font-medium">₹{plan.price.INR?.toLocaleString() || "—"}</td>
-                  <td className="px-4 py-5 text-sm font-medium">{plan.maxContacts === -1 ? "∞" : plan.maxContacts}</td>
+                  <td className="px-4 py-5 text-sm font-medium">
+                    Con: {plan.maxContacts === -1 ? "∞" : plan.maxContacts} / Msg: {plan.maxMessages === -1 ? "∞" : plan.maxMessages} / Call: {plan.maxCalls === -1 ? "∞" : (plan.maxCalls ?? "—")}
+                  </td>
+                  <td className="px-4 py-5 text-sm font-medium">{plan.freeTrialDays || 0}d</td>
                   <td className="px-4 py-5">
                     <button onClick={() => handleToggle(plan)} className="flex items-center gap-2">
                       {plan.isActive ? (

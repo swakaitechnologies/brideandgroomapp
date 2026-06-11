@@ -5,6 +5,7 @@ const {
   Payment,
   Coupon,
   Profile,
+  User,
 } = require("../models/associations");
 const {
   createOrder,
@@ -12,6 +13,7 @@ const {
   selectGateway,
 } = require("../utils/paymentGateway");
 const { Op } = require("sequelize");
+const { sendPlanPurchaseEmail } = require("../utils/emailService");
 
 /**
  * GET /api/payments/plans — List active plans for user's country
@@ -49,6 +51,30 @@ exports.createPaymentOrder = async (req, res) => {
     const plan = await SubscriptionPlan.findByPk(planId);
     if (!plan || !plan.isActive) {
       return res.status(404).json({ success: false, message: "Plan not found or inactive" });
+    }
+
+    // Check for existing active subscription and warn the user
+    const existingActiveSub = await Subscription.findOne({
+      where: {
+        userId,
+        status: { [Op.in]: ["active", "trialing"] },
+        endDate: { [Op.gt]: new Date() },
+      },
+      include: [{ model: SubscriptionPlan, as: "plan", attributes: ["name", "durationDays"] }],
+    });
+
+    // If user has not explicitly confirmed, return warning (frontend handles the popup)
+    const proceedAnyway = req.body.proceedAnyway === true;
+    if (existingActiveSub && !proceedAnyway) {
+      return res.status(200).json({
+        success: false,
+        hasActivePlan: true,
+        activePlan: {
+          name: existingActiveSub.plan ? existingActiveSub.plan.name : "Premium",
+          endDate: existingActiveSub.endDate,
+        },
+        message: "You already have an active plan. Purchasing a new plan will replace your current subscription.",
+      });
     }
 
     const basePrice = plan.price[currency];
@@ -210,6 +236,23 @@ exports.verifyPayment = async (req, res) => {
       paymentId: payment.id,
     });
 
+    // Send purchase confirmation email
+    try {
+      const user = await User.findByPk(userId);
+      if (user && user.email) {
+        await sendPlanPurchaseEmail(
+          user.email,
+          user.firstName,
+          plan.name,
+          payment.amount,
+          endDate
+        );
+        logger.info(`[PAYMENT] Purchase confirmation email sent to ${user.email} for ${plan.name} plan.`);
+      }
+    } catch (emailErr) {
+      logger.error("[PAYMENT] Failed to send purchase email:", emailErr.message);
+    }
+
     res.json({
       success: true,
       message: "Payment verified and subscription activated",
@@ -225,7 +268,9 @@ exports.verifyPayment = async (req, res) => {
           durationDays: plan.durationDays,
           maxContacts: plan.maxContacts,
           maxMessages: plan.maxMessages,
+          maxCalls: plan.maxCalls,
           features: plan.features,
+          displayFeatures: plan.displayFeatures,
         },
       },
     });

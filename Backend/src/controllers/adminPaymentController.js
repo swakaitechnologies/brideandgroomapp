@@ -29,7 +29,7 @@ exports.getAdminPlans = async (req, res) => {
  */
 exports.createPlan = async (req, res) => {
   try {
-    const { name, slug, durationDays, price, features, maxContacts, maxMessages, priority, badge, countryAvailability, freeTrialDays } = req.body;
+    const { name, slug, durationDays, price, features, displayFeatures, maxContacts, maxMessages, maxCalls, priority, badge, countryAvailability, freeTrialDays } = req.body;
 
     const existing = await SubscriptionPlan.findOne({ where: { slug } });
     if (existing) {
@@ -38,8 +38,10 @@ exports.createPlan = async (req, res) => {
 
     const plan = await SubscriptionPlan.create({
       name, slug, durationDays, price, features,
+      displayFeatures: displayFeatures || [],
       maxContacts: maxContacts || -1,
       maxMessages: maxMessages || -1,
+      maxCalls: maxCalls || -1,
       priority: priority || 0,
       badge: badge || null,
       countryAvailability: countryAvailability || ["ALL"],
@@ -65,15 +67,17 @@ exports.updatePlan = async (req, res) => {
       return res.status(404).json({ success: false, message: "Plan not found" });
     }
 
-    const { name, durationDays, price, features, maxContacts, maxMessages, priority, isActive, badge, countryAvailability, freeTrialDays } = req.body;
+    const { name, durationDays, price, features, displayFeatures, maxContacts, maxMessages, maxCalls, priority, isActive, badge, countryAvailability, freeTrialDays } = req.body;
 
     await plan.update({
       ...(name && { name }),
       ...(durationDays && { durationDays }),
       ...(price && { price }),
       ...(features && { features }),
+      ...(displayFeatures && { displayFeatures }),
       ...(maxContacts !== undefined && { maxContacts }),
       ...(maxMessages !== undefined && { maxMessages }),
+      ...(maxCalls !== undefined && { maxCalls }),
       ...(priority !== undefined && { priority }),
       ...(isActive !== undefined && { isActive }),
       ...(badge !== undefined && { badge }),

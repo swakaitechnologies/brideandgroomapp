@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -59,13 +60,16 @@ export default function PremiumScreen() {
   const [promoCoupon, setPromoCoupon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<string>("Gold");
+  const [showActivePlanModal, setShowActivePlanModal] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<any>(null);
 
-  const themeBg = isDark ? "#0A0A0A" : "#FFFFFF";
-  const cardBg = isDark ? "#1A1A1A" : "#FFFFFF";
-  const textColor = isDark ? "#FFFFFF" : "#1A1A1A";
-  const mutedText = isDark ? "#AAAAAA" : "#666666";
-  const accentGold = palette.gold.main;
-  const deepPurple = "#3B1E54";
+  const TIER_ORDER = ["Silver", "Gold", "Diamond"];
+  const TIER_COLORS: Record<string, string> = {
+    Silver: "#B4B4B4",
+    Gold: "#3B1E54",
+    Diamond: "#D4AF37",
+  };
 
   const fetchPremiumData = async () => {
     try {
@@ -80,23 +84,34 @@ export default function PremiumScreen() {
         const mappedPlans = plansRes.data.plans.map((p: any) => ({
           id: p.id,
           name: p.name,
+          slug: p.slug,
+          durationDays: p.durationDays,
           duration:
-            p.durationDays === 365 ? "1 Year" : `${p.durationDays / 30} Months`,
+            p.durationDays === 365 ? "1 Year"
+            : p.durationDays === 180 ? "6 Months"
+            : p.durationDays === 90 ? "3 Months"
+            : `${p.durationDays} Days`,
           price: `₹${p.price.INR || p.price.inr || 0}`,
+          priceValue: p.price.INR || p.price.inr || 0,
           oldPrice: p.price.oldPrice ? `₹${p.price.oldPrice}` : null,
           discount: p.price.discount || null,
-          features: Array.isArray(p.features) ? p.features : [],
+          features: Array.isArray(p.displayFeatures) && p.displayFeatures.length > 0
+            ? p.displayFeatures
+            : Array.isArray(p.features) ? p.features : [],
           badge: p.badge || null,
           popular: !!p.badge,
-          accent:
-            p.name === "Diamond"
-              ? "#D4AF37"
-              : p.name === "Gold"
-                ? "#3B1E54"
-                : "#B4B4B4",
+          freeTrialDays: p.freeTrialDays || 0,
+          accent: TIER_COLORS[p.name] || "#B4B4B4",
           rawPlan: p,
         }));
         setPlans(mappedPlans);
+
+        // Auto-select the first available tier
+        if (mappedPlans.length > 0) {
+          const availableTiers = [...new Set(mappedPlans.map((p: any) => p.name))] as string[];
+          const preferred = TIER_ORDER.find(t => availableTiers.includes(t));
+          if (preferred) setSelectedTier(preferred);
+        }
       }
 
       if (bannersRes.data.success) {
@@ -132,7 +147,29 @@ export default function PremiumScreen() {
   };
 
   const handleChoosePlan = (plan: any) => {
-    navigation.navigate("Checkout", { plan: plan.rawPlan || plan });
+    // If user has an active plan, show the confirmation modal
+    if (subscription) {
+      setPendingPlan(plan);
+      setShowActivePlanModal(true);
+    } else {
+      navigation.navigate("Checkout", { plan: plan.rawPlan || plan });
+    }
+  };
+
+  const handleProceedAnyway = () => {
+    setShowActivePlanModal(false);
+    if (pendingPlan) {
+      navigation.navigate("Checkout", {
+        plan: pendingPlan.rawPlan || pendingPlan,
+        proceedAnyway: true,
+      });
+      setPendingPlan(null);
+    }
+  };
+
+  const handleCancelPurchase = () => {
+    setShowActivePlanModal(false);
+    setPendingPlan(null);
   };
 
   const handlePromoApply = async () => {
@@ -323,6 +360,34 @@ export default function PremiumScreen() {
           </View>
         )}
 
+        {/* Tier Tabs */}
+        {!loading && (
+          <View style={styles.tierTabs}>
+            {TIER_ORDER.filter(tier => plans.some(p => p.name === tier)).map(tier => (
+              <TouchableOpacity
+                key={tier}
+                style={[
+                  styles.tierTab,
+                  selectedTier === tier && {
+                    backgroundColor: TIER_COLORS[tier],
+                    borderColor: TIER_COLORS[tier],
+                  },
+                ]}
+                onPress={() => setSelectedTier(tier)}
+              >
+                <Text
+                  style={[
+                    styles.tierTabText,
+                    selectedTier === tier && styles.tierTabTextActive,
+                  ]}
+                >
+                  {tier}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Carousel */}
         {loading ? (
           <ScrollView
@@ -365,7 +430,7 @@ export default function PremiumScreen() {
           </ScrollView>
         ) : (
           <FlatList
-            data={plans}
+            data={plans.filter(p => p.name === selectedTier)}
             renderItem={renderPlanCard}
             keyExtractor={(item) => item.id}
             horizontal
@@ -510,6 +575,45 @@ export default function PremiumScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Active Plan Warning Modal */}
+      <Modal
+        visible={showActivePlanModal}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={handleCancelPurchase}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.activePlanModal}>
+            <Crown size={36} color={accentGold} />
+            <Text style={styles.modalTitle}>Active Plan Detected</Text>
+            <Text style={styles.modalMessage}>
+              You already have an active <Text style={{ fontWeight: "800" }}>{subscription?.plan?.name}</Text> plan valid until{" "}
+              <Text style={{ fontWeight: "800" }}>
+                {subscription?.endDate
+                  ? new Date(subscription.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                  : "N/A"}
+              </Text>.
+              {"\n\n"}Purchasing a new plan will replace your current subscription.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={handleCancelPurchase}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalProceedBtn}
+                onPress={handleProceedAnyway}
+              >
+                <Text style={styles.modalProceedText}>Proceed Anyway</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

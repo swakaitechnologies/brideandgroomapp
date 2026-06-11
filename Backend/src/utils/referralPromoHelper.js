@@ -1,6 +1,15 @@
-const { User, Subscription, SubscriptionPlan } = require("../models/associations");
+const { User, Subscription, SubscriptionPlan, ClaimedPromotion } = require("../models/associations");
+const SystemSetting = require("../models/SystemSetting");
 const { sendNotification } = require("./notificationHelper");
 const logger = require("./logger");
+const crypto = require("crypto");
+
+/**
+ * Hash a mobile number using SHA-256 for privacy-compliant duplicate tracking.
+ */
+function hashMobile(mobile) {
+  return crypto.createHash("sha256").update(mobile.trim()).digest("hex");
+}
 
 /**
  * Grant subscription credit (welcome trial or referral extension)
@@ -8,28 +17,21 @@ const logger = require("./logger");
  * @param {number} days - Number of days to grant
  * @param {string} type - 'welcome' or 'referral'
  * @param {string} notificationMsg - In-app notification text
+ * @returns {object|null} subscription record or null
  */
 async function grantPremiumSubscription(userId, days, type, notificationMsg) {
   try {
     const plans = await SubscriptionPlan.findAll({ where: { isActive: true } });
     if (!plans || plans.length === 0) {
-      logger.warn("[PROMO] No active subscription plans found. Creating a default mock Elite plan.");
-      // Seed a default plan if none exist (useful for testing or initial clean setups)
-      const defaultPlan = await SubscriptionPlan.create({
-        name: "MVP Elite",
-        slug: "mvp-elite",
-        durationDays: 30,
-        price: { INR: 999 },
-        features: ["video_intro", "some_other_feature"],
-        maxContacts: 100,
-        maxMessages: 100,
-        isActive: true,
-      });
-      plans.push(defaultPlan);
+      logger.warn("[PROMO] No active subscription plans found. Cannot grant premium.");
+      return null;
     }
 
-    // Try to find an elite/premium plan with video_intro features, otherwise fallback to the first active plan
-    const promoPlan = plans.find(p => p.features && p.features.includes("video_intro")) || plans[0];
+    // Prefer Diamond plan, then any plan with video_intro, then first active
+    const promoPlan =
+      plans.find(p => p.name === "Diamond" && p.durationDays === 30) ||
+      plans.find(p => p.features && p.features.includes("video_intro")) ||
+      plans[0];
 
     const now = new Date();
     // Check if user has a current active subscription
@@ -55,19 +57,20 @@ async function grantPremiumSubscription(userId, days, type, notificationMsg) {
         startDate: now,
         endDate,
       });
-      logger.info(`[PROMO] Granted new active subscription for user ${userId} for ${days} days.`);
+      logger.info(`[PROMO] Granted new ${promoPlan.name} subscription for user ${userId} for ${days} days.`);
     }
 
     // Send in-app notification
     await sendNotification({
       receiverId: userId,
-      type: "feedback", // System notification channel
+      type: "feedback",
       message: notificationMsg,
     });
 
-    return subscription;
+    return { subscription, planName: promoPlan.name };
   } catch (err) {
     logger.error(`[PROMO] Error granting subscription to user ${userId}:`, err.message);
+    return null;
   }
 }
 
@@ -107,27 +110,85 @@ async function processReferral(refereeUserId) {
 }
 
 /**
- * Handle early adopter welcome promo (first 1,000 sign-ups)
+ * Handle early adopter welcome promo (first N sign-ups, configurable via SystemSetting).
+ * Returns { awarded: true, planName, durationDays } if the promo was granted, else { awarded: false }.
  * @param {string} userId - The verified user ID
+ * @returns {object} { awarded: boolean, planName?: string, durationDays?: number }
  */
 async function processWelcomeTrial(userId) {
   try {
-    const userCount = await User.count({ where: { isMobileVerified: true } });
-    if (userCount <= 1000) {
-      logger.info(`[WELCOME] Granting 30 days free welcome premium to user ${userId} (User #${userCount})`);
-      await grantPremiumSubscription(
-        userId,
-        30,
-        "welcome",
-        "Congratulations! As one of our first 1,000 users, you have been upgraded to 30 days of free Premium subscription features!"
-      );
+    // 1. Read dynamic settings
+    const [enabledSetting, limitSetting, durationSetting] = await Promise.all([
+      SystemSetting.findByPk("early_adopter_enabled"),
+      SystemSetting.findByPk("early_adopter_limit"),
+      SystemSetting.findByPk("early_adopter_duration_days"),
+    ]);
+
+    const enabled = enabledSetting ? enabledSetting.value === "true" : false;
+    const limit = limitSetting ? parseInt(limitSetting.value, 10) : 1000;
+    const durationDays = durationSetting ? parseInt(durationSetting.value, 10) : 30;
+
+    if (!enabled) {
+      logger.info("[WELCOME] Early adopter program is disabled.");
+      return { awarded: false };
     }
+
+    // 2. Check user count
+    const userCount = await User.count({ where: { isMobileVerified: true } });
+    if (userCount > limit) {
+      logger.info(`[WELCOME] User count (${userCount}) exceeds early adopter limit (${limit}). Skipping.`);
+      return { awarded: false };
+    }
+
+    // 3. Duplicate prevention — check ClaimedPromotion registry
+    const user = await User.findByPk(userId);
+    if (!user || !user.mobile) {
+      return { awarded: false };
+    }
+
+    const mobileHash = hashMobile(user.mobile);
+
+    const alreadyClaimed = await ClaimedPromotion.findOne({
+      where: { mobileHash, promoType: "early_adopter" },
+    });
+
+    if (alreadyClaimed) {
+      logger.warn(`[WELCOME] Mobile hash already claimed early_adopter promo. Blocking duplicate for user ${userId}.`);
+      return { awarded: false };
+    }
+
+    // 4. Grant the premium subscription
+    logger.info(`[WELCOME] Granting ${durationDays} days free Diamond premium to user ${userId} (User #${userCount})`);
+    const result = await grantPremiumSubscription(
+      userId,
+      durationDays,
+      "welcome",
+      `🎉 Congratulations! As one of our first ${limit} users, you've been upgraded to Diamond Premium for ${durationDays} days FREE!`
+    );
+
+    if (!result) {
+      return { awarded: false };
+    }
+
+    // 5. Record in ClaimedPromotion registry
+    await ClaimedPromotion.create({
+      mobileHash,
+      promoType: "early_adopter",
+      userId,
+      planName: result.planName,
+      durationDays,
+    });
+
+    logger.info(`[WELCOME] Recorded early_adopter claim for user ${userId}.`);
+
+    return { awarded: true, planName: result.planName, durationDays };
   } catch (err) {
     logger.error(`[WELCOME] Error processing welcome promo for user ${userId}:`, err.message);
+    return { awarded: false };
   }
 }
 
 module.exports = {
   processReferral,
-  processWelcomeTrial
+  processWelcomeTrial,
 };

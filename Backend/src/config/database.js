@@ -160,6 +160,12 @@ const connectDB = async () => {
       console.error("Error updating targetType column in Announcements:", annColError);
     }
 
+    // Programmatically ensure displayFeatures column exists in SubscriptionPlans
+    await ensureColumn("SubscriptionPlans", "displayFeatures", {
+      type: Sequelize.JSON,
+      defaultValue: [],
+    });
+
     // Programmatically ensure targetCustomId column exists in Announcements
     await ensureColumn("Announcements", "targetCustomId", {
       type: Sequelize.STRING,

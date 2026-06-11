@@ -1,0 +1,14 @@
+appId: com.brideandgroom
+---
+- clearState
+- launchApp
+- takeScreenshot: welcome_screen
+- tapOn: "Log In"
+- takeScreenshot: login_screen_initial
+- tapOn: "name@domain.com"
+- inputText: "api_test_user@example.com"
+- tapOn: "Enter password"
+- inputText: "Password123!"
+- takeScreenshot: login_screen_filled
+- tapOn: "Sign In"
+- takeScreenshot: home_screen

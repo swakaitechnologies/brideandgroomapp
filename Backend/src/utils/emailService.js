@@ -614,9 +614,289 @@ const sendNewsletterEmail = async (email, subject, content) => {
   return transporter.sendMail(mailOptions);
 };
 
+const sendPlanPurchaseEmail = async (email, firstName, planName, price, endDate) => {
+  const formattedDate = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const mailOptions = {
+    from: `"Bride&Groom" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `✅ ${planName} Plan Activated — Bride&Groom`,
+    html: `
+      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      </head>
+      <body style="margin:0;padding:0;background-color:#F9F7FC;font-family:'Plus Jakarta Sans',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F9F7FC;padding:40px 16px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(59,30,84,0.05);border:1px solid #E8E0F0;">
+              <tr><td style="background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);padding:45px 40px;text-align:center;border-bottom:4px solid #D4AF37;">
+                <a href="https://brideandgroom.co.in" style="text-decoration:none;"><img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:55px;border:0;display:block;outline:none;margin:0 auto;"></a>
+                <div style="height:2px;width:60px;background-color:#D4AF37;margin:20px auto 12px auto;border-radius:2px;"></div>
+                <p style="font-size:11px;color:#D4AF37;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:600;">Where Tradition Meets Excellence</p>
+              </td></tr>
+              <tr><td style="padding:45px 40px;background-color:#ffffff;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr><td style="background-color:#ECFDF5;border:1px solid #A7F3D0;border-radius:100px;padding:8px 24px;">
+                  <span style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:1.5px;">✓ Payment Confirmed</span>
+                </td></tr></table>
+                <h1 style="font-size:26px;font-weight:700;color:#3B1E54;margin:0 0 12px;">${planName} Plan Activated!</h1>
+                <p style="font-size:15px;color:#5C4B6E;line-height:1.6;margin:0 0 30px;">
+                  Dear <strong>${firstName}</strong>, your <strong style="color:#D4AF37;">${planName}</strong> subscription is now active. Enjoy all premium features until <strong>${formattedDate}</strong>.
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF9FC;border:1.5px solid #E8E0F0;border-radius:16px;margin-bottom:30px;">
+                  <tr><td style="padding:20px;text-align:center;">
+                    <p style="margin:0 0 4px;font-size:11px;color:#7E6B8F;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;">Subscription Details</p>
+                    <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#3B1E54;">${planName} Plan${price ? ` — ₹${price}` : ""}</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#7E6B8F;">Valid until ${formattedDate}</p>
+                  </td></tr>
+                </table>
+              </td></tr>
+              <tr><td style="background-color:#0A0514;padding:35px 40px;text-align:center;">
+                <img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:40px;display:block;outline:none;margin:0 auto 10px auto;">
+                <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 12px;line-height:1.5;">&copy; 2026 Bride&Groom Matrimony. All rights reserved.</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin:0;">Made with ❤️ by <a href="https://swakai.in" style="color:#D4AF37;text-decoration:none;font-weight:600;">SwaKai Technologies</a></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+const sendPlanExpiryEmail = async (email, firstName, planName, endDate, isExpiringSoon) => {
+  const formattedDate = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  const subject = isExpiringSoon
+    ? `⏰ Your ${planName} Plan Expires in 3 Days — Bride&Groom`
+    : `❌ Your ${planName} Plan Has Expired — Bride&Groom`;
+  const headline = isExpiringSoon ? `${planName} Plan Expiring Soon` : `${planName} Plan Expired`;
+  const body = isExpiringSoon
+    ? `Dear <strong>${firstName}</strong>, your <strong style="color:#D4AF37;">${planName}</strong> plan expires on <strong>${formattedDate}</strong>. Renew now to keep your premium features and continue connecting with your matches!`
+    : `Dear <strong>${firstName}</strong>, your <strong style="color:#D4AF37;">${planName}</strong> plan expired on <strong>${formattedDate}</strong>. Don't lose access to your connections — upgrade today!`;
+  const badgeColor = isExpiringSoon ? { bg: "#FFFBEB", border: "#FDE68A", text: "#B45309" } : { bg: "#FEF2F2", border: "#FECACA", text: "#B91C1C" };
+  const badgeText = isExpiringSoon ? "⏰ Expiring Soon" : "❌ Plan Expired";
+
+  const mailOptions = {
+    from: `"Bride&Groom" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject,
+    html: `
+      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      </head>
+      <body style="margin:0;padding:0;background-color:#F9F7FC;font-family:'Plus Jakarta Sans',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F9F7FC;padding:40px 16px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(59,30,84,0.05);border:1px solid #E8E0F0;">
+              <tr><td style="background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);padding:45px 40px;text-align:center;border-bottom:4px solid #D4AF37;">
+                <a href="https://brideandgroom.co.in" style="text-decoration:none;"><img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:55px;border:0;display:block;outline:none;margin:0 auto;"></a>
+                <div style="height:2px;width:60px;background-color:#D4AF37;margin:20px auto 12px auto;border-radius:2px;"></div>
+                <p style="font-size:11px;color:#D4AF37;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:600;">Where Tradition Meets Excellence</p>
+              </td></tr>
+              <tr><td style="padding:45px 40px;background-color:#ffffff;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr><td style="background-color:${badgeColor.bg};border:1px solid ${badgeColor.border};border-radius:100px;padding:8px 24px;">
+                  <span style="font-size:12px;font-weight:700;color:${badgeColor.text};text-transform:uppercase;letter-spacing:1.5px;">${badgeText}</span>
+                </td></tr></table>
+                <h1 style="font-size:26px;font-weight:700;color:#3B1E54;margin:0 0 12px;">${headline}</h1>
+                <p style="font-size:15px;color:#5C4B6E;line-height:1.6;margin:0 0 30px;">${body}</p>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:35px;"><tr><td align="center">
+                  <a href="https://brideandgroom.co.in" style="display:inline-block;background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);color:#ffffff !important;text-decoration:none;padding:18px 42px;border-radius:100px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow:0 10px 20px rgba(59,30,84,0.15);">
+                    ${isExpiringSoon ? "Renew Now" : "Upgrade Today"}
+                  </a>
+                </td></tr></table>
+              </td></tr>
+              <tr><td style="background-color:#0A0514;padding:35px 40px;text-align:center;">
+                <img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:40px;display:block;outline:none;margin:0 auto 10px auto;">
+                <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 12px;line-height:1.5;">&copy; 2026 Bride&Groom Matrimony. All rights reserved.</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin:0;">Made with ❤️ by <a href="https://swakai.in" style="color:#D4AF37;text-decoration:none;font-weight:600;">SwaKai Technologies</a></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+const sendProfileCompletionEmail = async (email, firstName, completionScore) => {
+  const profileUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/profile`;
+  const mailOptions = {
+    from: `"Bride&Groom" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "📈 Improve your Profile & Get 10x More Matches — Bride&Groom",
+    html: `
+      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      </head>
+      <body style="margin:0;padding:0;background-color:#F9F7FC;font-family:'Plus Jakarta Sans',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F9F7FC;padding:40px 16px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(59,30,84,0.05);border:1px solid #E8E0F0;">
+              <tr><td style="background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);padding:45px 40px;text-align:center;border-bottom:4px solid #D4AF37;">
+                <a href="https://brideandgroom.co.in" style="text-decoration:none;"><img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:55px;border:0;display:block;outline:none;margin:0 auto;"></a>
+                <div style="height:2px;width:60px;background-color:#D4AF37;margin:20px auto 12px auto;border-radius:2px;"></div>
+                <p style="font-size:11px;color:#D4AF37;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:600;">Where Tradition Meets Excellence</p>
+              </td></tr>
+              <tr><td style="padding:45px 40px;background-color:#ffffff;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr><td style="background-color:#FAF5FF;border:1px solid #E9D5FF;border-radius:100px;padding:8px 24px;">
+                  <span style="font-size:12px;font-weight:700;color:#7B39B6;text-transform:uppercase;letter-spacing:1.5px;">📈 Profile Strength</span>
+                </td></tr></table>
+                <h1 style="font-size:26px;font-weight:700;color:#3B1E54;margin:0 0 12px;">Complete Your Bio</h1>
+                <p style="font-size:15px;color:#5C4B6E;line-height:1.6;margin:0 0 30px;">
+                  Dear <strong>${firstName}</strong>, your profile completion score is currently at <strong style="color:#7B39B6;">${completionScore}%</strong>. Matrimonial statistics show that **profiles with photos and a completed bio get up to 10x more genuine responses**!
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF9FC;border:1.5px solid #E8E0F0;border-radius:16px;margin-bottom:30px;">
+                  <tr><td style="padding:20px;text-align:center;">
+                    <p style="margin:0 0 4px;font-size:11px;color:#7E6B8F;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;">Current Completion</p>
+                    <p style="margin:8px 0 0;font-size:28px;font-weight:700;color:#3B1E54;">${completionScore}%</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#7E6B8F;">Add photos or write a brief bio to unlock full visibility</p>
+                  </td></tr>
+                </table>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:35px;"><tr><td align="center">
+                  <a href="${profileUrl}" style="display:inline-block;background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);color:#ffffff !important;text-decoration:none;padding:18px 42px;border-radius:100px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow:0 10px 20px rgba(59,30,84,0.15);">
+                    Improve Profile Now
+                  </a>
+                </td></tr></table>
+              </td></tr>
+              <tr><td style="background-color:#0A0514;padding:35px 40px;text-align:center;">
+                <img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:40px;display:block;outline:none;margin:0 auto 10px auto;">
+                <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 12px;line-height:1.5;">&copy; 2026 Bride&Groom Matrimony. All rights reserved.</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin:0;">Made with ❤️ by <a href="https://swakai.in" style="color:#D4AF37;text-decoration:none;font-weight:600;">SwaKai Technologies</a></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+const sendWeeklyMatchesEmail = async (email, firstName, matches) => {
+  const matchesUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/matches`;
+  
+  let matchesHtml = "";
+  matches.forEach(m => {
+    const age = m.dob ? new Date().getFullYear() - new Date(m.dob).getFullYear() : "N/A";
+    const loc = [m.city, m.state].filter(Boolean).join(", ") || "India";
+    const religion = m.religion || "";
+    const caste = m.caste || "";
+    const details = [religion, caste].filter(Boolean).join(" - ");
+
+    matchesHtml += `
+      <tr style="border-bottom:1px solid #E8E0F0;">
+        <td style="padding:15px;text-align:left;">
+          <strong style="color:#3B1E54;font-size:16px;">${m.firstName} ${m.lastName || ""}</strong>
+          <p style="margin:4px 0 0;font-size:13px;color:#7E6B8F;">${age} yrs | ${loc}</p>
+          ${details ? `<p style="margin:2px 0 0;font-size:12px;color:#7B39B6;font-weight:500;">${details}</p>` : ""}
+        </td>
+      </tr>
+    `;
+  });
+
+  const mailOptions = {
+    from: `"Bride&Groom" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "🔔 Your Weekly Matches Digest — Bride&Groom",
+    html: `
+      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      </head>
+      <body style="margin:0;padding:0;background-color:#F9F7FC;font-family:'Plus Jakarta Sans',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F9F7FC;padding:40px 16px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(59,30,84,0.05);border:1px solid #E8E0F0;">
+              <tr><td style="background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);padding:45px 40px;text-align:center;border-bottom:4px solid #D4AF37;">
+                <a href="https://brideandgroom.co.in" style="text-decoration:none;"><img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:55px;border:0;display:block;outline:none;margin:0 auto;"></a>
+                <div style="height:2px;width:60px;background-color:#D4AF37;margin:20px auto 12px auto;border-radius:2px;"></div>
+                <p style="font-size:11px;color:#D4AF37;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:600;">Where Tradition Meets Excellence</p>
+              </td></tr>
+              <tr><td style="padding:45px 40px;background-color:#ffffff;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr><td style="background-color:#FFFBEB;border:1px solid #FDE68A;border-radius:100px;padding:8px 24px;">
+                  <span style="font-size:12px;font-weight:700;color:#B45309;text-transform:uppercase;letter-spacing:1.5px;">✨ Weekly Picks</span>
+                </td></tr></table>
+                <h1 style="font-size:26px;font-weight:700;color:#3B1E54;margin:0 0 12px;">Top Matches For You</h1>
+                <p style="font-size:15px;color:#5C4B6E;line-height:1.6;margin:0 0 30px;">
+                  Hello <strong>${firstName}</strong>, based on your saved Partner Preferences and activity, we have selected some of the top profiles looking to connect with you:
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF9FC;border:1px solid #E8E0F0;border-radius:16px;margin-bottom:30px;border-collapse:collapse;">
+                  ${matchesHtml}
+                </table>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:35px;"><tr><td align="center">
+                  <a href="${matchesUrl}" style="display:inline-block;background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);color:#ffffff !important;text-decoration:none;padding:18px 42px;border-radius:100px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow:0 10px 20px rgba(59,30,84,0.15);">
+                    View All Matches
+                  </a>
+                </td></tr></table>
+              </td></tr>
+              <tr><td style="background-color:#0A0514;padding:35px 40px;text-align:center;">
+                <img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:40px;display:block;outline:none;margin:0 auto 10px auto;">
+                <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 12px;line-height:1.5;">&copy; 2026 Bride&Groom Matrimony. All rights reserved.</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin:0;">Made with ❤️ by <a href="https://swakai.in" style="color:#D4AF37;text-decoration:none;font-weight:600;">SwaKai Technologies</a></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
+const sendInactivityReminderEmail = async (email, firstName, matchName) => {
+  const matchesUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/matches`;
+  const mailOptions = {
+    from: `"Bride&Groom" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "👀 We Miss You! Active Profiles are waiting — Bride&Groom",
+    html: `
+      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+      </head>
+      <body style="margin:0;padding:0;background-color:#F9F7FC;font-family:'Plus Jakarta Sans',sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F9F7FC;padding:40px 16px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 15px 35px rgba(59,30,84,0.05);border:1px solid #E8E0F0;">
+              <tr><td style="background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);padding:45px 40px;text-align:center;border-bottom:4px solid #D4AF37;">
+                <a href="https://brideandgroom.co.in" style="text-decoration:none;"><img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:55px;border:0;display:block;outline:none;margin:0 auto;"></a>
+                <div style="height:2px;width:60px;background-color:#D4AF37;margin:20px auto 12px auto;border-radius:2px;"></div>
+                <p style="font-size:11px;color:#D4AF37;letter-spacing:3px;text-transform:uppercase;margin:0;font-weight:600;">Where Tradition Meets Excellence</p>
+              </td></tr>
+              <tr><td style="padding:45px 40px;background-color:#ffffff;text-align:center;">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;"><tr><td style="background-color:#FEF2F2;border:1px solid #FECACA;border-radius:100px;padding:8px 24px;">
+                  <span style="font-size:12px;font-weight:700;color:#B91C1C;text-transform:uppercase;letter-spacing:1.5px;">👋 Come Back</span>
+                </td></tr></table>
+                <h1 style="font-size:26px;font-weight:700;color:#3B1E54;margin:0 0 12px;">New Connections Await</h1>
+                <p style="font-size:15px;color:#5C4B6E;line-height:1.6;margin:0 0 30px;">
+                  Dear <strong>${firstName}</strong>, we've missed you on the platform! While you were away, outstanding new matching profiles like <strong>${matchName}</strong> have joined and are actively searching for a partner.
+                </p>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:35px;"><tr><td align="center">
+                  <a href="${matchesUrl}" style="display:inline-block;background:linear-gradient(135deg,#3B1E54 0%,#2A143D 100%);color:#ffffff !important;text-decoration:none;padding:18px 42px;border-radius:100px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;box-shadow:0 10px 20px rgba(59,30,84,0.15);">
+                    Log In to See Matches
+                  </a>
+                </td></tr></table>
+              </td></tr>
+              <tr><td style="background-color:#0A0514;padding:35px 40px;text-align:center;">
+                <img src="${LOGO_URL}" alt="${PLATFORM_NAME}" style="height:40px;display:block;outline:none;margin:0 auto 10px auto;">
+                <p style="font-size:11px;color:rgba(255,255,255,0.4);margin:0 0 12px;line-height:1.5;">&copy; 2026 Bride&Groom Matrimony. All rights reserved.</p>
+                <p style="font-size:10px;color:rgba(255,255,255,0.3);margin:0;">Made with ❤️ by <a href="https://swakai.in" style="color:#D4AF37;text-decoration:none;font-weight:600;">SwaKai Technologies</a></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>
+    `,
+  };
+  return transporter.sendMail(mailOptions);
+};
+
 module.exports = { 
   sendVerificationEmail, 
   sendPasswordResetEmail, 
   sendWelcomeEmail,
-  sendNewsletterEmail
+  sendNewsletterEmail,
+  sendPlanPurchaseEmail,
+  sendPlanExpiryEmail,
+  sendProfileCompletionEmail,
+  sendWeeklyMatchesEmail,
+  sendInactivityReminderEmail,
 };

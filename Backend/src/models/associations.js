@@ -26,6 +26,7 @@ const ContactFilter = require("./ContactFilter");
 const Coupon = require("./Coupon");
 const Like = require("./Like");
 const UserSession = require("./UserSession");
+const ClaimedPromotion = require("./ClaimedPromotion");
 
 // User <-> Profile
 User.hasOne(Profile, {
@@ -253,4 +254,5 @@ module.exports = {
   Coupon,
   ContactFilter,
   UserSession,
+  ClaimedPromotion,
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -9,6 +9,8 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  Modal,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, View } from "@/components/Themed";
@@ -25,12 +27,15 @@ import {
   XCircle,
   ArrowRight,
   Phone,
+  Crown,
+  Sparkles,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
+import LottieView from "lottie-react-native";
 import { fonts } from "@/src/theme";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 export default function VerifyOTPScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -46,6 +51,24 @@ export default function VerifyOTPScreen() {
   );
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // Early adopter promo state
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoDetails, setPromoDetails] = useState<{
+    planName: string;
+    durationDays: number;
+  } | null>(null);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const lottieRef = useRef<LottieView>(null);
+
+  const animatePromoModal = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const handleVerifyOTP = async () => {
     if (!otp || otp.length < 6) {
@@ -84,10 +107,28 @@ export default function VerifyOTPScreen() {
       setMessage(data.message || "Your mobile number has been verified successfully.");
       TrackService.trackEvent('mobile_otp_verification_success');
       dispatch(verifyMobileSuccess());
+
+      // Check if early adopter promo was awarded
+      if (data.earlyAdopterPromoAwarded) {
+        setPromoDetails({
+          planName: data.earlyAdopterPlanName || "Diamond",
+          durationDays: data.earlyAdopterDurationDays || 30,
+        });
+        setTimeout(() => {
+          setShowPromoModal(true);
+          animatePromoModal();
+          lottieRef.current?.play();
+        }, 600);
+      }
     } catch (err: any) {
       setStatus("error");
       setMessage(err.message || "Network request failed. Please check your connection.");
     }
+  };
+
+  const dismissPromoModal = () => {
+    setShowPromoModal(false);
+    navigation.replace("Tabs");
   };
 
   return (
@@ -185,15 +226,17 @@ export default function VerifyOTPScreen() {
                 </View>
                 <Text style={styles.successTitle}>Mobile Verified!</Text>
                 <Text style={styles.successSubtitle}>{message}</Text>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => navigation.replace("Tabs")}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text style={styles.primaryButtonText}>ENTER YOUR DASHBOARD</Text>
-                    <ArrowRight size={16} color={palette.purple.deep} style={{ marginLeft: 8 }} />
-                  </View>
-                </TouchableOpacity>
+                {!showPromoModal && (
+                  <TouchableOpacity
+                    style={styles.primaryButton}
+                    onPress={() => navigation.replace("Tabs")}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Text style={styles.primaryButtonText}>ENTER YOUR DASHBOARD</Text>
+                      <ArrowRight size={16} color={palette.purple.deep} style={{ marginLeft: 8 }} />
+                    </View>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
 
@@ -233,6 +276,73 @@ export default function VerifyOTPScreen() {
           <Text style={styles.footerCopy}>&copy; 2026 BRIDE&GROOM LEGACY</Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Early Adopter Confetti & Welcome Modal */}
+      <Modal
+        visible={showPromoModal}
+        transparent
+        animationType="none"
+        statusBarTranslucent
+        onRequestClose={dismissPromoModal}
+      >
+        <View style={styles.modalOverlay}>
+          {/* Confetti Animation */}
+          <LottieView
+            ref={lottieRef}
+            source={require("../../../assets/animations/confetti.json")}
+            style={styles.confettiAnimation}
+            autoPlay={false}
+            loop={false}
+          />
+
+          <Animated.View
+            style={[
+              styles.promoCard,
+              { transform: [{ scale: scaleAnim }] },
+            ]}
+          >
+            <LinearGradient
+              colors={["#3B1E54", "#5A2A82"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.promoCardGradient}
+            >
+              {/* Crown Icon */}
+              <View style={styles.promoIconContainer}>
+                <Crown size={40} color="#D4AF37" />
+              </View>
+
+              <Text style={styles.promoTitle}>🎉 Congratulations!</Text>
+              <Text style={styles.promoSubtitle}>
+                You are one of our first 1,000 users!
+              </Text>
+
+              <View style={styles.promoBadge}>
+                <Sparkles size={16} color="#D4AF37" style={{ marginRight: 6 }} />
+                <Text style={styles.promoBadgeText}>
+                  {promoDetails?.planName || "Diamond"} Premium
+                </Text>
+              </View>
+
+              <Text style={styles.promoDuration}>
+                {promoDetails?.durationDays || 30} Days FREE
+              </Text>
+
+              <Text style={styles.promoDescription}>
+                Enjoy unlimited messaging, contact reveals, video introductions, and all premium features — completely free!
+              </Text>
+
+              <TouchableOpacity
+                style={styles.promoButton}
+                onPress={dismissPromoModal}
+              >
+                <Text style={styles.promoButtonText}>EXPLORE NOW</Text>
+                <ArrowRight size={16} color="#3B1E54" style={{ marginLeft: 8 }} />
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -490,5 +600,116 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
     letterSpacing: 3,
     marginTop: 30,
+  },
+  // Early Adopter Promo Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  confettiAnimation: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: width,
+    height: height,
+    zIndex: 10,
+    pointerEvents: "none",
+  },
+  promoCard: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: 24,
+    overflow: "hidden",
+    elevation: 20,
+    shadowColor: "#3B1E54",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    zIndex: 20,
+  },
+  promoCardGradient: {
+    padding: 30,
+    alignItems: "center",
+  },
+  promoIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "rgba(212,175,55,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  promoTitle: {
+    fontSize: 24,
+    ...fonts.bold,
+    color: "#FFFFFF",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  promoSubtitle: {
+    fontSize: 14,
+    ...fonts.medium,
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  promoBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(212,175,55,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(212,175,55,0.3)",
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  promoBadgeText: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: "#D4AF37",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  promoDuration: {
+    fontSize: 32,
+    ...fonts.bold,
+    color: "#D4AF37",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  promoDescription: {
+    fontSize: 13,
+    ...fonts.regular,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  promoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#D4AF37",
+    borderRadius: 100,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    elevation: 6,
+    shadowColor: "#D4AF37",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  promoButtonText: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: "#3B1E54",
+    letterSpacing: 1.5,
   },
 });
