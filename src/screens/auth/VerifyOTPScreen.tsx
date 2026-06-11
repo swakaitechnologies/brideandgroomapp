@@ -29,7 +29,6 @@ import {
   Phone,
   Crown,
   Sparkles,
-  Heart,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
@@ -189,11 +188,6 @@ export default function VerifyOTPScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <View style={styles.taglineRow}>
-              <View style={styles.taglineLine} />
-              <Heart size={14} color={palette.purple.deep} fill={palette.purple.deep} />
-              <View style={styles.taglineLine} />
-            </View>
             <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
@@ -388,7 +382,7 @@ export default function VerifyOTPScreen() {
                 You are one of our first 1,000 users!
               </Text>
 
-              <View style={styles.promoBadge}>
+              <View style={promoDetails ? styles.promoBadge : { display: "none" }}>
                 <Sparkles size={16} color="#D4AF37" style={{ marginRight: 6 }} />
                 <Text style={styles.promoBadgeText}>
                   {promoDetails?.planName || "Diamond"} Premium
@@ -441,50 +435,39 @@ const styles = StyleSheet.create({
     width: width * 0.65,
     height: 70,
   },
-  taglineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 12,
-  },
-  taglineLine: {
-    width: 32,
-    height: 1,
-    backgroundColor: palette.purple.muted,
-    opacity: 0.4,
-    marginHorizontal: 10,
-  },
   taglineText: {
     fontSize: 10,
     color: "#6B5A80",
     letterSpacing: 1.5,
     ...fonts.semibold,
     textAlign: "center",
+    marginTop: 8,
   },
   formSection: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+    borderRadius: 30,
     paddingHorizontal: 26,
-    paddingVertical: 32,
+    paddingVertical: 36,
     shadowColor: palette.purple.deep,
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.08,
-    shadowRadius: 36,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: "rgba(237, 230, 245, 0.6)",
+    shadowOpacity: 0.05,
+    shadowRadius: 30,
+    elevation: 6,
   },
   formTitle: {
-    fontSize: 24,
+    fontSize: 26,
     ...fonts.bold,
     color: palette.purple.deep,
     marginBottom: 6,
     letterSpacing: -0.5,
+    textAlign: "left",
   },
   formSubtitle: {
     fontSize: 14,
     color: "#7A6F8B",
-    marginBottom: 28,
+    marginBottom: 30,
     ...fonts.regular,
+    textAlign: "left",
   },
   fieldWrap: {
     marginBottom: 20,
@@ -499,16 +482,21 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FDFDFD",
-    borderRadius: 16,
+    backgroundColor: "#F6F2FC",
+    borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "#EDE6F5",
-    paddingHorizontal: 16,
-    height: 56,
+    borderColor: "transparent",
+    paddingHorizontal: 18,
+    height: 58,
   },
   inputRowFocused: {
     borderColor: palette.purple.deep,
     backgroundColor: "#FFFFFF",
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   fieldIcon: {
     marginRight: 12,
@@ -520,15 +508,29 @@ const styles = StyleSheet.create({
     ...fonts.medium,
     paddingVertical: 0,
   },
+  errorBox: {
+    backgroundColor: "#FFF2F2",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#FFE6E6",
+  },
+  errorText: {
+    color: "#D32F2F",
+    fontSize: 13,
+    textAlign: "center",
+    ...fonts.medium,
+  },
   signInBtn: {
-    borderRadius: 16,
+    borderRadius: 28,
     overflow: "hidden",
     marginTop: 8,
     shadowColor: palette.purple.deep,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 4,
   },
   signInGradient: {
     height: 56,
@@ -574,20 +576,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
     marginBottom: 10,
-  },
-  errorBox: {
-    backgroundColor: "#FFF2F2",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: "#FFE6E6",
-  },
-  errorText: {
-    color: "#D32F2F",
-    fontSize: 13,
-    textAlign: "center",
-    ...fonts.medium,
   },
   trustBadgesRow: {
     flexDirection: "row",
