@@ -21,7 +21,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
-import { API_BASE_URL } from "../../services/api";
+import { resetPassword } from "../../services/api";
 import LinearGradient from "react-native-linear-gradient";
 import { fonts } from "@/src/theme";
 
@@ -61,18 +61,10 @@ export default function ResetPasswordScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Mobile-App": "true",
-        },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
+      const response = await resetPassword({ token, newPassword: password });
+      const data = response.data;
 
-      const data = await response.json() as any;
-
-      if (!response.ok) {
+      if (!data.success) {
         setError(data.message || "Failed to reset password");
         return;
       }

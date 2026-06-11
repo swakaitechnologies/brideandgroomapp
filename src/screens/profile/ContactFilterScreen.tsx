@@ -22,7 +22,7 @@ import {
   ShieldCheck, ToggleLeft, ToggleRight
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL } from '../../services/api';
+import { getContactFilters, updateContactFilters } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { fonts } from "@/src/theme";
@@ -110,15 +110,8 @@ export default function ContactFilterScreen() {
       const token = await secureStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/contact-filters`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-
-      const result = await response.json() as any;
+      const response = await getContactFilters();
+      const result = response.data;
       if (result.success && result.data) {
         const f = result.data;
         setIsEnabled(!!f.isEnabled);
@@ -193,17 +186,8 @@ export default function ContactFilterScreen() {
         isKycRequired,
       };
 
-      const response = await fetch(`${API_BASE_URL}/contact-filters`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify(body)
-      });
-
-      const result = await response.json() as any;
+      const response = await updateContactFilters(body);
+      const result = response.data;
       if (result.success) {
         showAlert('Saved', 'Your contact filters have been updated successfully.', 'success');
       } else {

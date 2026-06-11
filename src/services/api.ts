@@ -1067,6 +1067,168 @@ export const getMyReports = async () => {
     };
   }
 };
+// --- Auth APIs ---
+
+export const forgotPassword = async (email: string) => {
+  return await apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+};
+
+export const resetPassword = async (payload: any) => {
+  return await apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const changePassword = async (payload: any) => {
+  return await apiRequest('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const verifyEmailToken = async (payload: any) => {
+  return await apiRequest('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const verifyOTP = async (payload: any) => {
+  return await apiRequest('/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const resendVerificationEmail = async () => {
+  return await apiRequest('/auth/resend-email', {
+    method: 'POST',
+  });
+};
+
+export const getMe = async () => {
+  return await apiRequest('/auth/me');
+};
+
+export const updateAccountInfo = async (payload: any) => {
+  return await apiRequest('/auth/update-info', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const updateNominee = async (payload: any) => {
+  return await apiRequest('/auth/update-nominee', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getActiveSessions = async () => {
+  return await apiRequest('/auth/sessions');
+};
+
+export const logoutOtherSessions = async () => {
+  return await apiRequest('/auth/sessions/logout-others', {
+    method: 'POST',
+  });
+};
+
+export const deleteAccount = async (payload: any) => {
+  return await apiRequest('/auth/delete-account', {
+    method: 'DELETE',
+    body: JSON.stringify(payload),
+  });
+};
+
+// --- Partner Preference APIs ---
+
+export const getPartnerPreferences = async () => {
+  return await apiRequest('/partner-preferences');
+};
+
+export const updatePartnerPreferences = async (payload: any) => {
+  return await apiRequest('/partner-preferences', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const resetPartnerPreferences = async () => {
+  return await apiRequest('/partner-preferences/reset', {
+    method: 'DELETE',
+  });
+};
+
+// --- Contact Filter APIs ---
+
+export const getContactFilters = async () => {
+  return await apiRequest('/contact-filters');
+};
+
+export const updateContactFilters = async (payload: any) => {
+  return await apiRequest('/contact-filters', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+};
+
+// --- Feedback APIs ---
+
+export const getUserFeedback = async () => {
+  return await apiRequest('/feedback/my');
+};
+
+export const submitFeedback = async (payload: any) => {
+  const isFormData = payload instanceof FormData || payload?.constructor?.name === 'FormData' || typeof payload?.append === 'function';
+  return await apiRequest('/feedback', {
+    method: 'POST',
+    body: isFormData ? payload : JSON.stringify(payload),
+  });
+};
+
+// --- Profile share & PDF Export ---
+
+export const shareProfile = async (payload: any) => {
+  return await apiRequest('/profile/share', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+export const exportUserData = async () => {
+  return await apiRequest('/profile/export-data');
+};
+
+// --- Photo Requests ---
+
+export const sendPhotoRequest = async (payload: any) => {
+  return await apiRequest('/photos/requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+// --- Additional Profile APIs ---
+
+export const searchProfiles = async (queryParams: string) => {
+  return await apiRequest(`/profile/search${queryParams}`);
+};
+
+export const getMetadata = async () => {
+  return await apiRequest('/profile/metadata');
+};
+
+export const requestMobileChange = async (payload: any) => {
+  return await apiRequest('/profile/request-mobile-change', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
 
 const api = {
   get: (endpoint: string, options?: RequestInit) => apiRequest(endpoint, { method: 'GET', ...options }),

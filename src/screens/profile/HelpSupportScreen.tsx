@@ -43,7 +43,7 @@ import {
   Shield,
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL, resolvePhotoUrl, getMyReports } from '../../services/api';
+import { resolvePhotoUrl, getMyReports, getUserFeedback, submitFeedback, deleteFeedbackQuery } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -190,16 +190,12 @@ export default function HelpSupportScreen() {
       const token = await secureStorage.getItem('token');
       if (!token) return;
 
-      const res = await fetch(`${API_BASE_URL}/feedback/my`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setTickets(Array.isArray(data) ? data : []);
+      const response = await getUserFeedback();
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setTickets(data);
+      } else if (data && data.success) {
+        setTickets(Array.isArray(data.feedbacks) ? data.feedbacks : []);
       } else {
         showAlert('Error', 'Failed to retrieve ticket history.', 'error');
       }
@@ -348,18 +344,9 @@ export default function HelpSupportScreen() {
         } as any);
       }
 
-      const res = await fetch(`${API_BASE_URL}/feedback`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true',
-          // Don't set Content-Type for FormData; fetch sets it automatically with boundary
-        },
-        body: formData,
-      });
-
-      const result = await res.json() as any;
-      if (res.ok) {
+      const response = await submitFeedback(formData);
+      const result = response.data;
+      if (result.success) {
         showAlert('Ticket Submitted', 'Thank you for reaching out! Our support agents will review your request shortly.', 'success', () => {
           // Reset form fields
           setCategoryLabel('Select Category');
@@ -396,15 +383,10 @@ export default function HelpSupportScreen() {
               const token = await secureStorage.getItem('token');
               if (!token) return;
 
-              const res = await fetch(`${API_BASE_URL}/feedback/${queryId}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'X-Mobile-App': 'true'
-                }
-              });
+              const response = await deleteFeedbackQuery(queryId);
+              const result = response.data;
 
-              if (res.ok) {
+              if (result.success) {
                 // Filter out of local state
                 setTickets(prev => prev.filter(ticket => ticket.id !== queryId));
                 showAlert('Success', 'Query deleted from your history.', 'success');

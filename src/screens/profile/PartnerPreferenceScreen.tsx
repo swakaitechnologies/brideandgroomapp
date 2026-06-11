@@ -22,7 +22,7 @@ import {
   CheckCircle, XCircle, AlertCircle, HelpCircle
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL, getProfile, updateProfile } from '../../services/api';
+import { getProfile, updateProfile, getPartnerPreferences, updatePartnerPreferences, resetPartnerPreferences } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { fonts } from "@/src/theme";
@@ -118,15 +118,8 @@ export default function PartnerPreferenceScreen() {
       if (!token) return;
 
       // Fetch PartnerPreference model data
-      const response = await fetch(`${API_BASE_URL}/partner-preferences`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-
-      const result = await response.json() as any;
+      const response = await getPartnerPreferences();
+      const result = response.data;
       if (result.success && result.data) {
         const p = result.data;
         if (p.minAge) setMinAge(String(p.minAge));
@@ -222,17 +215,8 @@ export default function PartnerPreferenceScreen() {
         city
       };
 
-      const response = await fetch(`${API_BASE_URL}/partner-preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify(body)
-      });
-
-      const result = await response.json() as any;
+      const response = await updatePartnerPreferences(body);
+      const result = response.data;
 
       // Also save profile-level preference fields (auto-derived from structured inputs)
       const derivedPreferredAge = `${minAge} - ${maxAge} Years`;
@@ -269,15 +253,8 @@ export default function PartnerPreferenceScreen() {
           const token = await secureStorage.getItem('token');
           if (!token) return;
 
-          const response = await fetch(`${API_BASE_URL}/partner-preferences/reset`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'X-Mobile-App': 'true'
-            }
-          });
-
-          const result = await response.json() as any;
+          const response = await resetPartnerPreferences();
+          const result = response.data;
           if (result.success) {
             // Restore defaults in state
             setMinAge('18');

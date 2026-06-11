@@ -25,7 +25,22 @@ import {
   Gift, Share2
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { API_BASE_URL, getBlockedUsers, unblockUser } from '../../services/api';
+import { 
+  getBlockedUsers, 
+  unblockUser, 
+  getMe, 
+  getProfile, 
+  getPrivacySettings, 
+  resendVerificationEmail, 
+  updateAccountInfo, 
+  updateNominee, 
+  exportUserData, 
+  getActiveSessions, 
+  logoutOtherSessions, 
+  changePassword, 
+  updatePrivacySettings, 
+  deleteAccount 
+} from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
 import { logout } from '../../store/authSlice';
@@ -214,15 +229,9 @@ export default function AccountSettingScreen() {
       if (!token) return;
 
       // 1. Fetch User details
-      const userRes = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const userResult = await userRes.json() as any;
-      if (userRes.ok && userResult) {
+      const userRes = await getMe();
+      const userResult = userRes.data;
+      if (userResult && userResult.success !== false) {
         setEmail(userResult.email || '');
         setMobile(userResult.mobile || '');
         setIsEmailVerified(!!userResult.isEmailVerified);
@@ -240,28 +249,16 @@ export default function AccountSettingScreen() {
       }
 
       // 2. Fetch Profile details (customId)
-      const profileRes = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const profileResult = await profileRes.json() as any;
-      if (profileRes.ok && profileResult.success && profileResult.data) {
+      const profileRes = await getProfile();
+      const profileResult = profileRes.data;
+      if (profileResult && profileResult.success && profileResult.data) {
         setCustomId(profileResult.data.customId || '');
       }
 
       // 3. Fetch Privacy Settings
-      const privacyRes = await fetch(`${API_BASE_URL}/privacy`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const privacyResult = await privacyRes.json() as any;
-      if (privacyRes.ok && privacyResult.success && privacyResult.data) {
+      const privacyRes = await getPrivacySettings();
+      const privacyResult = privacyRes.data;
+      if (privacyResult && privacyResult.success && privacyResult.data) {
         const p = privacyResult.data;
         setProfileVisibility(p.profileVisibility || 'Everyone');
         setPhotoVisibility(p.photoVisibility || 'All');
@@ -316,15 +313,9 @@ export default function AccountSettingScreen() {
       const token = await secureStorage.getItem('token');
       if (!token) return;
 
-      const res = await fetch(`${API_BASE_URL}/auth/resend-email`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const result = await res.json() as any;
-      if (res.ok) {
+      const response = await resendVerificationEmail();
+      const result = response.data;
+      if (result.success) {
         showAlert(
           'Verification Sent',
           'A verification email has been resent to your address. Please check your Inbox and Spam/Junk folder.',
@@ -355,21 +346,13 @@ export default function AccountSettingScreen() {
     setSavingInfo(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/auth/update-info`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify({
-          email,
-          mobile,
-          currentPassword: infoPassword,
-        })
+      const response = await updateAccountInfo({
+        email,
+        mobile,
+        currentPassword: infoPassword,
       });
-      const result = await res.json() as any;
-      if (res.ok) {
+      const result = response.data;
+      if (result.success) {
         setInfoPassword('');
         setIsEmailVerified(!!result.user?.isEmailVerified);
         showAlert('Success', 'Account information updated successfully.', 'success');
@@ -393,20 +376,12 @@ export default function AccountSettingScreen() {
     setSavingNominee(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/auth/update-nominee`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify({
-          nomineeName,
-          nomineeContact,
-        })
+      const response = await updateNominee({
+        nomineeName,
+        nomineeContact,
       });
-      const result = await res.json() as any;
-      if (res.ok) {
+      const result = response.data;
+      if (result.success) {
         showAlert('Success', 'Matrimonial nominee details updated successfully.', 'success');
         TrackService.trackEvent('save_nominee_details_success');
       } else {
@@ -424,15 +399,9 @@ export default function AccountSettingScreen() {
     setExportingData(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/profile/export-data`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const result = await res.json() as any;
-      if (res.ok && result.success) {
+      const response = await exportUserData();
+      const result = response.data;
+      if (result.success) {
         const dataStr = JSON.stringify(result.data, null, 2);
         Clipboard.setString(dataStr);
         showAlert(
@@ -457,15 +426,9 @@ export default function AccountSettingScreen() {
     try {
       const token = await secureStorage.getItem('token');
       if (!token) return;
-      const res = await fetch(`${API_BASE_URL}/auth/sessions`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        }
-      });
-      const result = await res.json() as any;
-      if (res.ok && result.success) {
+      const response = await getActiveSessions();
+      const result = response.data;
+      if (result.success) {
         setSessions(result.sessions || []);
       }
     } catch (error) {
@@ -485,15 +448,9 @@ export default function AccountSettingScreen() {
         setTerminatingOthers(true);
         try {
           const token = await secureStorage.getItem('token');
-          const res = await fetch(`${API_BASE_URL}/auth/sessions/logout-others`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'X-Mobile-App': 'true'
-            }
-          });
-          const result = await res.json() as any;
-          if (res.ok && result.success) {
+          const response = await logoutOtherSessions();
+          const result = response.data;
+          if (result.success) {
             showAlert('Success', 'Logged out of all other devices.', 'success');
             fetchSessions();
           } else {
@@ -526,20 +483,12 @@ export default function AccountSettingScreen() {
     setSavingPassword(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        })
+      const response = await changePassword({
+        currentPassword,
+        newPassword,
       });
-      const result = await res.json() as any;
-      if (res.ok) {
+      const result = response.data;
+      if (result.success) {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -559,17 +508,9 @@ export default function AccountSettingScreen() {
     setUpdatingSetting(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/privacy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify(updatedFields)
-      });
-      const result = await res.json() as any;
-      if (!res.ok) {
+      const response = await updatePrivacySettings(updatedFields);
+      const result = response.data;
+      if (!result.success) {
         showAlert('Error', result.message || 'Failed to update setting.', 'error');
         // Re-fetch to sync settings to server state on failure
         fetchData();
@@ -642,19 +583,11 @@ export default function AccountSettingScreen() {
     setDeletingAccount(true);
     try {
       const token = await secureStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/auth/delete-account`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Mobile-App': 'true'
-        },
-        body: JSON.stringify({
-          password: confirmPasswordText,
-        })
+      const response = await deleteAccount({
+        password: confirmPasswordText,
       });
-      const result = await res.json() as any;
-      if (res.ok) {
+      const result = response.data;
+      if (result.success) {
         setDeleteModalVisible(false);
         setConfirmPasswordText('');
         showAlert('Account Deleted', 'Your account has been deleted. You will now be redirected to the welcome screen.', 'success', () => {

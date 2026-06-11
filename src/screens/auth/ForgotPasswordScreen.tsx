@@ -25,7 +25,7 @@ import {
 import { palette } from "@/src/theme/colors";
 import { fonts } from "@/src/theme";
 import LinearGradient from "react-native-linear-gradient";
-import { API_BASE_URL } from "../../services/api";
+import { forgotPassword } from "../../services/api";
 
 const { height } = Dimensions.get("window");
 
@@ -54,18 +54,10 @@ export default function ForgotPasswordScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Mobile-App": "true",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await forgotPassword(email);
+      const data = response.data;
 
-      const data = (await response.json()) as any;
-
-      if (!response.ok) {
+      if (!data.success) {
         setError(data.message || "Failed to send reset link");
         return;
       }

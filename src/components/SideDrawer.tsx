@@ -34,7 +34,7 @@ import { logout } from '../store/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../services/secureStorage';
-import { API_BASE_URL, getActivePromoBanner, getMySubscription, getProfile, resolvePhotoUrl, getPrivacySettings, updatePrivacySettings } from '../services/api';
+import { API_BASE_URL, getActivePromoBanner, getMySubscription, getProfile, resolvePhotoUrl, getPrivacySettings, updatePrivacySettings, shareProfile } from '../services/api';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { fonts } from "@/src/theme";
 
@@ -268,14 +268,8 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
 
       if (token) {
         try {
-          const response = await fetch(`${API_BASE_URL}/profile/share`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          const result = await response.json() as any;
+          const response = await shareProfile({});
+          const result = response.data;
           if (result && result.success && result.shareUrl) {
             shareUrl = result.shareUrl;
           }

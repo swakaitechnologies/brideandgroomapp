@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useDispatch } from "react-redux";
 import { verifyEmailSuccess } from "../../store/authSlice";
-import { API_BASE_URL } from "../../services/api";
+import { verifyEmailToken } from "../../services/api";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -54,18 +54,10 @@ export default function VerifyEmailScreen() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Mobile-App": "true",
-        },
-        body: JSON.stringify({ token: verifyToken }),
-      });
+      const response = await verifyEmailToken({ token: verifyToken });
+      const data = response.data;
 
-      const data = await response.json() as any;
-
-      if (!response.ok) {
+      if (!data.success) {
         setStatus("error");
         setMessage(data.message || "Failed to verify email. The link may be expired.");
         return;

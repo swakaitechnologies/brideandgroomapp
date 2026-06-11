@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useDispatch } from "react-redux";
 import { verifyMobileSuccess } from "../../store/authSlice";
-import { API_BASE_URL } from "../../services/api";
+import { verifyOTP } from "../../services/api";
 import { secureStorage } from "../../services/secureStorage";
 import { TrackService } from "../../services/analyticsService";
 import {
@@ -92,26 +92,11 @@ export default function VerifyOTPScreen() {
 
     setStatus("loading");
     setError(null);
-
     try {
-      const token = await secureStorage.getItem("token");
-      const headers: any = {
-        "Content-Type": "application/json",
-        "X-Mobile-App": "true",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      const response = await verifyOTP({ otp });
+      const data = response.data;
 
-      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ otp }),
-      });
-
-      const data = (await response.json()) as any;
-
-      if (!response.ok) {
+      if (!data.success) {
         setStatus("error");
         setMessage(data.message || "Failed to verify OTP code.");
         return;
