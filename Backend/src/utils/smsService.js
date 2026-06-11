@@ -8,7 +8,41 @@ const axios = require("axios");
 const sendOTP = async (mobile, otp, userId = null) => {
   logger.info(`[SMS GATEWAY] Sending OTP [${otp}] to mobile number [${mobile}]`);
   
-  if (process.env.SMS_GATEWAY_USER && process.env.SMS_GATEWAY_PASS) {
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    try {
+      // Clean mobile number (Twilio expects E.164 format, e.g., +91XXXXXXXXXX)
+      let formattedMobile = mobile.trim();
+      if (!formattedMobile.startsWith("+")) {
+        if (formattedMobile.length === 10) {
+          formattedMobile = "+91" + formattedMobile;
+        } else if (formattedMobile.startsWith("91") && formattedMobile.length === 12) {
+          formattedMobile = "+" + formattedMobile;
+        }
+      }
+      
+      const response = await axios.post(
+        `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
+        new URLSearchParams({
+          To: formattedMobile,
+          From: process.env.TWILIO_PHONE_NUMBER,
+          Body: `Your Bride & Groom verification code is ${otp}. Valid for 10 minutes.`,
+        }),
+        {
+          auth: {
+            username: process.env.TWILIO_ACCOUNT_SID,
+            password: process.env.TWILIO_AUTH_TOKEN,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+      
+      logger.info(`[SMS GATEWAY] Twilio SMS dispatched successfully: ${response.data.sid}`);
+    } catch (err) {
+      logger.error(`[SMS GATEWAY ERROR] Failed to send SMS via Twilio: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
+    }
+  } else if (process.env.SMS_GATEWAY_USER && process.env.SMS_GATEWAY_PASS) {
     try {
       // Clean mobile number (sms-gate.app expects phone numbers in an array, formatted with leading +)
       let formattedMobile = mobile.trim();
@@ -48,40 +82,6 @@ const sendOTP = async (mobile, otp, userId = null) => {
       logger.info(`[SMS GATEWAY] sms-gate.app response status: ${response.status}. Data: ${JSON.stringify(response.data)}`);
     } catch (err) {
       logger.error(`[SMS GATEWAY ERROR] Failed to send SMS via sms-gate.app: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
-    }
-  } else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
-    try {
-      // Clean mobile number (Twilio expects E.164 format, e.g., +91XXXXXXXXXX)
-      let formattedMobile = mobile.trim();
-      if (!formattedMobile.startsWith("+")) {
-        if (formattedMobile.length === 10) {
-          formattedMobile = "+91" + formattedMobile;
-        } else if (formattedMobile.startsWith("91") && formattedMobile.length === 12) {
-          formattedMobile = "+" + formattedMobile;
-        }
-      }
-      
-      const response = await axios.post(
-        `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
-        new URLSearchParams({
-          To: formattedMobile,
-          From: process.env.TWILIO_PHONE_NUMBER,
-          Body: `Your Bride & Groom verification code is ${otp}. Valid for 10 minutes.`,
-        }),
-        {
-          auth: {
-            username: process.env.TWILIO_ACCOUNT_SID,
-            password: process.env.TWILIO_AUTH_TOKEN,
-          },
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
-      
-      logger.info(`[SMS GATEWAY] Twilio SMS dispatched successfully: ${response.data.sid}`);
-    } catch (err) {
-      logger.error(`[SMS GATEWAY ERROR] Failed to send SMS via Twilio: ${err.response ? JSON.stringify(err.response.data) : err.message}`);
     }
   } else if (process.env.SMS_GATEWAY_API_KEY) {
     try {
