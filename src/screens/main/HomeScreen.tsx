@@ -452,8 +452,8 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                     {kycStatus?.status === "pending" || kycStatus?.selfieStatus === "pending"
                       ? "KYC Pending Review"
                       : kycStatus?.status === "rejected" || kycStatus?.selfieStatus === "rejected"
-                      ? "KYC Rejected"
-                      : "Verify KYC Now"}
+                        ? "KYC Rejected"
+                        : "Verify KYC Now"}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -602,7 +602,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                       <View style={[styles.homeBlockedOverlay, { borderRadius: 24 }]}>
                         <Ban size={20} color="#FF3B30" />
                         <Text style={styles.homeBlockedText}>Blocked Profile</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => navigation.navigate("AccountSetting")}
                           activeOpacity={0.7}
                         >
@@ -671,7 +671,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                       <View style={[styles.homeBlockedOverlay, { borderRadius: 20 }]}>
                         <Ban size={20} color="#FF3B30" />
                         <Text style={styles.homeBlockedText}>Blocked Profile</Text>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           onPress={() => navigation.navigate("AccountSetting")}
                           activeOpacity={0.7}
                         >
@@ -755,11 +755,11 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
         {/* Brand Footer */}
         <View style={styles.footer}>
-          <View style={styles.footerDivider} />
-          <Text style={styles.footerBrandText}>BRIDE & GROOM</Text>
-          <Text style={styles.footerSubtitleText}>Made with ❤️ in India</Text>
-          <Text style={styles.footerMottoText}>Connecting hearts, building beautiful beginnings.</Text>
-          <Text style={styles.footerCopyrightText}>© 2026 Bride & Groom. All Rights Reserved.</Text>
+          <Image
+            source={require("../../../assets/images/made-with-love.png")}
+            style={styles.madeWithLoveLogo}
+            resizeMode="contain"
+          />
         </View>
       </ScrollView>
 
@@ -1205,44 +1205,17 @@ const styles = StyleSheet.create({
 
   // Footer
   footer: {
-    paddingTop: 40,
-    paddingBottom: 60,
-    paddingHorizontal: 20,
+    padding: 30,
     alignItems: "center",
     justifyContent: "center",
   },
-  footerDivider: {
-    width: 60,
-    height: 1,
-    backgroundColor: 'rgba(59, 30, 84, 0.15)',
-    marginBottom: 20,
+  madeWithLoveLogo: {
+    width: '100%',
+    height: 140,
   },
-  footerBrandText: {
-    fontSize: 15,
-    ...fonts.bold,
-    color: '#3B1E54',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  footerSubtitleText: {
-    fontSize: 12,
-    ...fonts.semibold,
-    color: '#7E6B8F',
-    marginTop: 6,
-  },
-  footerMottoText: {
-    fontSize: 11,
-    ...fonts.regular,
-    color: '#8E8E93',
-    marginTop: 6,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  footerCopyrightText: {
+  copyright: {
     fontSize: 10,
-    ...fonts.medium,
-    color: 'rgba(142, 142, 147, 0.6)',
-    marginTop: 20,
+    marginTop: 25,
   },
   // ProfileCard styles
   cardContainer: {
