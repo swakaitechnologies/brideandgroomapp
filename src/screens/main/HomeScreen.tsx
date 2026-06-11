@@ -755,11 +755,11 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
 
         {/* Brand Footer */}
         <View style={styles.footer}>
-          <Image
-            source={require("../../../assets/images/made-with-love.png")}
-            style={styles.madeWithLoveLogo}
-            resizeMode="contain"
-          />
+          <View style={styles.footerDivider} />
+          <Text style={styles.footerBrandText}>BRIDE & GROOM</Text>
+          <Text style={styles.footerSubtitleText}>Made with ❤️ in India</Text>
+          <Text style={styles.footerMottoText}>Connecting hearts, building beautiful beginnings.</Text>
+          <Text style={styles.footerCopyrightText}>© 2026 Bride & Groom. All Rights Reserved.</Text>
         </View>
       </ScrollView>
 
@@ -1205,17 +1205,44 @@ const styles = StyleSheet.create({
 
   // Footer
   footer: {
-    padding: 30,
+    paddingTop: 40,
+    paddingBottom: 60,
+    paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  madeWithLoveLogo: {
-    width: '100%',
-    height: 140,
+  footerDivider: {
+    width: 60,
+    height: 1,
+    backgroundColor: 'rgba(59, 30, 84, 0.15)',
+    marginBottom: 20,
   },
-  copyright: {
+  footerBrandText: {
+    fontSize: 15,
+    ...fonts.bold,
+    color: '#3B1E54',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  footerSubtitleText: {
+    fontSize: 12,
+    ...fonts.semibold,
+    color: '#7E6B8F',
+    marginTop: 6,
+  },
+  footerMottoText: {
+    fontSize: 11,
+    ...fonts.regular,
+    color: '#8E8E93',
+    marginTop: 6,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  footerCopyrightText: {
     fontSize: 10,
-    marginTop: 25,
+    ...fonts.medium,
+    color: 'rgba(142, 142, 147, 0.6)',
+    marginTop: 20,
   },
   // ProfileCard styles
   cardContainer: {
