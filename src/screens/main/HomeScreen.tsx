@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
   },
   madeWithLoveLogo: {
     width: '100%',
-    height: 140,
+    height: 180,
   },
   copyright: {
     fontSize: 10,
