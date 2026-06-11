@@ -53,6 +53,14 @@ export default function PremiumScreen() {
   const insets = useSafeAreaInsets();
   const topPadding = insets.top + 80;
   const isDark = false;
+
+  // Theme Colors
+  const themeBg = isDark ? "#0A0514" : "#F8F5FC";
+  const cardBg = isDark ? "#120B1E" : "#FFFFFF";
+  const textColor = isDark ? "#FFFFFF" : "#3B1E54";
+  const mutedText = isDark ? "rgba(255, 255, 255, 0.6)" : "#7A6F8B";
+  const deepPurple = "#3B1E54";
+  const accentGold = "#D4AF37";
   
   const [subscription, setSubscription] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
@@ -946,5 +954,93 @@ const styles = StyleSheet.create({
     color: "#D4AF37",
     textDecorationLine: "underline",
     ...fonts.semibold,
+  },
+  tierTabs: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 10,
+  },
+  tierTab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  tierTabText: {
+    fontSize: 13,
+    color: "#7A6F8B",
+    ...fonts.semibold,
+  },
+  tierTabTextActive: {
+    color: "#FFFFFF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  activePlanModal: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 340,
+    alignItems: "center",
+    shadowColor: "#3B1E54",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    ...fonts.bold,
+    color: "#3B1E54",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalMessage: {
+    fontSize: 13,
+    color: "#7A6F8B",
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  modalCancelText: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: "#7A6F8B",
+  },
+  modalProceedBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#3B1E54",
+    alignItems: "center",
+  },
+  modalProceedText: {
+    fontSize: 14,
+    ...fonts.bold,
+    color: "#FFFFFF",
   },
 });

@@ -11,10 +11,10 @@ import {
   ScrollView,
   Modal,
   Animated,
+  Text,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, View } from "@/components/Themed";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useDispatch } from "react-redux";
 import { verifyMobileSuccess } from "../../store/authSlice";
@@ -29,6 +29,7 @@ import {
   Phone,
   Crown,
   Sparkles,
+  Heart,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
@@ -42,7 +43,7 @@ export default function VerifyOTPScreen() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    TrackService.trackScreen('Verify_OTP_Screen');
+    TrackService.trackScreen("Verify_OTP_Screen");
   }, []);
 
   const [otp, setOtp] = useState("");
@@ -51,6 +52,7 @@ export default function VerifyOTPScreen() {
   );
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [otpFocused, setOtpFocused] = useState(false);
 
   // Early adopter promo state
   const [showPromoModal, setShowPromoModal] = useState(false);
@@ -59,6 +61,7 @@ export default function VerifyOTPScreen() {
     durationDays: number;
   } | null>(null);
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
   const lottieRef = useRef<LottieView>(null);
 
   const animatePromoModal = () => {
@@ -75,6 +78,19 @@ export default function VerifyOTPScreen() {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
+
+    Animated.sequence([
+      Animated.timing(buttonScale, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     setStatus("loading");
     setError(null);
@@ -105,7 +121,7 @@ export default function VerifyOTPScreen() {
 
       setStatus("success");
       setMessage(data.message || "Your mobile number has been verified successfully.");
-      TrackService.trackEvent('mobile_otp_verification_success');
+      TrackService.trackEvent("mobile_otp_verification_success");
       dispatch(verifyMobileSuccess());
 
       // Check if early adopter promo was awarded
@@ -132,85 +148,119 @@ export default function VerifyOTPScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.container}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Background Decorative Gradients */}
-          <LinearGradient
-            colors={[palette.purple.deep, "#2D1B44"]}
-            style={styles.bgGradientTop}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          <LinearGradient
-            colors={["#2D1B44", palette.purple.deep]}
-            style={styles.bgGradientBottom}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
+    <View style={styles.root}>
+      {/* Decorative Background Hearts */}
+      <View style={styles.bgHeart1} pointerEvents="none" collapsable={false}>
+        <Heart size={140} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart2} pointerEvents="none" collapsable={false}>
+        <Heart size={80} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart3} pointerEvents="none" collapsable={false}>
+        <Heart size={100} color="#FF4D4D" />
+      </View>
+      <View style={styles.bgHeart4} pointerEvents="none" collapsable={false}>
+        <Heart size={60} color="#FF4D4D" />
+      </View>
 
-          <View style={styles.header}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}
+        >
+          {/* Header Section */}
+          <View style={styles.headerSection}>
             <Image
               source={require("../../../assets/images/logo.png")}
               style={styles.logo}
               resizeMode="contain"
             />
+            <View style={styles.taglineRow}>
+              <View style={styles.taglineLine} />
+              <Heart size={14} color={palette.purple.deep} fill={palette.purple.deep} />
+              <View style={styles.taglineLine} />
+            </View>
+            <Text style={styles.taglineText}>EXCLUSIVITY & ELEGANCE IN MATCHMAKING</Text>
           </View>
 
-          <View style={styles.formCard}>
+          {/* Form Card */}
+          <View style={styles.formSection}>
             {/* IDLE State */}
             {status === "idle" && (
               <>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.cardTitle}>
-                    Verify <Text style={styles.cardTitleItalic}>Mobile</Text>
-                  </Text>
-                  <Text style={styles.cardSubtitle}>
-                    Enter the 6-digit OTP code sent to your registered mobile number to proceed.
-                  </Text>
-                </View>
+                <Text style={styles.formTitle}>Verify Mobile OTP</Text>
+                <Text style={styles.formSubtitle}>
+                  Enter the 6-digit OTP code sent to your registered mobile number to proceed.
+                </Text>
 
                 {error && (
-                  <View style={styles.errorContainer}>
+                  <View style={styles.errorBox}>
                     <Text style={styles.errorText}>{error}</Text>
                   </View>
                 )}
 
-                <Text style={styles.label}>6-Digit OTP Code</Text>
-                <View style={styles.inputContainer}>
-                  <Phone size={20} color={palette.purple.deep} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter 6-digit code"
-                    placeholderTextColor={palette.neutral.grey}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    value={otp}
-                    onChangeText={(val) => {
-                      setOtp(val.replace(/[^0-9]/g, ""));
-                      setError(null);
-                    }}
-                  />
+                <View style={styles.fieldWrap}>
+                  <Text style={styles.fieldLabel}>6-DIGIT OTP CODE</Text>
+                  <View
+                    collapsable={false}
+                    style={[
+                      styles.inputRow,
+                      otpFocused && styles.inputRowFocused,
+                    ]}
+                  >
+                    <Phone
+                      size={18}
+                      color={otpFocused ? palette.purple.deep : palette.purple.muted}
+                      style={styles.fieldIcon}
+                    />
+                    <TextInput
+                      collapsable={false}
+                      style={styles.textInput}
+                      placeholder="Enter 6-digit code"
+                      placeholderTextColor="#A39BB0"
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      value={otp}
+                      onChangeText={(val) => {
+                        setOtp(val.replace(/[^0-9]/g, ""));
+                        setError(null);
+                      }}
+                      onFocus={() => setOtpFocused(true)}
+                      onBlur={() => setOtpFocused(false)}
+                    />
+                  </View>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={handleVerifyOTP}
-                >
-                  <Text style={styles.primaryButtonText}>VERIFY CODE</Text>
-                </TouchableOpacity>
+                {/* Submit Button */}
+                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                  <TouchableOpacity
+                    style={styles.signInBtn}
+                    onPress={handleVerifyOTP}
+                    activeOpacity={0.9}
+                  >
+                    <LinearGradient
+                      colors={[palette.purple.deep, "#34005B"]}
+                      style={styles.signInGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.signInText}>Verify Code</Text>
+                      <ArrowRight size={16} color="#FFFFFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
               </>
             )}
 
             {/* LOADING State */}
             {status === "loading" && (
               <View style={styles.centerContainer}>
-                <View style={styles.spinnerWrapper}>
-                  <ActivityIndicator size="large" color={palette.purple.deep} />
-                </View>
+                <ActivityIndicator size="large" color={palette.purple.deep} style={{ marginBottom: 20 }} />
                 <Text style={styles.stateTitle}>Verifying Code</Text>
                 <Text style={styles.stateSubtitle}>
                   Please wait while we confirm your mobile OTP and activate your account access.
@@ -221,20 +271,24 @@ export default function VerifyOTPScreen() {
             {/* SUCCESS State */}
             {status === "success" && (
               <View style={styles.centerContainer}>
-                <View style={styles.successIconWrapper}>
-                  <CheckCircle2 size={42} color="#2E7D32" />
-                </View>
-                <Text style={styles.successTitle}>Mobile Verified!</Text>
-                <Text style={styles.successSubtitle}>{message}</Text>
+                <CheckCircle2 size={48} color="#2D1B44" style={{ marginBottom: 20 }} />
+                <Text style={styles.stateTitle}>Mobile Verified!</Text>
+                <Text style={styles.stateSubtitle}>{message}</Text>
                 {!showPromoModal && (
                   <TouchableOpacity
-                    style={styles.primaryButton}
+                    style={styles.signInBtn}
                     onPress={() => navigation.replace("Tabs")}
+                    activeOpacity={0.9}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={styles.primaryButtonText}>ENTER YOUR DASHBOARD</Text>
-                      <ArrowRight size={16} color={palette.purple.deep} style={{ marginLeft: 8 }} />
-                    </View>
+                    <LinearGradient
+                      colors={[palette.purple.deep, "#34005B"]}
+                      style={styles.signInGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Text style={styles.signInText}>Enter Your Dashboard</Text>
+                      <ArrowRight size={16} color="#FFFFFF" />
+                    </LinearGradient>
                   </TouchableOpacity>
                 )}
               </View>
@@ -243,37 +297,45 @@ export default function VerifyOTPScreen() {
             {/* ERROR State */}
             {status === "error" && (
               <View style={styles.centerContainer}>
-                <View style={styles.errorIconWrapper}>
-                  <XCircle size={42} color={palette.status.error} />
-                </View>
-                <Text style={styles.errorTitle}>Verification Failed</Text>
-                <Text style={styles.errorSubtitle}>{message}</Text>
+                <XCircle size={48} color="#D32F2F" style={{ marginBottom: 20 }} />
+                <Text style={styles.stateTitle}>Verification Failed</Text>
+                <Text style={styles.stateSubtitle}>{message}</Text>
 
                 <TouchableOpacity
-                  style={styles.primaryButton}
+                  style={styles.signInBtn}
                   onPress={() => setStatus("idle")}
+                  activeOpacity={0.9}
                 >
-                  <Text style={styles.primaryButtonText}>TRY AGAIN</Text>
+                  <LinearGradient
+                    colors={[palette.purple.deep, "#34005B"]}
+                    style={styles.signInGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <Text style={styles.signInText}>Try Again</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.outlineButton}
+                  style={styles.outlineBtn}
                   onPress={() => navigation.navigate("Login")}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.outlineButtonText}>RETURN TO LOGIN</Text>
+                  <Text style={styles.outlineBtnText}>Return to Login</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            <View style={styles.footerLinks}>
-              <View style={styles.secureBadge}>
-                <ShieldCheck size={14} color={palette.purple.muted} style={{ marginRight: 6 }} />
-                <Text style={styles.secureBadgeText}>PROTECTED BY ETERNALGUARD</Text>
+            {/* Footer Trust badge */}
+            <View style={styles.trustBadgesRow}>
+              <View style={styles.badgeItem}>
+                <ShieldCheck size={14} color="#7A6F8B" />
+                <Text style={styles.badgeText}>Protected by EternalGuard</Text>
               </View>
             </View>
           </View>
 
-          <Text style={styles.footerCopy}>&copy; 2026 BRIDE&GROOM LEGACY</Text>
+          <Text style={styles.footerCopy}>&copy; 2026 BRIDE & GROOM LEGACY</Text>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -343,255 +405,199 @@ export default function VerifyOTPScreen() {
           </Animated.View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: palette.purple.light,
+    backgroundColor: "#F8F5FC",
   },
-  container: {
+  keyboardView: {
     flex: 1,
-    backgroundColor: palette.purple.light,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 25,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 28,
     justifyContent: "center",
+    paddingBottom: 40,
+    paddingTop: Platform.OS === "ios" ? 40 : 60,
   },
-  header: {
+  headerSection: {
     alignItems: "center",
-    marginBottom: 40,
-    backgroundColor: "transparent",
+    marginBottom: height * 0.04,
   },
   logo: {
-    width: width * 0.7,
-    height: 100,
+    width: width * 0.65,
+    height: 70,
   },
-  bgGradientTop: {
-    position: "absolute",
-    top: -60,
-    left: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    opacity: 1,
-  },
-  bgGradientBottom: {
-    position: "absolute",
-    bottom: -150,
-    right: -100,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    opacity: 1,
-  },
-  formCard: {
-    backgroundColor: palette.neutral.white,
-    borderRadius: 25,
-    padding: 25,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  titleContainer: {
-    alignItems: "center",
-    marginBottom: 25,
-    backgroundColor: "transparent",
-  },
-  cardTitle: {
-    fontSize: 26,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    textAlign: "center",
-  },
-  cardTitleItalic: {
-    color: palette.gold.main,
-    fontStyle: "italic",
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    textAlign: "center",
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  label: {
-    fontSize: 10,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 1.5,
-    marginLeft: 5,
-  },
-  inputContainer: {
+  taglineRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FDFBFF",
+    marginVertical: 12,
+  },
+  taglineLine: {
+    width: 32,
+    height: 1,
+    backgroundColor: palette.purple.muted,
+    opacity: 0.4,
+    marginHorizontal: 10,
+  },
+  taglineText: {
+    fontSize: 10,
+    color: "#6B5A80",
+    letterSpacing: 1.5,
+    ...fonts.semibold,
+    textAlign: "center",
+  },
+  formSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    paddingHorizontal: 26,
+    paddingVertical: 32,
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 36,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: palette.purple.border,
-    borderRadius: 15,
+    borderColor: "rgba(237, 230, 245, 0.6)",
+  },
+  formTitle: {
+    fontSize: 24,
+    ...fonts.bold,
+    color: palette.purple.deep,
+    marginBottom: 6,
+    letterSpacing: -0.5,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: "#7A6F8B",
+    marginBottom: 28,
+    ...fonts.regular,
+  },
+  fieldWrap: {
     marginBottom: 20,
-    paddingHorizontal: 15,
   },
-  inputIcon: {
-    marginRight: 10,
+  fieldLabel: {
+    fontSize: 11,
+    ...fonts.semibold,
+    color: "#7A6F8B",
+    letterSpacing: 1,
+    marginBottom: 8,
   },
-  input: {
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FDFDFD",
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  inputRowFocused: {
+    borderColor: palette.purple.deep,
+    backgroundColor: "#FFFFFF",
+  },
+  fieldIcon: {
+    marginRight: 12,
+  },
+  textInput: {
     flex: 1,
-    height: 55,
     fontSize: 15,
     color: palette.purple.deep,
+    ...fonts.medium,
+    paddingVertical: 0,
   },
-  primaryButton: {
-    backgroundColor: palette.gold.main,
-    height: 55,
-    borderRadius: 15,
+  signInBtn: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginTop: 8,
+    shadowColor: palette.purple.deep,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  signInGradient: {
+    height: 56,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: palette.gold.main,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-    width: "100%",
-    marginTop: 10,
+    gap: 8,
   },
-  primaryButtonText: {
-    color: palette.purple.deep,
-    fontSize: 12,
+  signInText: {
+    color: "#FFFFFF",
+    fontSize: 16,
     ...fonts.semibold,
-    letterSpacing: 1.5,
   },
-  outlineButton: {
-    width: "100%",
-    height: 55,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: palette.purple.border,
+  outlineBtn: {
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#EDE6F5",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 15,
-    backgroundColor: palette.neutral.white,
+    marginTop: 12,
+    backgroundColor: "#FFFFFF",
   },
-  outlineButtonText: {
+  outlineBtnText: {
     color: palette.purple.deep,
-    fontSize: 12,
+    fontSize: 15,
     ...fonts.semibold,
-    letterSpacing: 1.5,
   },
   centerContainer: {
     alignItems: "center",
     paddingVertical: 10,
-    backgroundColor: "transparent",
-  },
-  spinnerWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#F8F7FC",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#E5DEEE",
-  },
-  successIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#E8F5E9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  errorIconWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#FFEBEE",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
   },
   stateTitle: {
-    fontSize: 24,
-    ...fonts.semibold,
+    fontSize: 22,
+    ...fonts.bold,
     color: palette.purple.deep,
+    marginBottom: 8,
     textAlign: "center",
-    marginBottom: 10,
   },
   stateSubtitle: {
     fontSize: 14,
-    color: palette.purple.muted,
+    color: "#7A6F8B",
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
     marginBottom: 10,
   },
-  successTitle: {
-    fontSize: 24,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  successSubtitle: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 25,
-  },
-  errorTitle: {
-    fontSize: 24,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  errorSubtitle: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 25,
-  },
-  errorContainer: {
-    backgroundColor: "#FFF0F0",
-    padding: 12,
+  errorBox: {
+    backgroundColor: "#FFF2F2",
     borderRadius: 12,
-    marginBottom: 20,
+    padding: 12,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#FFE6E6",
   },
   errorText: {
-    color: palette.status.error,
+    color: "#D32F2F",
     fontSize: 13,
     textAlign: "center",
+    ...fonts.medium,
   },
-  footerLinks: {
-    marginTop: 30,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#F5F0FA",
-    paddingTop: 20,
-    backgroundColor: "transparent",
-  },
-  secureBadge: {
+  trustBadgesRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "transparent",
+    justifyContent: "center",
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#EDE6F5",
+    paddingTop: 16,
   },
-  secureBadgeText: {
-    fontSize: 9,
-    ...fonts.semibold,
-    color: palette.purple.muted,
-    letterSpacing: 1.5,
+  badgeItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  badgeText: {
+    fontSize: 11,
+    color: "#7A6F8B",
+    ...fonts.medium,
   },
   footerCopy: {
     textAlign: "center",
@@ -600,6 +606,34 @@ const styles = StyleSheet.create({
     ...fonts.semibold,
     letterSpacing: 3,
     marginTop: 30,
+  },
+  bgHeart1: {
+    position: "absolute",
+    top: -20,
+    left: -40,
+    transform: [{ rotate: "-15deg" }],
+    opacity: 0.15,
+  },
+  bgHeart2: {
+    position: "absolute",
+    top: height * 0.25,
+    right: -20,
+    transform: [{ rotate: "25deg" }],
+    opacity: 0.12,
+  },
+  bgHeart3: {
+    position: "absolute",
+    bottom: height * 0.15,
+    left: -30,
+    transform: [{ rotate: "15deg" }],
+    opacity: 0.1,
+  },
+  bgHeart4: {
+    position: "absolute",
+    bottom: 40,
+    right: 30,
+    transform: [{ rotate: "-20deg" }],
+    opacity: 0.15,
   },
   // Early Adopter Promo Modal Styles
   modalOverlay: {
