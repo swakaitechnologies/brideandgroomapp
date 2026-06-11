@@ -1206,14 +1206,14 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     paddingHorizontal: 20,
-    paddingTop: 0,
-    paddingBottom: 16,
-    alignItems: "flex-start",
+    paddingTop: 10,
+    paddingBottom: 24,
+    alignItems: "center",
     justifyContent: "center",
   },
   madeWithLoveLogo: {
-    width: 300,
-    height: 180,
+    width: 260,
+    height: 260,
   },
   copyright: {
     fontSize: 10,
