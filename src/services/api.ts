@@ -213,6 +213,16 @@ export const getApprovedSuccessStories = async () => {
   }
 };
 
+// Get Featured Success Stories
+export const getFeaturedSuccessStories = async () => {
+  try {
+    return await apiRequest('/stories/featured');
+  } catch (error) {
+    console.error("getFeaturedSuccessStories error:", error);
+    throw error;
+  }
+};
+
 // Get approved video reels for matching
 export const getVideoReels = async () => {
   try {

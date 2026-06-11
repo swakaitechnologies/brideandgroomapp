@@ -32,6 +32,7 @@ import {
   Users,
   Eye,
   Ban,
+  Heart,
 } from "lucide-react-native";
 import {
   getDailyPicks,
@@ -42,6 +43,7 @@ import {
   resolvePhotoUrl,
   getKYCStatus,
   getMySubscription,
+  getFeaturedSuccessStories,
 } from "../../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ProfileCard } from "../../components/ProfileCard";
@@ -135,6 +137,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
   const [kycStatus, setKycStatus] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [featuredStory, setFeaturedStory] = useState<any>(null);
 
   // Theme-aware colors
   const themeBg = isDark ? "#0F0F0F" : "#FFFFFF";
@@ -195,6 +198,18 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
         } else if (!subscription) {
           setSubscription(null);
         }
+      }
+
+      // Fetch featured success stories
+      try {
+        const featuredStoriesRes = await getFeaturedSuccessStories();
+        if (featuredStoriesRes?.data && Array.isArray(featuredStoriesRes.data) && featuredStoriesRes.data.length > 0) {
+          setFeaturedStory(featuredStoriesRes.data[0]);
+        } else if (featuredStoriesRes?.data?.stories && Array.isArray(featuredStoriesRes.data.stories) && featuredStoriesRes.data.stories.length > 0) {
+          setFeaturedStory(featuredStoriesRes.data.stories[0]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch featured stories in HomeScreen:", err);
       }
     } catch (error) {
       console.error("Error fetching home data:", error);
@@ -752,6 +767,63 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             </ScrollView>
           </View>
         )}
+
+        {/* Success Story Spotlight Teaser */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={[styles.sectionHeading, { color: textColor }]}>
+                Destiny Matches
+              </Text>
+              <Text style={[styles.sectionSub, { color: mutedText }]}>
+                Real couples, real success stories
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate("SuccessStories")}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.featuredStoryCard, { backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF' }]}
+            onPress={() => navigation.navigate("SuccessStories")}
+            activeOpacity={0.9}
+          >
+            <View style={styles.featuredStoryHeader}>
+              <View style={styles.featuredStoryBadge}>
+                <Sparkles size={10} color="#D4AF37" fill="#D4AF37" />
+                <Text style={styles.featuredStoryBadgeText}>FEATURED STORY</Text>
+              </View>
+              <Sparkles size={16} color="#D4AF37" />
+            </View>
+
+            <View style={styles.featuredStoryContent}>
+              <Image
+                source={
+                  featuredStory?.imageUrl
+                    ? { uri: resolvePhotoUrl(featuredStory.imageUrl) }
+                    : require("../../../assets/images/welcome_couple_ai.png")
+                }
+                style={styles.featuredStoryThumb}
+              />
+              <View style={styles.featuredStoryTextContainer}>
+                <Text style={[styles.featuredStoryCouple, { color: textColor }]}>
+                  {featuredStory?.coupleName || "Simran & Raj"}
+                </Text>
+                <Text style={[styles.featuredStoryQuote, { color: mutedText }]} numberOfLines={2}>
+                  {featuredStory?.story 
+                    ? `"${featuredStory.story}"` 
+                    : `"Bride & Groom made it possible to find each other across cities. We are starting our beautiful journey together!"`}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.featuredStoryFooter}>
+              <Text style={styles.featuredStoryLinkText}>Read Success Story</Text>
+              <ChevronRight size={14} color="#3B1E54" />
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* Brand Footer */}
         <View style={styles.footer}>
@@ -1477,5 +1549,84 @@ const styles = StyleSheet.create({
     color: '#7E6B8F',
     textAlign: 'center',
     width: '100%',
+  },
+  featuredStoryCard: {
+    marginHorizontal: 20,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 30, 84, 0.08)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#3B1E54',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  featuredStoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featuredStoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  featuredStoryBadgeText: {
+    fontSize: 9,
+    ...fonts.bold,
+    color: '#D4AF37',
+    letterSpacing: 0.5,
+  },
+  featuredStoryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  featuredStoryThumb: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#EEEEEE',
+  },
+  featuredStoryTextContainer: {
+    flex: 1,
+  },
+  featuredStoryCouple: {
+    fontSize: 15,
+    ...fonts.bold,
+    color: '#3B1E54',
+  },
+  featuredStoryQuote: {
+    fontSize: 12.5,
+    ...fonts.regular,
+    color: '#666666',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  featuredStoryFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#EDE6F5',
+    paddingTop: 10,
+    marginTop: 12,
+  },
+  featuredStoryLinkText: {
+    fontSize: 12,
+    ...fonts.bold,
+    color: '#3B1E54',
   },
 });
