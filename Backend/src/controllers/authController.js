@@ -87,7 +87,7 @@ exports.register = async (req, res) => {
   if (logBody.password) logBody.password = "[MASKED]";
   logger.info(`=== REGISTER REQ BODY === ${JSON.stringify(logBody)}`);
   try {
-    const { firstName, lastName, email, password, mobile, createdBy, agreedToTerms, is18Plus, dateOfBirth, gender, country, referredByCode } =
+    const { firstName, lastName, email, password, mobile, createdBy, agreedToTerms, agreedToPrivacy, is18Plus, dateOfBirth, gender, country, referredByCode } =
       req.body;
 
     const existingUserByEmail = await User.findOne({
@@ -155,6 +155,7 @@ exports.register = async (req, res) => {
           emailTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
           registrationIp,
           agreedToTerms,
+          agreedToPrivacy,
           is18Plus,
           dateOfBirth,
           consentIp: registrationIp,

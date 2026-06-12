@@ -50,6 +50,8 @@ interface UserComplianceRecord {
   consentPhotoProcessing: boolean;
   consentAnalytics: boolean;
   activeSessions: number;
+  consentIp: string;
+  consentAt: string;
 }
 
 const AnalyticsDashboardPage = () => {
@@ -426,6 +428,8 @@ const AnalyticsDashboardPage = () => {
                       <th className="py-4 px-5 text-center">Mobile Verified</th>
                       <th className="py-4 px-5">Nominee</th>
                       <th className="py-4 px-5 text-center">Sessions</th>
+                      <th className="py-4 px-5">Consent IP</th>
+                      <th className="py-4 px-5">Consent Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border text-slate-700 text-sm">
@@ -500,6 +504,14 @@ const AnalyticsDashboardPage = () => {
                           <span className="inline-flex items-center justify-center w-6 h-6 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">
                             {user.activeSessions}
                           </span>
+                        </td>
+                        
+                        {/* Consent IP & Timestamp */}
+                        <td className="py-3.5 px-5 font-mono text-xs text-slate-600">
+                          {user.consentIp}
+                        </td>
+                        <td className="py-3.5 px-5 text-xs text-slate-600 whitespace-nowrap">
+                          {user.consentAt !== "N/A" ? new Date(user.consentAt).toLocaleString() : "N/A"}
                         </td>
                       </tr>
                     ))}

@@ -234,7 +234,7 @@ exports.getUserComplianceReport = async (req, res) => {
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [["createdAt", "DESC"]],
-      attributes: ["id", "firstName", "lastName", "isMobileVerified", "nomineeName", "createdAt"],
+      attributes: ["id", "firstName", "lastName", "isMobileVerified", "nomineeName", "createdAt", "consentIp", "consentAt"],
     });
 
     const reportData = users.map(user => {
@@ -250,6 +250,8 @@ exports.getUserComplianceReport = async (req, res) => {
         consentPhotoProcessing: u.privacySetting ? !!u.privacySetting.consentPhotoProcessing : true,
         consentAnalytics: u.privacySetting ? !!u.privacySetting.consentAnalytics : true,
         activeSessions: u.sessions ? u.sessions.length : 0,
+        consentIp: u.consentIp || "N/A",
+        consentAt: u.consentAt ? new Date(u.consentAt).toISOString() : "N/A",
       };
     });
 

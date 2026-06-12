@@ -27,6 +27,7 @@ const registerSchema = z.object({
   mobile: z.string().trim().regex(/^\+?[\d\s-]{10,}$/, "Invalid mobile number format"),
   createdBy: z.string().optional(),
   agreedToTerms: z.boolean().refine((val) => val === true, "Must agree to terms and conditions"),
+  agreedToPrivacy: z.boolean().refine((val) => val === true, "Must agree to privacy policy"),
   is18Plus: z.boolean().refine((val) => val === true, "Must be 18 years or older"),
   dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)").refine((dob) => {
     const birthDate = new Date(dob);

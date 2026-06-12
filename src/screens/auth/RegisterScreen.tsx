@@ -188,7 +188,7 @@ export default function RegisterScreen() {
     }
     TrackService.trackEvent('registration_initiated', { createdBy: formData.createdBy });
     const result = await dispatch(
-      register({ ...formData, agreedToTerms, is18Plus: currentAge >= 18 })
+      register({ ...formData, agreedToTerms, agreedToPrivacy, is18Plus: currentAge >= 18 })
     );
     if (register.fulfilled.match(result)) {
       try {
@@ -471,7 +471,14 @@ export default function RegisterScreen() {
           {agreedToTerms && <CheckCircle2 size={12} color="#FFF" />}
         </View>
         <Text style={s.termsText}>
-          I agree to the Terms of Use. (Required)
+          I agree to the{" "}
+          <Text
+            style={s.linkText}
+            onPress={() => navigation.navigate("TermsConditions")}
+          >
+            Terms of Use
+          </Text>
+          . (Required)
         </Text>
       </TouchableOpacity>
 
@@ -485,7 +492,14 @@ export default function RegisterScreen() {
           {agreedToPrivacy && <CheckCircle2 size={12} color="#FFF" />}
         </View>
         <Text style={s.termsText}>
-          I agree to the collection and processing of my profile data as outlined in the Privacy Policy. (Required)
+          I agree to the collection and processing of my profile data as outlined in the{" "}
+          <Text
+            style={s.linkText}
+            onPress={() => navigation.navigate("PrivacyPolicy")}
+          >
+            Privacy Policy
+          </Text>
+          . (Required)
         </Text>
       </TouchableOpacity>
 
@@ -957,6 +971,11 @@ const s = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
     ...fonts.medium,
+  },
+  linkText: {
+    color: palette.purple.deep,
+    textDecorationLine: "underline",
+    ...fonts.semibold,
   },
   errorInline: {
     color: "#D32F2F",

@@ -102,6 +102,10 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    agreedToPrivacy: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     is18Plus: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
