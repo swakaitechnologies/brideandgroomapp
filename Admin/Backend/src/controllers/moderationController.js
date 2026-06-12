@@ -10,6 +10,7 @@ const {
 const { logAdminAction } = require("../utils/logger");
 const { client: redisClient } = require("../config/redis");
 const { sendReportNotificationEmail } = require("../utils/emailService");
+const { calculateTrustScore } = require("../utils/trustScore");
 
 exports.getPendingPhotos = async (req, res) => {
   try {
@@ -242,26 +243,35 @@ exports.resolveReport = async (req, res) => {
 exports.getAuditProfiles = async (req, res) => {
   try {
     const { quality } = req.query;
-    // Fetch profiles from DB
+    // Fetch profiles from DB, including related User and Photos
     const profiles = await Profile.findAll({
+      include: [
+        { model: User, as: "user" },
+        { model: Photo, as: "photos" }
+      ],
       limit: 100,
       order: [["createdAt", "DESC"]],
     });
 
-    // Mocking trust score and flags for now as requested for audit page
     let data = profiles.map((p) => {
-      const isLowQuality = Math.random() > 0.5;
-      const score = isLowQuality 
-        ? Math.floor(Math.random() * 35) + 10  // 10-45
-        : Math.floor(Math.random() * 40) + 55; // 55-95
+      const user = p.user;
+      const photoCount = p.photos ? p.photos.length : 0;
+      const score = calculateTrustScore(user, p, photoCount);
       
+      let flags = [];
+      if (!p.bio || p.bio.length < 50) flags.push("Short Bio");
+      if (photoCount === 0) flags.push("No Photos");
+      if (!user || !user.isMobileVerified) flags.push("Mobile Not Verified");
+      if (!user || !user.isEmailVerified) flags.push("Email Not Verified");
+      if (!p.isKycVerified && (!user || !user.isIdentityVerified)) flags.push("KYC Not Verified");
+
       return {
         id: p.id,
         customId: p.customId,
         firstName: p.firstName,
         lastName: p.lastName,
         trustScore: score,
-        flags: score < 50 ? ["Incomplete Profile", "Low Trust"] : [],
+        flags,
         createdAt: p.createdAt,
       };
     });

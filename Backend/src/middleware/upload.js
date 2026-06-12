@@ -78,6 +78,7 @@ const reportUpload = multer({
 
 const videoIntroUpload = multer({
   storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit per video
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("video/")) {
       cb(null, true);

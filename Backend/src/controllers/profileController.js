@@ -131,9 +131,8 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
 
   // 1. Phone Visibility
   const phoneVis = settings.phoneVisibility || "Matches";
-  if (!isContactRevealed && (phoneVis === "Hidden" || phoneVis === "Matches")) {
-    // TODO: Add proper "Is Match" check for "Matches" setting if strictly required,
-    // but for now "Matches" implies "Request Accepted" (isContactRevealed)
+  const isPhoneUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && phoneVis === "Matches") || phoneVis === "All");
+  if (!isPhoneUnmasked) {
     profileJson.mobile = profileJson.mobile
       ? "********" + profileJson.mobile.slice(-2)
       : "Hidden";
@@ -141,7 +140,8 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
 
   // 2. Email Visibility
   const emailVis = settings.emailVisibility || "Hidden";
-  if (!isContactRevealed && (emailVis === "Hidden" || emailVis === "Matches")) {
+  const isEmailUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && emailVis === "Matches") || emailVis === "All");
+  if (!isEmailUnmasked) {
     profileJson.email = profileJson.email
       ? "********@" + (profileJson.email.split("@")[1] || "email.com")
       : "Hidden";
@@ -200,8 +200,9 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
   }
 
   // 4. Name Masking (Advanced Privacy)
-  // Mask last names for everyone except matches/revealed contacts
-  if (!isContactRevealed && viewerId !== profileJson.userId) {
+  // Mask last names for everyone except premium members who matched or revealed
+  const isNameUnmasked = viewerIsPremium && (isContactRevealed || areMatched);
+  if (!isNameUnmasked && viewerId !== profileJson.userId) {
     if (profileJson.lastName) {
       profileJson.lastName = profileJson.lastName.charAt(0) + ".";
     }

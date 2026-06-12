@@ -742,6 +742,63 @@ export const moderateVideo = async (profileId: string, status: 'approved' | 'rej
   });
 };
 
+// Admin: Get all call/photo requests pending approval
+export const getAdminRequests = async () => {
+  return await apiRequest('/admin/requests');
+};
+
+// Admin: Process call/photo request status
+export const processAdminRequest = async (requestId: string, status: 'approved' | 'rejected', notes?: string) => {
+  return await apiRequest(`/admin/requests/${requestId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, notes }),
+  });
+};
+
+// Admin: Get profiles pending verification audit
+export const getAdminAuditProfiles = async () => {
+  return await apiRequest('/admin/audit-profiles');
+};
+
+// Admin: Get report tickets
+export const getAdminReports = async () => {
+  return await apiRequest('/admin/reports');
+};
+
+// Admin: Process user report ticket
+export const processAdminReport = async (reportId: string, status: 'resolved' | 'dismissed', resolutionNotes?: string) => {
+  return await apiRequest(`/admin/reports/${reportId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, resolutionNotes }),
+  });
+};
+
+// Admin: Get all success stories for moderation
+export const getAdminSuccessStories = async () => {
+  return await apiRequest('/admin/stories');
+};
+
+// Admin: Moderate success story status
+export const updateAdminSuccessStoryStatus = async (storyId: string, status: 'approved' | 'rejected', rejectionReason?: string) => {
+  return await apiRequest(`/admin/stories/${storyId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, rejectionReason }),
+  });
+};
+
+// Admin: Get pending KYC submissions
+export const getAdminPendingKYC = async () => {
+  return await apiRequest('/admin/kyc/pending');
+};
+
+// Admin: Verify or reject a KYC document
+export const verifyAdminKYC = async (kycId: string, status: 'approved' | 'rejected', rejectionReason?: string) => {
+  return await apiRequest(`/admin/kyc/${kycId}/verify`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, rejectionReason }),
+  });
+};
+
 // Upload User Photos
 export const uploadPhotos = async (formData: FormData) => {
   try {
@@ -1227,6 +1284,89 @@ export const requestMobileChange = async (payload: any) => {
   return await apiRequest('/profile/request-mobile-change', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+};
+
+// --- Newly Exposed Backend Endpoints ---
+
+// Get User's own payment/transaction history
+export const getPaymentHistory = async () => {
+  return await apiRequest('/payments/history');
+};
+
+// Download own profile as a PDF document
+export const downloadProfilePdf = async () => {
+  return await apiRequest('/profile/download/pdf');
+};
+
+// Sync app and device permission status with backend
+export const saveAppPermissions = async (permissions: {
+  camera?: boolean;
+  contacts?: boolean;
+  notifications?: boolean;
+  location?: boolean;
+  [key: string]: any;
+}) => {
+  return await apiRequest('/profile/permissions', {
+    method: 'POST',
+    body: JSON.stringify({ permissions }),
+  });
+};
+
+// Log call metrics/records to server
+export const addCallRecord = async (payload: {
+  receiverId: string;
+  type: 'audio' | 'video';
+  duration?: number;
+  status?: string;
+  [key: string]: any;
+}) => {
+  return await apiRequest('/calls/record', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+};
+
+// Server-side token refresh
+export const refreshToken = async () => {
+  return await apiRequest('/auth/refresh', {
+    method: 'POST',
+  });
+};
+
+// Server-side logout (revokes active session in backend)
+export const logoutUser = async () => {
+  return await apiRequest('/auth/logout', {
+    method: 'POST',
+  });
+};
+
+// Newsletter subscribe
+export const subscribeNewsletter = async (email: string) => {
+  return await apiRequest('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+};
+
+// Block/Report user legacy (simplified endpoint)
+export const reportUserLegacy = async (blockedId: string, reason?: string) => {
+  return await apiRequest('/block/report', {
+    method: 'POST',
+    body: JSON.stringify({ blockedId, reason }),
+  });
+};
+
+// Get list of matched profiles (alternative endpoint)
+export const getMatchedProfiles = async () => {
+  return await apiRequest('/matches');
+};
+
+// Test trigger notifications (dev/debug helper)
+export const testTriggerNotification = async (payload?: any) => {
+  return await apiRequest('/notifications/test-trigger-public', {
+    method: 'POST',
+    body: JSON.stringify(payload || {}),
   });
 };
 
