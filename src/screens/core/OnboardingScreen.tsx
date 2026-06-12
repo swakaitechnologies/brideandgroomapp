@@ -35,7 +35,7 @@ const SLIDES = [
     title: 'Verified &\nTrustworthy',
     subtitle: 'Every profile undergoes rigorous KYC verification. Connect with genuine people who share your values.',
     accent: '#3B1E54',
-    image: require('../../../assets/images/onboarding_trust.png'),
+    image: require('../../../assets/images/onboarding_match.png'),
   },
   {
     id: '3',
@@ -43,7 +43,7 @@ const SLIDES = [
     title: 'Premium\nExperience',
     subtitle: 'Unlock direct contact reveals, unlimited messaging, and priority matching with our premium plans.',
     accent: '#3B1E54',
-    image: require('../../../assets/images/onboarding_premium.png'),
+    image: require('../../../assets/images/onboarding_match.png'),
   },
 ];
 
