@@ -493,7 +493,7 @@ exports.getAllProfiles = async (req, res) => {
     }
 
     // Check for Premium status once for the whole list
-    const { Subscription, Interest, Block } = require("../models/associations");
+    const { Subscription, Interest, Block, ContactFilter } = require("../models/associations");
     const sub = await Subscription.findOne({
       where: { userId, status: "active", endDate: { [Op.gt]: new Date() } }
     });
@@ -519,13 +519,88 @@ exports.getAllProfiles = async (req, res) => {
       userExcludeFilter[Op.notIn] = blockedByUserIds;
     }
 
+    // Load active contact filters
+    const contactFilter = await ContactFilter.findOne({ where: { userId, isEnabled: true } });
+
+    const matchesWhere = {
+      userId: userExcludeFilter,
+      verificationStatus: "approved", // Only approved profiles
+      ...genderFilter,
+    };
+
+    if (contactFilter) {
+      // 1. Age range
+      if (contactFilter.minAge || contactFilter.maxAge) {
+        const today = new Date();
+        const minBirthYear = contactFilter.maxAge ? today.getFullYear() - contactFilter.maxAge - 1 : null;
+        const maxBirthYear = contactFilter.minAge ? today.getFullYear() - contactFilter.minAge : null;
+        
+        if (minBirthYear && maxBirthYear) {
+          const minDate = new Date(minBirthYear, today.getMonth(), today.getDate());
+          const maxDate = new Date(maxBirthYear, today.getMonth(), today.getDate());
+          matchesWhere.dob = { [Op.between]: [minDate, maxDate] };
+        } else if (minBirthYear) {
+          const minDate = new Date(minBirthYear, today.getMonth(), today.getDate());
+          matchesWhere.dob = { [Op.gte]: minDate };
+        } else if (maxBirthYear) {
+          const maxDate = new Date(maxBirthYear, today.getMonth(), today.getDate());
+          matchesWhere.dob = { [Op.lte]: maxDate };
+        }
+      }
+
+      // Helper to parse arrays from JSON/JSON-string fields
+      const parseJsonArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        try {
+          const parsed = JSON.parse(val);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          return [val];
+        }
+      };
+
+      // 2. Marital Status
+      const maritalStatuses = parseJsonArray(contactFilter.maritalStatus);
+      if (maritalStatuses.length > 0) {
+        matchesWhere.maritalStatus = { [Op.in]: maritalStatuses };
+      }
+
+      // 3. Religion
+      const religions = parseJsonArray(contactFilter.religion);
+      if (religions.length > 0) {
+        matchesWhere.religion = { [Op.in]: religions };
+      }
+
+      // 4. Mother Tongue
+      const motherTongues = parseJsonArray(contactFilter.motherTongue);
+      if (motherTongues.length > 0) {
+        matchesWhere.motherTongue = { [Op.in]: motherTongues };
+      }
+
+      // 5. Education
+      const educations = parseJsonArray(contactFilter.education);
+      if (educations.length > 0) {
+        const eduConditions = educations.map(edu => ({
+          highestDegree: { [Op.iLike]: `%${edu}%` }
+        }));
+        matchesWhere[Op.or] = eduConditions;
+      }
+
+      // 6. Country
+      if (contactFilter.country && contactFilter.country.trim() !== "") {
+        matchesWhere.country = { [Op.iLike]: contactFilter.country.trim() };
+      }
+
+      // 7. KYC Required
+      if (contactFilter.isKycRequired) {
+        matchesWhere.isKycVerified = true;
+      }
+    }
+
     // 2. Fetch matches based on gender filter and excluding self
     const profiles = await Profile.findAll({
-      where: {
-        userId: userExcludeFilter,
-        verificationStatus: "approved", // Only approved profiles
-        ...genderFilter,
-      },
+      where: matchesWhere,
       include: [
         {
           model: User,
