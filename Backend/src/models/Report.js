@@ -27,7 +27,7 @@ const Report = sequelize.define("Report", {
     type: DataTypes.TEXT,
   },
   reportImage: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
   status: {
     type: DataTypes.ENUM("pending", "reviewed", "resolved", "dismissed"),

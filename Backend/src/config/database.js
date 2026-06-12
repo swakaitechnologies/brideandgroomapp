@@ -283,6 +283,20 @@ const connectDB = async () => {
       allowNull: true,
     });
 
+    // Programmatically ensure consent columns exist in Users (DPDP Consent Tracking)
+    await ensureColumn("Users", "agreedToPrivacy", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false,
+    });
+    await ensureColumn("Users", "consentIp", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+    await ensureColumn("Users", "consentAt", {
+      type: Sequelize.DATE,
+      allowNull: true,
+    });
+
     // Programmatically ensure granular consent columns exist in PrivacySettings (DPDP Consent Management)
     await ensureColumn("PrivacySettings", "consentMatchmaking", {
       type: Sequelize.BOOLEAN,

@@ -117,6 +117,20 @@ const connectDB = async () => {
       allowNull: true,
     });
 
+    // Programmatically ensure consent columns exist in Users (DPDP Consent Tracking)
+    await ensureColumn("Users", "agreedToPrivacy", {
+      type: Sequelize.BOOLEAN,
+      defaultValue: false,
+    });
+    await ensureColumn("Users", "consentIp", {
+      type: Sequelize.STRING,
+      allowNull: true,
+    });
+    await ensureColumn("Users", "consentAt", {
+      type: Sequelize.DATE,
+      allowNull: true,
+    });
+
     console.log("✅ Admin Database synced.");
   } catch (error) {
     console.error("❌ Unable to connect to the Admin database:", error);

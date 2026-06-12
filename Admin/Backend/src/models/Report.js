@@ -23,7 +23,7 @@ const Report = sequelize.define("Report", {
     type: DataTypes.TEXT,
   },
   reportImage: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
   reportedType: {
     type: DataTypes.ENUM("user", "message", "photo"),
