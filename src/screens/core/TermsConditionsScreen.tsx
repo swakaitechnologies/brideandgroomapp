@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, FileText, UserCheck, ShieldAlert, AlertCircle, CreditCard, Ban, Scale, BookOpen, RefreshCw, Gavel, Shield } from 'lucide-react-native';
@@ -16,7 +17,7 @@ import { fonts } from "@/src/theme";
 
 export default function TermsConditionsScreen() {
   const navigation = useNavigation<any>();
-  const isDark = false;
+  const isDark = useColorScheme() === 'dark';
 
   const themeBg = isDark ? '#0F0F0F' : '#FDFBFF';
   const textColor = isDark ? '#F0F0F0' : '#3B1E54';
@@ -270,6 +271,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 8,
     fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingRight: 6,
   },
   contentSection: {
     paddingHorizontal: 20,
@@ -335,11 +339,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 6,
     color: '#3B1E54',
+    textAlign: 'center',
+    lineHeight: 17,
     ...fonts.semibold,
   },
   footerContact: {
     fontSize: 13,
     color: '#D4AF37',
+    textAlign: 'center',
+    lineHeight: 18,
     ...fonts.bold,
   },
 });
