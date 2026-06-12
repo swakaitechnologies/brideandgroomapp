@@ -1,4 +1,4 @@
-const { Admin, AdminLog } = require("../models/associations"); // Use associations to get linked models
+const { Admin, AdminLog, User, Profile, Photo, KYC, SuccessStory, Report } = require("../models/associations"); // Use associations to get linked models
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -131,9 +131,160 @@ exports.getLogs = async (req, res) => {
       offset: parseInt(offset),
     });
 
+    // Group targetIds by targetType
+    const userIds = [];
+    const photoIds = [];
+    const kycIds = [];
+    const storyIds = [];
+    const reportIds = [];
+    const profileIds = [];
+
+    logs.forEach(log => {
+      if (!log.targetId) return;
+      if (log.targetType === "User") userIds.push(log.targetId);
+      else if (log.targetType === "Photo") photoIds.push(log.targetId);
+      else if (log.targetType === "KYC") kycIds.push(log.targetId);
+      else if (log.targetType === "SuccessStory") storyIds.push(log.targetId);
+      else if (log.targetType === "Report") reportIds.push(log.targetId);
+      else if (log.targetType === "Profile" || log.targetType === "ProfileVideo") profileIds.push(log.targetId);
+    });
+
+    const userLookup = {};
+
+    // Fetch details for each target type
+    if (userIds.length > 0) {
+      const users = await User.findAll({
+        where: { id: userIds },
+        include: [{ model: Profile, as: "profile", attributes: ["customId", "firstName", "lastName"] }],
+        attributes: ["id", "firstName", "lastName", "email"]
+      });
+      users.forEach(u => {
+        userLookup[`User:${u.id}`] = {
+          name: `${u.firstName || u.profile?.firstName || ''} ${u.lastName || u.profile?.lastName || ''}`.trim(),
+          customId: u.profile?.customId || "No ID",
+          email: u.email
+        };
+      });
+    }
+
+    if (photoIds.length > 0) {
+      const photos = await Photo.findAll({
+        where: { id: photoIds },
+        include: [
+          { model: User, as: "user", attributes: ["firstName", "lastName", "email"] },
+          { model: Profile, as: "profile", attributes: ["customId", "firstName", "lastName"] }
+        ]
+      });
+      photos.forEach(p => {
+        userLookup[`Photo:${p.id}`] = {
+          name: `${p.profile?.firstName || p.user?.firstName || ''} ${p.profile?.lastName || p.user?.lastName || ''}`.trim(),
+          customId: p.profile?.customId || "No ID",
+          email: p.user?.email
+        };
+      });
+    }
+
+    if (kycIds.length > 0) {
+      const kycs = await KYC.findAll({
+        where: { id: kycIds },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["firstName", "lastName", "email"],
+            include: [{ model: Profile, as: "profile", attributes: ["customId"] }]
+          }
+        ]
+      });
+      kycs.forEach(k => {
+        const u = k.user;
+        if (u) {
+          userLookup[`KYC:${k.id}`] = {
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            customId: u.profile?.customId || "No ID",
+            email: u.email
+          };
+        }
+      });
+    }
+
+    if (storyIds.length > 0) {
+      const stories = await SuccessStory.findAll({
+        where: { id: storyIds },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["firstName", "lastName", "email"],
+            include: [{ model: Profile, as: "profile", attributes: ["customId"] }]
+          }
+        ]
+      });
+      stories.forEach(s => {
+        const u = s.user;
+        if (u) {
+          userLookup[`SuccessStory:${s.id}`] = {
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            customId: u.profile?.customId || "No ID",
+            email: u.email
+          };
+        }
+      });
+    }
+
+    if (reportIds.length > 0) {
+      const reports = await Report.findAll({
+        where: { id: reportIds },
+        include: [
+          {
+            model: User,
+            as: "reportedUser",
+            attributes: ["firstName", "lastName", "email"],
+            include: [{ model: Profile, as: "profile", attributes: ["customId"] }]
+          }
+        ]
+      });
+      reports.forEach(r => {
+        const u = r.reportedUser;
+        if (u) {
+          userLookup[`Report:${r.id}`] = {
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+            customId: u.profile?.customId || "No ID",
+            email: u.email
+          };
+        }
+      });
+    }
+
+    if (profileIds.length > 0) {
+      const profiles = await Profile.findAll({
+        where: { id: profileIds },
+        include: [{ model: User, as: "user", attributes: ["firstName", "lastName", "email"] }],
+        attributes: ["id", "customId", "firstName", "lastName"]
+      });
+      profiles.forEach(p => {
+        const u = p.user;
+        const details = {
+          name: `${p.firstName || u?.firstName || ''} ${p.lastName || u?.lastName || ''}`.trim(),
+          customId: p.customId || "No ID",
+          email: u?.email || "No Email"
+        };
+        userLookup[`Profile:${p.id}`] = details;
+        userLookup[`ProfileVideo:${p.id}`] = details;
+      });
+    }
+
+    // Map lookup results to logs
+    const enhancedLogs = logs.map(log => {
+      const logJSON = log.toJSON();
+      const lookupKey = `${log.targetType}:${log.targetId}`;
+      logJSON.targetUser = userLookup[lookupKey] || null;
+      return logJSON;
+    });
+
     res.json({
       success: true,
-      data: logs,
+      data: enhancedLogs,
       pagination: {
         total: count,
         pages: Math.ceil(count / limit),

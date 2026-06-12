@@ -43,6 +43,7 @@ interface ModerationLog {
   details: string;
   createdAt: string;
   admin?: { username: string; email: string };
+  targetUser?: { name: string; customId: string; email: string } | null;
 }
 
 const VerificationPage = () => {
@@ -59,6 +60,16 @@ const VerificationPage = () => {
   const [videoSubTab, setVideoSubTab] = useState<"pending" | "history">("pending");
   const [loading, setLoading] = useState(true);
   const [previewPhoto, setPreviewPhoto] = useState<PendingPhoto | null>(null);
+
+  // Logs pagination states
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsTotalPages, setLogsTotalPages] = useState(1);
+  const [logsTotalItems, setLogsTotalItems] = useState(0);
+
+  const handleTabChange = (tab: "profiles" | "photos" | "videos" | "history") => {
+    setActiveTab(tab);
+    setLogsPage(1);
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -94,15 +105,17 @@ const VerificationPage = () => {
           setVideoHistory(res.data.data);
         }
       } else {
-        const res = await api.get("/logs?limit=100");
+        const res = await api.get(`/logs?page=${logsPage}&limit=10`);
         setLogs(res.data.data);
+        setLogsTotalPages(res.data.pagination?.pages || 1);
+        setLogsTotalItems(res.data.pagination?.total || 0);
       }
     } catch {
       toast.error("Failed to fetch pending requests");
     } finally {
       setLoading(false);
     }
-  }, [activeTab, photoSubTab, videoSubTab]);
+  }, [activeTab, photoSubTab, videoSubTab, logsPage]);
 
   useEffect(() => {
     fetchData();
@@ -584,10 +597,21 @@ const VerificationPage = () => {
                     </span>
                   </td>
                   <td className="py-5 px-6 text-xs font-mono text-black">
-                    <span className="bg-muted px-2 py-0.5 rounded border border-border/50">
+                    <span className="bg-muted px-2 py-0.5 rounded border border-border/50 text-[10px]">
                       {log.targetType}
                     </span>
-                    <p className="mt-1 opacity-50">{log.targetId}</p>
+                    {log.targetUser ? (
+                      <div className="mt-1.5 flex flex-col font-sans">
+                        <span className="font-semibold text-black text-xs">
+                          {log.targetUser.name}
+                        </span>
+                        <span className="text-[10px] text-primary font-medium tracking-wide">
+                          {log.targetUser.customId}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="mt-1 opacity-50 text-[10px]">{log.targetId}</p>
+                    )}
                   </td>
                   <td className="py-5 px-6">
                     <div className="text-[10px] font-medium text-black max-w-[200px] truncate">
@@ -611,6 +635,35 @@ const VerificationPage = () => {
             )}
           </tbody>
         </table>
+
+        {/* Pagination controls */}
+        {logsTotalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 bg-slate-50/50">
+            <span className="text-xs text-black/60 font-medium">
+              Showing Page {logsPage} of {logsTotalPages} ({logsTotalItems} total logs)
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-lg text-xs"
+                disabled={logsPage === 1}
+                onClick={() => setLogsPage(prev => Math.max(prev - 1, 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-lg text-xs"
+                disabled={logsPage === logsTotalPages}
+                onClick={() => setLogsPage(prev => Math.min(prev + 1, logsTotalPages))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -676,7 +729,7 @@ const VerificationPage = () => {
 
           <div className="flex bg-white border border-border p-1.5 rounded-[1.25rem] shadow-soft">
             <button
-              onClick={() => setActiveTab("profiles")}
+              onClick={() => handleTabChange("profiles")}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
                 activeTab === "profiles"
@@ -688,7 +741,7 @@ const VerificationPage = () => {
               Profiles
             </button>
             <button
-              onClick={() => setActiveTab("photos")}
+              onClick={() => handleTabChange("photos")}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
                 activeTab === "photos"
@@ -700,7 +753,7 @@ const VerificationPage = () => {
               Photos
             </button>
             <button
-              onClick={() => setActiveTab("videos")}
+              onClick={() => handleTabChange("videos")}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
                 activeTab === "videos"
@@ -712,7 +765,7 @@ const VerificationPage = () => {
               Videos
             </button>
             <button
-              onClick={() => setActiveTab("history")}
+              onClick={() => handleTabChange("history")}
               className={cn(
                 "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium  tracking-widest transition-all",
                 activeTab === "history"
@@ -746,7 +799,7 @@ const VerificationPage = () => {
                 ? (photoSubTab === "pending" ? photos.length : photoHistory.length)
                 : activeTab === "videos"
                   ? (videoSubTab === "pending" ? videos.length : videoHistory.length)
-                  : logs.length}{" "}
+                  : logsTotalItems}{" "}
             items
           </span>
         </div>
