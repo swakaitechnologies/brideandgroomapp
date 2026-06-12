@@ -166,7 +166,7 @@ const Profile = sequelize.define(
           let isUnique = false;
           let newId;
           while (!isUnique) {
-            newId = `EM-${Math.floor(100000 + Math.random() * 900000)}`;
+            newId = `BG-${Math.floor(100000 + Math.random() * 900000)}`;
             const existing = await Profile.findOne({
               where: { customId: newId },
             });

@@ -202,7 +202,7 @@ const CouponManagementPage = () => {
 
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Restricted Custom ID (Optional)</label>
-              <input className="input-admin" placeholder="e.g., MAT-123456" value={form.customId} onChange={e => setForm({...form, customId: (e.target as HTMLInputElement).value})} />
+              <input className="input-admin" placeholder="e.g., BG-123456" value={form.customId} onChange={e => setForm({...form, customId: (e.target as HTMLInputElement).value})} />
             </div>
 
             <div className="flex items-center gap-2 mt-4">

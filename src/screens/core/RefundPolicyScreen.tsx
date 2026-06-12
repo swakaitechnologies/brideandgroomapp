@@ -67,7 +67,7 @@ export default function RefundPolicyScreen() {
       conditions: [
         "In-App: Navigate to Account Settings → Help & Support → Submit a Query and select 'Payment / Refund Issue' as the category.",
         "Email: Send to support@brideandgroom.co.in with subject 'Refund Request — [Your Profile ID]'.",
-        "Include: Registered email, mobile number, Profile ID (EM-XXXXXX), date and amount of transaction, payment gateway order/transaction ID, and reason for the request.",
+        "Include: Registered email, mobile number, Profile ID (BG-XXXXXX), date and amount of transaction, payment gateway order/transaction ID, and reason for the request.",
         "Response Time: We will acknowledge your request within 24 hours and provide a resolution within 5 business days.",
       ]
     },

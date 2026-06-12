@@ -299,7 +299,7 @@ Refunds will NOT be issued in the following cases:
 1. **In-App:** Navigate to **Account Settings → Help & Support → Submit a Query** and select "Payment / Refund Issue" as the category.
 2. **Email:** Send an email to **support@brideandgroom.co.in** with the subject line "Refund Request — [Your Profile ID]". Include:
    - Your registered email address and mobile number.
-   - Your Matrimonial Profile ID (e.g., EM-XXXXXX).
+   - Your Matrimonial Profile ID (e.g., BG-XXXXXX).
    - The date and amount of the transaction.
    - The payment gateway transaction/order ID (if available).
    - A clear description of the reason for the refund request.
@@ -459,7 +459,7 @@ In compliance with **Section 13 of the DPDP Act, 2023** and the **Information Te
 ## 7.3 Required Information
 
 When filing a grievance, please include:
-- Your registered email address and Profile ID (EM-XXXXXX).
+- Your registered email address and Profile ID (BG-XXXXXX).
 - A clear description of the issue.
 - Any supporting evidence (screenshots, transaction IDs, dates).
 - The specific relief or resolution you are seeking.
