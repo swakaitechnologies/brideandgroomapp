@@ -15,6 +15,7 @@ interface Coupon {
   expiresAt: string | null;
   maxUses: number;
   usedCount: number;
+  userId?: string | null;
   createdAt: string;
 }
 
@@ -33,6 +34,7 @@ const CouponManagementPage = () => {
     maxUses: -1,
     isPromoBanner: false,
     isActive: true,
+    userId: "",
   });
 
   const fetchCoupons = async () => {
@@ -61,6 +63,7 @@ const CouponManagementPage = () => {
       maxUses: -1,
       isPromoBanner: false,
       isActive: true,
+      userId: "",
     });
     setShowForm(false);
   };
@@ -77,6 +80,7 @@ const CouponManagementPage = () => {
         maxUses: form.maxUses,
         isPromoBanner: form.isPromoBanner,
         isActive: form.isActive,
+        userId: form.userId.trim() || null,
       };
 
       await api.post("/coupons", payload);
@@ -196,6 +200,11 @@ const CouponManagementPage = () => {
               <input className="input-admin" type="number" placeholder="e.g., 100 (-1 = unlimited)" value={form.maxUses} onChange={e => setForm({...form, maxUses: +(e.target as HTMLInputElement).value})} />
             </div>
 
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Restricted User ID (Optional)</label>
+              <input className="input-admin" placeholder="e.g., 3ccd38ac-adae-..." value={form.userId} onChange={e => setForm({...form, userId: (e.target as HTMLInputElement).value})} />
+            </div>
+
             <div className="flex items-center gap-2 mt-4">
               <input type="checkbox" id="isActive" checked={form.isActive} onChange={e => setForm({...form, isActive: (e.target as HTMLInputElement).checked})} className="rounded text-primary focus:ring-primary h-4 w-4" />
               <label htmlFor="isActive" className="text-xs font-semibold uppercase tracking-wider text-black/60">Is Active</label>
@@ -244,6 +253,13 @@ const CouponManagementPage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{coupon.code}</p>
                         <p className="text-[10px] text-black/60 tracking-wider">{coupon.description}</p>
+                        {coupon.userId && (
+                          <div className="mt-1">
+                            <span className="inline-block px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 bg-amber-50 rounded border border-amber-200">
+                              LOCKED TO USER: {coupon.userId.slice(0, 8)}...
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
