@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Sparkles, Calendar, BookOpen, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ArrowLeft, Star, Calendar, BookOpen, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { getApprovedSuccessStories, resolvePhotoUrl } from '../../services/api';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
@@ -92,13 +92,13 @@ export default function SuccessStoriesScreen() {
               resizeMode="cover"
             />
             <View style={styles.badgeOverlay}>
-              <Sparkles size={12} color="#D4AF37" fill="#D4AF37" />
+              <Star size={12} color="#D4AF37" fill="#D4AF37" />
               <Text style={styles.badgeOverlayText}>SUCCESS MATCH</Text>
             </View>
           </View>
         ) : (
           <View style={[styles.imageWrapper, styles.placeholderWrapper]}>
-            <Sparkles size={36} color="rgba(212, 175, 55, 0.4)" />
+            <Star size={36} color="rgba(212, 175, 55, 0.4)" />
             <Text style={styles.placeholderText}>A Match Made in Heaven</Text>
           </View>
         )}

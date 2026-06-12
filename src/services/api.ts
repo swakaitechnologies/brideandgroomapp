@@ -234,11 +234,11 @@ export const getVideoReels = async () => {
 };
 
 // Create Payment Order
-export const createPaymentOrder = async (planId: string, currency: string = 'INR', couponCode?: string) => {
+export const createPaymentOrder = async (planId: string, currency: string = 'INR', couponCode?: string, proceedAnyway?: boolean) => {
   try {
     return await apiRequest('/payments/create-order', {
       method: 'POST',
-      body: JSON.stringify({ planId, currency, couponCode }),
+      body: JSON.stringify({ planId, currency, couponCode, proceedAnyway }),
     });
   } catch (error) {
     console.error("createPaymentOrder error:", error);

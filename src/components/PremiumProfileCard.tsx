@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Heart, Star, Crown, MapPin, Zap, User, Languages, Briefcase, Award, BookOpen, Lock } from 'lucide-react-native';
+import { Heart, Star, Crown, MapPin, User, Languages, Briefcase, Award, BookOpen, Lock } from 'lucide-react-native';
 import { palette } from '../theme/colors';
 import { resolvePhotoUrl } from '../services/api';
 import { fonts } from "@/src/theme";
@@ -181,7 +181,6 @@ export const PremiumProfileCard: React.FC<PremiumProfileCardProps> = ({
           }}
         >
           <Text style={[styles.connectBtnText, { color: premiumGold }]}>VIEW PROFILE</Text>
-          <Zap size={11} color={premiumGold} fill={premiumGold} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -195,6 +194,7 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 24,
     borderWidth: 1.5,
+    marginBottom: 8,
     overflow: 'hidden',
     ...Platform.select({
       ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
@@ -207,6 +207,7 @@ const styles = StyleSheet.create({
     height: 310,
     borderRadius: 24,
     borderWidth: 1.5,
+    marginBottom: 8,
     overflow: 'hidden',
     ...Platform.select({
       ios: { shadowColor: '#D4AF37', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },

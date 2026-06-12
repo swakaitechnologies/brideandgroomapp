@@ -11,6 +11,7 @@ import {
   Modal,
   FlatList,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -66,23 +67,6 @@ export default function ContactFilterScreen() {
   const [pickerTempSelectedList, setPickerTempSelectedList] = useState<string[]>([]);
   const [pickerSaveTarget, setPickerSaveTarget] = useState<string>('');
 
-  // Custom Alert State
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'confirm' | 'info';
-    onConfirm?: () => void;
-    onCancel?: () => void;
-    confirmText?: string;
-    cancelText?: string;
-  }>({
-    visible: false,
-    title: '',
-    message: '',
-    type: 'info',
-  });
-
   const showAlert = (
     title: string,
     message: string,
@@ -92,16 +76,24 @@ export default function ContactFilterScreen() {
     confirmText = 'OK',
     cancelText = 'Cancel'
   ) => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      type,
-      onConfirm,
-      onCancel,
-      confirmText,
-      cancelText,
-    });
+    if (type === 'confirm') {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: cancelText, onPress: onCancel, style: 'cancel' },
+          { text: confirmText, onPress: onConfirm }
+        ]
+      );
+    } else {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: confirmText, onPress: onConfirm }
+        ]
+      );
+    }
   };
 
   // Fetch existing filters on load
@@ -568,56 +560,6 @@ export default function ContactFilterScreen() {
         </View>
       </Modal>
 
-      {/* Custom Alert Modal */}
-      <Modal visible={alertConfig.visible} transparent animationType="fade">
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertCard}>
-            <View style={styles.alertIconWrapper}>
-              {alertConfig.type === 'success' && <CheckCircle size={40} color="#4CAF50" />}
-              {alertConfig.type === 'error' && <XCircle size={40} color={palette.status.error} />}
-              {alertConfig.type === 'confirm' && <HelpCircle size={40} color={palette.gold.main} />}
-              {alertConfig.type === 'info' && <AlertCircle size={40} color={palette.purple.muted} />}
-            </View>
-            <Text style={styles.alertTitle}>{alertConfig.title}</Text>
-            <Text style={styles.alertMessage}>{alertConfig.message}</Text>
-
-            <View style={styles.alertBtnContainer}>
-              {alertConfig.type === 'confirm' ? (
-                <>
-                  <TouchableOpacity
-                    style={[styles.alertBtn, styles.alertBtnSecondary]}
-                    onPress={() => {
-                      setAlertConfig(prev => ({ ...prev, visible: false }));
-                      if (alertConfig.onCancel) alertConfig.onCancel();
-                    }}
-                  >
-                    <Text style={styles.alertBtnTextSecondary}>{alertConfig.cancelText || 'Cancel'}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.alertBtn, styles.alertBtnPrimary]}
-                    onPress={() => {
-                      setAlertConfig(prev => ({ ...prev, visible: false }));
-                      if (alertConfig.onConfirm) alertConfig.onConfirm();
-                    }}
-                  >
-                    <Text style={styles.alertBtnTextPrimary}>{alertConfig.confirmText || 'OK'}</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.alertBtn, styles.alertBtnSingle]}
-                  onPress={() => {
-                    setAlertConfig(prev => ({ ...prev, visible: false }));
-                    if (alertConfig.onConfirm) alertConfig.onConfirm();
-                  }}
-                >
-                  <Text style={styles.alertBtnTextPrimary}>{alertConfig.confirmText || 'OK'}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -888,76 +830,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     ...fonts.semibold,
-  },
-  // Custom Alert Styles
-  alertOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(59, 30, 84, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 25,
-  },
-  alertCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    width: '85%',
-    alignItems: 'center',
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  alertIconWrapper: {
-    marginBottom: 15,
-  },
-  alertTitle: {
-    fontSize: 18,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  alertMessage: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  alertBtnContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    gap: 12,
-  },
-  alertBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  alertBtnPrimary: {
-    backgroundColor: palette.purple.deep,
-  },
-  alertBtnSecondary: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: palette.purple.border,
-  },
-  alertBtnSingle: {
-    backgroundColor: palette.purple.deep,
-    width: '100%',
-  },
-  alertBtnTextPrimary: {
-    color: '#FFFFFF',
-    ...fonts.semibold,
-    fontSize: 15,
-  },
-  alertBtnTextSecondary: {
-    color: palette.purple.deep,
-    ...fonts.semibold,
-    fontSize: 15,
   },
 });

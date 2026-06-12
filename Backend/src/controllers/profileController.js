@@ -131,7 +131,7 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
 
   // 1. Phone Visibility
   const phoneVis = settings.phoneVisibility || "Matches";
-  const isPhoneUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && phoneVis === "Matches") || phoneVis === "All");
+  const isPhoneUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && phoneVis === "Matches") || phoneVis === "All" || phoneVis === "Paid");
   if (!isPhoneUnmasked) {
     profileJson.mobile = profileJson.mobile
       ? "********" + profileJson.mobile.slice(-2)
@@ -140,7 +140,7 @@ const maskProfilePrivacy = (profile, viewerId, isContactRevealed = false, viewer
 
   // 2. Email Visibility
   const emailVis = settings.emailVisibility || "Hidden";
-  const isEmailUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && emailVis === "Matches") || emailVis === "All");
+  const isEmailUnmasked = viewerIsPremium && (isContactRevealed || (areMatched && emailVis === "Matches") || emailVis === "All" || emailVis === "Paid");
   if (!isEmailUnmasked) {
     profileJson.email = profileJson.email
       ? "********@" + (profileJson.email.split("@")[1] || "email.com")
@@ -755,7 +755,16 @@ exports.getProfileById = async (req, res) => {
           { 
             model: User, 
             as: "user", 
-            attributes: ["isOnline", "lastSeen"],
+            attributes: [
+              "isOnline",
+              "lastSeen",
+              "isMobileVerified",
+              "isEmailVerified",
+              "isSocialVerified",
+              "isIdentityVerified",
+              "nomineeName",
+              "nomineeContact"
+            ],
             include: [
               {
                 model: Subscription,
@@ -892,6 +901,14 @@ exports.getProfileById = async (req, res) => {
       );
       profileJson.isPremium = !!activeSub;
       profileJson.accountType = activeSub ? "Premium" : "Free";
+      
+      // Compute trust score
+      const { calculateTrustScore } = require("../utils/trustScore");
+      profileJson.trustScore = calculateTrustScore(
+        profile.user || {},
+        profile,
+        profile.photos ? profile.photos.length : 0
+      );
     }
 
     profileJson.isContactRevealed = isContactRevealed;
@@ -905,6 +922,19 @@ exports.getProfileById = async (req, res) => {
 
       if (!created) {
         await view.update({ viewedAt: new Date() });
+      }
+
+      // Send notification to the viewed user
+      try {
+        const { sendNotification } = require("../utils/notificationHelper");
+        await sendNotification({
+          receiverId: profile.userId,
+          senderId: viewerId,
+          type: "profile_view",
+          message: "Someone viewed your profile."
+        });
+      } catch (err) {
+        console.error("Failed to send profile view notification:", err);
       }
     }
 
@@ -959,12 +989,22 @@ exports.getProfileViewers = async (req, res) => {
     // 2. Get the viewer IDs
     const viewerIds = views.map((v) => v.viewerId);
 
-    // 3. Fetch profiles of these viewers
+    // Get current user's profile to find their gender
+    const userProfile = await Profile.findOne({ where: { userId } });
+    let genderFilter = {};
+    if (userProfile && userProfile.gender) {
+      genderFilter = {
+        gender: userProfile.gender.toLowerCase() === "male" ? "Female" : "Male",
+      };
+    }
+
+    // 3. Fetch profiles of these viewers (filtered by opposite gender)
     const profiles = await Profile.findAll({
       where: {
         userId: {
           [Op.in]: viewerIds,
         },
+        ...genderFilter,
       },
       include: [
         { model: PhotoModel, as: "photos" },
@@ -2545,7 +2585,7 @@ exports.exportUserData = async (req, res) => {
 
 /**
  * POST /api/profile/intro-video
- * Upload user intro video (max 15s - validated on client, handled raw on backend)
+ * Upload user intro video (max 1 min - validated on client, handled raw on backend)
  */
 exports.uploadIntroVideo = async (req, res) => {
   try {

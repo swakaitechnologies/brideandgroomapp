@@ -14,6 +14,7 @@ import {
   RefreshControl,
   Alert,
   Modal,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -28,6 +29,8 @@ import {
   Mail,
   MessageCircle,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Headphones,
   Ticket,
 } from "lucide-react-native";
@@ -71,6 +74,29 @@ const ACTIVE_PLAN_ACCENTS: Record<string, string> = {
   Platinum: "#5A3280",
 };
 
+const PREMIUM_FAQS = [
+  {
+    question: "What are the key benefits of upgrading to Premium?",
+    answer: "Premium plans allow you to reveal contact details (phone and email) of match profiles, watch match video introductions, display VIP badges, and increase your overall profile visibility by up to 3x."
+  },
+  {
+    question: "How long is my subscription valid?",
+    answer: "Depending on your selected tier, subscriptions are valid for 90 Days (3 Months), 180 Days (6 Months), or 365 Days (1 Year)."
+  },
+  {
+    question: "What is the 100% Money-Back Guarantee?",
+    answer: "If you upgrade to premium and do not receive any match interests or response messages within 30 days, we will issue a full refund. Terms and conditions apply."
+  },
+  {
+    question: "Can I upgrade my active plan later?",
+    answer: "Yes, you can upgrade to a higher tier plan at any time. The billing adjustments are computed pro-rata based on the remaining days of your current plan."
+  },
+  {
+    question: "Are payment transactions secure?",
+    answer: "Absolutely. All transactions are securely processed and fully encrypted via industry-standard protocols, supporting UPI, credit/debit cards, net banking, and wallets."
+  }
+];
+
 
 export default function PremiumScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -85,7 +111,7 @@ export default function PremiumScreen() {
   const mutedText = isDark ? "rgba(255, 255, 255, 0.6)" : "#7A6F8B";
   const deepPurple = "#3B1E54";
   const accentGold = "#D4AF37";
-  
+
   const [subscription, setSubscription] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [promoCoupon, setPromoCoupon] = useState<any>(null);
@@ -94,6 +120,7 @@ export default function PremiumScreen() {
   const [selectedTier, setSelectedTier] = useState<string>("Gold");
   const [showActivePlanModal, setShowActivePlanModal] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<any>(null);
+  const [expandedFaqIndex, setExpandedFaqIndex] = useState<number | null>(null);
 
   const activePlanName = subscription?.plan?.name || "Gold";
   const activeAccentColor = ACTIVE_PLAN_ACCENTS[activePlanName] || ACTIVE_PLAN_ACCENTS.Gold;
@@ -115,9 +142,9 @@ export default function PremiumScreen() {
           durationDays: p.durationDays,
           duration:
             p.durationDays === 365 ? "1 Year"
-            : p.durationDays === 180 ? "6 Months"
-            : p.durationDays === 90 ? "3 Months"
-            : `${p.durationDays} Days`,
+              : p.durationDays === 180 ? "6 Months"
+                : p.durationDays === 90 ? "3 Months"
+                  : `${p.durationDays} Days`,
           price: `₹${p.price.INR || p.price.inr || 0}`,
           priceValue: p.price.INR || p.price.inr || 0,
           oldPrice: p.price.oldPrice ? `₹${p.price.oldPrice}` : null,
@@ -266,9 +293,9 @@ export default function PremiumScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingTop: topPadding }]}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh} 
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
             progressViewOffset={topPadding}
           />
         }
@@ -316,7 +343,7 @@ export default function PremiumScreen() {
                     {subscription.plan?.maxContacts === -1
                       ? "Unlimited"
                       : subscription.plan?.maxContacts -
-                        subscription.contactsUsed}
+                      subscription.contactsUsed}
                   </Text>
                   <Text style={styles.usageLabel}>
                     Contacts
@@ -334,7 +361,7 @@ export default function PremiumScreen() {
                     {subscription.plan?.maxMessages === -1
                       ? "Unlimited"
                       : subscription.plan?.maxMessages -
-                        subscription.messagesUsed}
+                      subscription.messagesUsed}
                   </Text>
                   <Text style={styles.usageLabel}>Messages</Text>
                 </View>
@@ -346,7 +373,7 @@ export default function PremiumScreen() {
                       Math.ceil(
                         (new Date(subscription.endDate).getTime() -
                           new Date().getTime()) /
-                          (1000 * 60 * 60 * 24),
+                        (1000 * 60 * 60 * 24),
                       ),
                     )}
                   </Text>
@@ -522,6 +549,46 @@ export default function PremiumScreen() {
           </View>
         </View>
 
+        {/* Collapsible FAQ Section */}
+        <View style={styles.faqSection}>
+          <View style={styles.faqHeader}>
+            <HelpCircle size={22} color={deepPurple} />
+            <Text style={[styles.faqSectionTitle, { color: textColor }]}>
+              Frequently Asked Questions
+            </Text>
+          </View>
+          <View style={styles.faqList}>
+            {PREMIUM_FAQS.map((faq, index) => {
+              const isExpanded = expandedFaqIndex === index;
+              return (
+                <View key={index} style={[styles.faqCard, { backgroundColor: cardBg }]}>
+                  <TouchableOpacity
+                    style={styles.faqQuestionRow}
+                    onPress={() => setExpandedFaqIndex(isExpanded ? null : index)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.faqQuestionText, { color: textColor }]}>
+                      {faq.question}
+                    </Text>
+                    {isExpanded ? (
+                      <ChevronUp size={16} color={deepPurple} />
+                    ) : (
+                      <ChevronDown size={16} color={deepPurple} />
+                    )}
+                  </TouchableOpacity>
+                  {isExpanded && (
+                    <View style={styles.faqAnswerContainer}>
+                      <Text style={[styles.faqAnswerText, { color: mutedText }]}>
+                        {faq.answer}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
         {/* Redesigned Support Center */}
         <View style={styles.supportCenter}>
           <View style={styles.supportHeader}>
@@ -539,7 +606,7 @@ export default function PremiumScreen() {
           <View style={styles.supportCardContainer}>
             <TouchableOpacity
               style={styles.supportRowItem}
-              onPress={() => Linking.openURL("tel:+911234567890")}
+              onPress={() => Linking.openURL("tel:+918698891975")}
             >
               <View
                 style={[
@@ -554,7 +621,7 @@ export default function PremiumScreen() {
                   Call Support
                 </Text>
                 <Text style={[styles.supportOptionSub, { color: mutedText }]}>
-                  Available 24/7 for premium users
+                  Available Mon-Sat, 9:00 AM to 6:00 PM IST.
                 </Text>
               </View>
               <ChevronRight size={16} color={mutedText} />
@@ -564,7 +631,7 @@ export default function PremiumScreen() {
 
             <TouchableOpacity
               style={styles.supportRowItem}
-              onPress={() => Linking.openURL("mailto:support@punarmilan.com")}
+              onPress={() => Linking.openURL("mailto:support@brideandgroom.co.in")}
             >
               <View
                 style={[
@@ -589,6 +656,7 @@ export default function PremiumScreen() {
 
             <TouchableOpacity
               style={styles.supportRowItem}
+              onPress={() => navigation.navigate("HelpSupport", { activeTab: "faqs" })}
             >
               <View
                 style={[
@@ -1053,5 +1121,66 @@ const styles = StyleSheet.create({
     fontSize: 14,
     ...fonts.bold,
     color: "#FFFFFF",
+  },
+  faqSection: {
+    paddingHorizontal: 20,
+    marginBottom: 25,
+    marginTop: 10,
+  },
+  faqHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  faqSectionTitle: {
+    fontSize: 18,
+    ...fonts.bold,
+    letterSpacing: -0.5,
+  },
+  faqList: {
+    gap: 10,
+  },
+  faqCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(59, 30, 84, 0.06)",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#3B1E54",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 5,
+      },
+      android: {
+        elevation: 1.5,
+      },
+    }),
+  },
+  faqQuestionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  faqQuestionText: {
+    fontSize: 13,
+    ...fonts.semibold,
+    flex: 1,
+  },
+  faqAnswerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(59, 30, 84, 0.04)",
+    paddingTop: 10,
+  },
+  faqAnswerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    ...fonts.regular,
   },
 });

@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Heart, MessageCircle, Star, Crown, MapPin, Zap, User, Languages, Briefcase, Award, BookOpen, Lock } from 'lucide-react-native';
+import { Heart, MessageCircle, Star, Crown, MapPin, User, Languages, Briefcase, Award, BookOpen, Lock } from 'lucide-react-native';
 import { palette } from '../theme/colors';
 import { resolvePhotoUrl } from '../services/api';
 import { fonts } from "@/src/theme";
@@ -184,7 +184,6 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
             }
           }}
         >
-          <Zap size={14} color={accentColor} />
           <Text style={[styles.connectBtnText, { color: accentColor }]}>VIEW PROFILE</Text>
         </TouchableOpacity>
       </View>
@@ -199,6 +198,7 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 24,
     marginRight: 16,
+    marginBottom: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E8E8E8',
@@ -213,6 +213,7 @@ const styles = StyleSheet.create({
     height: 360,
     borderRadius: 24,
     marginRight: 16,
+    marginBottom: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E8E8E8',
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 160,
     borderRadius: 20,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#F1F1F1',
     overflow: 'hidden',
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     height: 320,
     borderRadius: 20,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: '#F1F1F1',
     overflow: 'hidden',

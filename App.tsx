@@ -10,6 +10,8 @@ import { secureStorage } from './src/services/secureStorage';
 import OfflineOverlay from './src/components/OfflineOverlay';
 import Toast, { ToastConfig } from 'react-native-toast-message';
 import { ShieldCheck, Zap, Info, AlertTriangle } from 'lucide-react-native';
+import './src/utils/customAlert'; // Initialize Alert.alert monkey-patching
+import CustomAlert from './src/components/CustomAlert';
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -159,6 +161,7 @@ function App() {
             <Stack.Screen name="RefundPolicy" component={RefundPolicyScreen} />
           </Stack.Navigator>
         </NavigationContainer>
+        <CustomAlert />
         <Toast config={toastConfig} />
       </SafeAreaProvider>
     </Provider>

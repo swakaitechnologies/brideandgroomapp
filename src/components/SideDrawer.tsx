@@ -24,7 +24,7 @@ import {
   Star, BadgeCheck, Copy, X,
   LogOut, Crown, Ticket, ChevronRight,
   ShieldCheck, Edit3, Download, Share2, User,
-  FileText, EyeOff, Sparkles
+  FileText, EyeOff
 } from 'lucide-react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
@@ -587,7 +587,7 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
               <MenuItem icon={FileText} label="Terms & Conditions" onPress={() => { onClose(); navigation.navigate('TermsConditions'); }} />
               <MenuItem icon={Shield} label="Privacy Policy" onPress={() => { onClose(); navigation.navigate('PrivacyPolicy'); }} />
               <MenuItem icon={Heart} label="Share Success Story" onPress={() => { onClose(); navigation.navigate('SubmitStory'); }} />
-              <MenuItem icon={Sparkles} label="Success Stories" onPress={() => { onClose(); navigation.navigate('SuccessStories'); }} isLast={true} />
+              <MenuItem icon={(props: any) => <Heart {...props} color="#FF3B30" fill="#FF3B30" />} label="Success Stories" onPress={() => { onClose(); navigation.navigate('SuccessStories'); }} isLast={true} />
             </View>
           </View>
 
@@ -621,7 +621,12 @@ export default function SideDrawer({ isOpen, onClose, setActiveTab }: SideDrawer
           </View>
 
           <View style={styles.footerInfo}>
-            <Text style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={styles.footerLogo}
+              resizeMode="contain"
+            />
+            <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.copyrightText, { color: isDark ? palette.purple.muted : palette.neutral.grey }]}>© 2026 Bride & Groom. All Rights Reserved.</Text>
             <Text style={styles.versionText}>App Version: {appVersion}</Text>
           </View>
         </ScrollView>
@@ -989,8 +994,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   copyrightText: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: palette.neutral.grey,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+    alignSelf: 'stretch',
+  },
+  footerLogo: {
+    width: 140,
+    height: 35,
+    marginBottom: 8,
   },
   versionText: {
     fontSize: 10,

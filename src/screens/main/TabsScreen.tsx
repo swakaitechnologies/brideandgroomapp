@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, TouchableOpacity, Platform, Image, Animated } from "react-native";
+import { StyleSheet, TouchableOpacity, Platform, Image, Animated, Alert } from "react-native";
 import { Text, View } from "@/components/Themed";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeScreen from "./HomeScreen";
@@ -7,12 +7,12 @@ import MatchesScreen from "./MatchesScreen";
 import ChatsScreen from "./ChatsScreen";
 import PremiumScreen from "./PremiumScreen";
 import UpdatesScreen from "./UpdatesScreen";
-import { Home, Heart, MessageSquare, Crown, Menu, ShieldCheck, Bell, Search, Play } from "lucide-react-native";
+import { Home, Heart, MessageSquare, Crown, Menu, Bell, Search, Play } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import SideDrawer from "../../components/SideDrawer";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { secureStorage } from '../../services/secureStorage';
-import { getChatList, getProfile } from "../../services/api";
+import { getChatList, getProfile, getMySubscription } from "../../services/api";
 import { setupPushNotifications, listenToTokenRefresh, setupNotificationListeners } from "../../services/pushNotification";
 import { useNotificationSocket } from "../../hooks/useNotificationSocket";
 import { fonts } from "@/src/theme";
@@ -35,6 +35,32 @@ export default function TabsScreen() {
   const insets = useSafeAreaInsets();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+
+  const checkPremiumStatus = async () => {
+    try {
+      const res = await getMySubscription();
+      if (res.data?.success && res.data.subscription) {
+        setIsPremium(true);
+      } else {
+        setIsPremium(false);
+      }
+    } catch (err) {
+      console.log("Failed to load subscription in TabsScreen:", err);
+    }
+  };
+
+  useEffect(() => {
+    checkPremiumStatus();
+
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      checkPremiumStatus();
+    });
+
+    return () => {
+      unsubscribeFocus();
+    };
+  }, [navigation]);
 
   // Load profile to retrieve user ID for Socket.io
   useEffect(() => {
@@ -206,7 +232,7 @@ export default function TabsScreen() {
               <Menu size={24} color="#3B1E54" />
             </TouchableOpacity>
 
-            <View pointerEvents="none">
+            <View pointerEvents="none" style={{ justifyContent: "center", alignItems: "center", height: 40 }}>
               <Image
                 source={require("../../../assets/images/logo.png")}
                 style={styles.navLogo}
@@ -230,13 +256,6 @@ export default function TabsScreen() {
             >
               <Bell size={22} color="#3B1E54" />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navButton}
-              onPress={() => navigation.navigate("Safety")}
-              activeOpacity={0.7}
-            >
-              <ShieldCheck size={24} color={palette.gold.main} />
-            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -247,7 +266,20 @@ export default function TabsScreen() {
       {!hideTabBar && (
         <TouchableOpacity
           style={[styles.floatingReelsBtn, { bottom: Math.max(insets.bottom + 80, 95) }]}
-          onPress={() => navigation.navigate("VideoReels")}
+          onPress={() => {
+            if (isPremium) {
+              navigation.navigate("VideoReels");
+            } else {
+              Alert.alert(
+                "Premium Feature Locked",
+                "Video Intros are strictly for Premium members. Upgrade to Premium to watch matches' video intros!",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Upgrade Now", onPress: () => setActiveTab("Premium") }
+                ]
+              );
+            }
+          }}
           activeOpacity={0.85}
         >
           <LinearGradient
@@ -384,9 +416,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   navLogo: {
-    width: 150,
-    height: 45,
-    marginLeft: -28,
+    width: 100,
+    height: 30,
+    marginLeft: 4,
   },
   navActions: {
     flexDirection: "row",

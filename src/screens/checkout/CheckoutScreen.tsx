@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
+  Modal,
   Alert,
   TextInput,
 } from 'react-native';
@@ -47,6 +48,7 @@ export default function CheckoutScreen() {
 
   const isDark = false;
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activatedPlan, setActivatedPlan] = useState<string>('');
   const [failure, setFailure] = useState(false);
@@ -123,16 +125,37 @@ export default function CheckoutScreen() {
   }, []);
 
   const handlePay = async () => {
+    await initiatePayment(false);
+  };
+
+  const initiatePayment = async (proceedAnyway: boolean) => {
     setLoading(true);
     try {
       // Step 1: Create payment order on backend
       const res = await createPaymentOrder(
         plan.id, 
         'INR', 
-        appliedCoupon ? appliedCoupon.code : undefined
+        appliedCoupon ? appliedCoupon.code : undefined,
+        proceedAnyway
       );
 
       if (!res.data?.success) {
+        if (res.data?.hasActivePlan) {
+          setLoading(false);
+          Alert.alert(
+            "Active Subscription Found",
+            "You already have an active subscription. Upgrading or purchasing a new plan will replace your current subscription.\n\n[NOTE] Please note that no remaining benefits (including remaining days, contact views, or message limits) will be transferred to the new plan.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { 
+                text: "Purchase Anyway", 
+                onPress: () => initiatePayment(true) 
+              }
+            ]
+          );
+          return;
+        }
+
         Alert.alert("Error", res.data?.message || "Failed to initiate payment.");
         setLoading(false);
         return;
@@ -161,6 +184,10 @@ export default function CheckoutScreen() {
 
       const razorpayResponse = await RazorpayCheckout.open(options);
 
+      // Show verifying popup/modal and clear pay button loading spinner
+      setVerifying(true);
+      setLoading(false);
+
       // Step 3: Verify payment on backend (from mobile app — has X-Mobile-App header)
       const verifyRes = await verifyPayment({
         paymentId: internalPaymentId,
@@ -168,6 +195,8 @@ export default function CheckoutScreen() {
         razorpay_payment_id: razorpayResponse.razorpay_payment_id,
         razorpay_signature: razorpayResponse.razorpay_signature,
       });
+
+      setVerifying(false);
 
       if (verifyRes.data?.success) {
         // Step 4: Payment verified — show success
@@ -180,6 +209,7 @@ export default function CheckoutScreen() {
         setFailure(true);
       }
     } catch (err: any) {
+      setVerifying(false);
       // Razorpay modal dismissed or payment failed
       if (err?.code === 'PAYMENT_CANCELLED' || err?.description?.includes('cancelled')) {
         setFailureReason("Payment was cancelled by the user.");
@@ -214,6 +244,39 @@ export default function CheckoutScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#F8F9FA' }]}>
+      {/* Verifying Payment Modal */}
+      <Modal
+        visible={verifying}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View style={styles.verifyingOverlay}>
+          <View style={[styles.verifyingCard, { backgroundColor: cardBg }]}>
+            <ActivityIndicator size="large" color={palette.gold.main} style={{ marginBottom: 20 }} />
+            <Text style={[styles.verifyingTitle, { color: textColor }]}>Verifying Payment</Text>
+            <Text style={[styles.verifyingText, { color: mutedText }]}>
+              Please wait while we confirm your payment details. Do not close the app or press back.
+            </Text>
+          </View>
+        </View>
+      </Modal>
+      {/* Pre-load heavy Lottie animations offscreen to warm up native composition cache */}
+      <View style={{ position: 'absolute', opacity: 0.01, width: 1, height: 1, top: -100, left: -100, overflow: 'hidden' }} pointerEvents="none">
+        <LottieView
+          source={require('../../../assets/animations/7ae221e8-1183-11ee-a1e0-f351111eea7f.json')}
+          autoPlay={false}
+          loop={false}
+          cacheComposition={true}
+        />
+        <LottieView
+          source={require('../../../assets/animations/8418934e-1153-11ee-b862-8f7bf804c03e (1).json')}
+          autoPlay={false}
+          loop={false}
+          cacheComposition={true}
+        />
+      </View>
+
       {/* Header */}
       <View style={[
         styles.header, 
@@ -239,6 +302,8 @@ export default function CheckoutScreen() {
             autoPlay
             loop={true}
             style={{ width: 160, height: 160, marginBottom: 20 }}
+            cacheComposition={true}
+            renderMode="HARDWARE"
           />
           <Text style={[styles.successTitle, { color: textColor }]}>Payment Confirmed!</Text>
           <Text style={[styles.successSub, { color: mutedText }]}>
@@ -269,6 +334,8 @@ export default function CheckoutScreen() {
             autoPlay
             loop={true}
             style={{ width: 160, height: 160, marginBottom: 20 }}
+            cacheComposition={true}
+            renderMode="HARDWARE"
           />
           <Text style={[styles.successTitle, { color: '#C62828' }]}>Payment Failed</Text>
           <Text style={[styles.successSub, { color: mutedText, textAlign: 'center', marginHorizontal: 20 }]}>
@@ -424,9 +491,23 @@ export default function CheckoutScreen() {
 
           {/* Info Details */}
           <View style={styles.infoBox}>
-            <Info size={14} color="#555" />
+            <Info size={14} color="#7E6B8F" />
             <Text style={styles.infoText}>
-              By proceeding with payment, you agree to our Terms of Use and Refund Policy.
+              By proceeding with payment, you agree to our{' '}
+              <Text 
+                style={styles.infoLink} 
+                onPress={() => navigation.navigate('TermsConditions')}
+              >
+                Terms of Use
+              </Text>
+              {' '}and{' '}
+              <Text 
+                style={styles.infoLink} 
+                onPress={() => navigation.navigate('RefundPolicy')}
+              >
+                Refund Policy
+              </Text>
+              .
             </Text>
           </View>
         </ScrollView>
@@ -572,6 +653,11 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 16,
   },
+  infoLink: {
+    color: palette.purple.deep,
+    ...fonts.semibold,
+    textDecorationLine: 'underline',
+  },
   successContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -686,5 +772,32 @@ const styles = StyleSheet.create({
     color: '#C62828',
     fontSize: 12,
     ...fonts.semibold,
+  },
+  verifyingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(59, 30, 84, 0.7)',
+  },
+  verifyingCard: {
+    borderRadius: 24,
+    padding: 30,
+    alignItems: 'center',
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  verifyingTitle: {
+    fontSize: 18,
+    ...fonts.bold,
+    marginBottom: 8,
+  },
+  verifyingText: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

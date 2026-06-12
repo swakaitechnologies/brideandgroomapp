@@ -1,5 +1,6 @@
 const { Shortlist, Profile, Photo, User, Block } = require("../models/associations");
 const { Op } = require("sequelize");
+const { sendNotification } = require("../utils/notificationHelper");
 
 exports.toggleShortlist = async (req, res) => {
   console.log(`[DEBUG] Attempting Shortlist Toggle. Body:`, req.body);
@@ -20,6 +21,19 @@ exports.toggleShortlist = async (req, res) => {
       return res.status(200).json({ success: true, message: "Removed from shortlist", isShortlisted: false });
     } else {
       await Shortlist.create({ userId, shortlistedId });
+
+      // Send notification to the shortlisted user
+      try {
+        await sendNotification({
+          receiverId: shortlistedId,
+          senderId: userId,
+          type: "shortlist",
+          message: "Someone added you to their shortlist."
+        });
+      } catch (err) {
+        console.error("Failed to send shortlist notification:", err);
+      }
+
       return res.status(201).json({ success: true, message: "Added to shortlist", isShortlisted: true });
     }
   } catch (error) {

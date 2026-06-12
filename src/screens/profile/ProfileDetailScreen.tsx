@@ -40,11 +40,16 @@ import {
   ThumbsUp,
   Flag,
   X,
+  Check,
   FileText,
   Plus,
   Play,
   PlayCircle,
+  Globe,
+  Eye,
+  Users,
 } from 'lucide-react-native';
+import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
 import { Text, View } from '@/components/Themed';
 import { palette } from '../../theme/colors';
 import LinearGradient from 'react-native-linear-gradient';
@@ -65,6 +70,32 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { pick } from '@react-native-documents/picker';
 
 const { width } = Dimensions.get('window');
+
+const FacebookIcon = ({ size = 18, color = '#1877F2' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
+      fill={color}
+    />
+  </Svg>
+);
+
+const InstagramIcon = ({ size = 18, color = '#E4405F' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <Circle cx="12" cy="12" r="4" />
+    <Line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </Svg>
+);
+
+const LinkedinIcon = ({ size = 18, color = '#0A66C2' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"
+      fill={color}
+    />
+  </Svg>
+);
 
 
 
@@ -209,6 +240,8 @@ export default function ProfileDetailScreen() {
   };
 
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const scrollViewRef = React.useRef<any>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'personal' | 'family' | 'preferences'>('overview');
 
   const showCustomToast = (msg: string) => {
     showToast(msg);
@@ -255,11 +288,14 @@ export default function ProfileDetailScreen() {
       if (res.data.success && res.data.data) {
         setCurrentProfile(res.data.data);
         setProfileFetched(true);
-        if (res.data.data.isContactRevealed) {
+        const data = res.data.data;
+        const isMobileUnmasked = data.mobile && data.mobile.trim() !== '' && !data.mobile.startsWith('********') && data.mobile !== 'Hidden';
+        const isEmailUnmasked = data.email && data.email.trim() !== '' && !data.email.startsWith('********') && data.email !== 'Hidden';
+        if (data.isContactRevealed || isMobileUnmasked || isEmailUnmasked) {
           setContactRevealed(true);
           setRevealedData({
-            mobile: res.data.data.mobile || 'Verified',
-            email: res.data.data.email || 'Verified',
+            mobile: data.mobile || 'Verified',
+            email: data.email || 'Verified',
           });
         }
       }
@@ -395,12 +431,27 @@ export default function ProfileDetailScreen() {
     }
   };
 
-  const DataRow = ({ label, value }: { label: string; value: any }) => {
+  const parseArrayOrString = (val: any): string => {
+    if (!val) return '';
+    if (Array.isArray(val)) return val.join(', ');
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) return parsed.join(', ');
+      } catch {
+        // Not a JSON string
+      }
+      return val;
+    }
+    return String(val);
+  };
+
+  const DataRow = ({ label, value, fullWidth }: { label: string; value: any; fullWidth?: boolean }) => {
     if (value === undefined || value === null || value === '') return null;
     let displayValue =
       typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value);
     return (
-      <View style={styles.dataRow}>
+      <View style={[styles.dataRow, fullWidth && { width: '100%' }]}>
         <Text style={[styles.dataLabel, { color: mutedText }]}>{label}</Text>
         <Text style={[styles.dataValue, { color: textColor }]}>
           {displayValue}
@@ -469,6 +520,7 @@ export default function ProfileDetailScreen() {
       </View>
 
       <Animated.ScrollView
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -601,481 +653,786 @@ export default function ProfileDetailScreen() {
 
         {/* Content */}
         <View style={[styles.contentContainer, { backgroundColor: themeBg, zIndex: 1, elevation: 1 }]}>
-          <View style={styles.profileHeader}>
-            <View style={{ flex: 1 }}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.nameText, { color: textColor }]}>
-                  {`${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim()}{profileAge ? `, ${profileAge}` : ''}
-                </Text>
-                {currentProfile.verificationStatus === 'approved' && (
-                  <ShieldCheck size={20} color="#4CAF50" />
-                )}
-                {currentProfile.isKycVerified && (
-                  <View style={{ backgroundColor: '#E8F5E9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 4 }}>
-                    <Text style={{ fontSize: 9, ...fonts.bold, color: '#2E7D32' }}>KYC</Text>
-                  </View>
-                )}
+          
+          {/* Quick-Facts Overlap Header Card */}
+          <View style={[styles.quickHeaderCard, { backgroundColor: cardBg, borderColor: isDark ? '#333' : '#EDE6F5', shadowColor: deepPurple }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <Text style={[styles.nameText, { color: textColor }]}>
+                    {`${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim()}{profileAge ? `, ${profileAge}` : ''}
+                  </Text>
+                  {currentProfile.verificationStatus === 'approved' && (
+                    <ShieldCheck size={22} color="#4CAF50" />
+                  )}
+                  {(currentProfile.isKycVerified || currentProfile.user?.isIdentityVerified) && (
+                    <View style={styles.badgeKyc}>
+                      <Text style={styles.badgeTextKyc}>KYC</Text>
+                    </View>
+                  )}
+                  {currentProfile.user?.isSocialVerified && (
+                    <View style={styles.badgeSocial}>
+                      <Text style={styles.badgeTextSocial}>SOCIAL</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.idText, { marginTop: 4 }]}>ID: {currentProfile.customId || 'N/A'}</Text>
               </View>
-              <View style={styles.idTag}>
-                <Text style={styles.idText}>
-                  ID: {currentProfile.customId || 'N/A'}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                <View style={{
-                  width: 8, height: 8, borderRadius: 4,
-                  backgroundColor: isOnline ? '#4CAF50' : '#BDBDBD',
-                }} />
-                <Text style={{ fontSize: 11, ...fonts.semibold, color: isOnline ? '#4CAF50' : mutedText }}>
-                  {isOnline ? 'Online' : lastSeen ? `Last seen ${lastSeen}` : 'Offline'}
-                </Text>
-              </View>
+              {(currentProfile.isPremium || currentProfile.accountType === 'Premium') && (
+                <View style={[styles.premiumHeaderBadge, { backgroundColor: accentGold }]}>
+                  <Crown size={12} color={deepPurple} />
+                  <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+                </View>
+              )}
             </View>
-            {(currentProfile.isPremium || currentProfile.accountType === 'Premium') && (
-              <View
-                style={[styles.premiumBadge, { backgroundColor: accentGold }]}
-              >
-                <Crown size={16} color={deepPurple} />
-                <Text style={styles.premiumBadgeText}>PREMIUM</Text>
-              </View>
-            )}
-          </View>
-
-          <View style={[styles.infoGrid, { backgroundColor: cardBg }]}>
-            <View style={styles.infoItem}>
-              <MapPin size={18} color={accentGold} />
-              <Text style={[styles.infoLabel, { color: mutedText }]}>
-                Location
-              </Text>
-              <Text style={[styles.infoValue, { color: textColor }]}>
-                {[currentProfile.city, currentProfile.state].filter(Boolean).join(', ') || '—'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Briefcase size={18} color={accentGold} />
-              <Text style={[styles.infoLabel, { color: mutedText }]}>
-                Profession
-              </Text>
-              <Text style={[styles.infoValue, { color: textColor }]}>
-                {currentProfile.profession || '—'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <User size={18} color={accentGold} />
-              <Text style={[styles.infoLabel, { color: mutedText }]}>
-                Height
-              </Text>
-              <Text style={[styles.infoValue, { color: textColor }]}>
-                {currentProfile.height || '—'}
-              </Text>
-            </View>
-            <View style={styles.infoItem}>
-              <Languages size={18} color={accentGold} />
-              <Text style={[styles.infoLabel, { color: mutedText }]}>
-                Language
-              </Text>
-              <Text style={[styles.infoValue, { color: textColor }]}>
-                {currentProfile.motherTongue || '—'}
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, borderTopWidth: 1, borderTopColor: isDark ? '#333' : '#EDE6F5', paddingTop: 10 }}>
+              <View style={[styles.statusDot, { backgroundColor: isOnline ? '#4CAF50' : '#BDBDBD' }]} />
+              <Text style={{ fontSize: 11, ...fonts.semibold, color: isOnline ? '#4CAF50' : mutedText }}>
+                {isOnline ? 'Online Now' : lastSeen ? `Active ${lastSeen}` : 'Offline'}
               </Text>
             </View>
           </View>
 
-          {/* Section: 15-Sec Intro Video Reel */}
-          {currentProfile.introVideoUrl ? (
-            <RNView style={[styles.detailCard, { padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }]}>
-              <LinearGradient
-                colors={['#3B1E54', '#D4AF37']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ padding: 1.5, borderRadius: 20 }}
-              >
-                <RNView style={{ backgroundColor: cardBg, borderRadius: 19, padding: 16 }}>
-                  <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent' }}>
-                    <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
-                      <PlayCircle size={22} color={palette.gold.main} />
-                      <RNText style={[styles.detailCardTitle, { color: deepPurple, marginBottom: 0 }]}>
-                        15-Second Intro Video
-                      </RNText>
-                    </RNView>
-                    <RNView style={{ backgroundColor: 'rgba(214, 175, 55, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                      <RNText style={{ fontSize: 10, ...fonts.bold, color: palette.gold.main }}>PREMIUM REEL</RNText>
-                    </RNView>
-                  </RNView>
+          {/* Horizontal Highlights Scroll Chips */}
+          <View style={{ marginVertical: 15 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+            >
+              {[
+                currentProfile.dob && { label: `${profileAge} Years`, icon: <User size={13} color={accentGold} /> },
+                currentProfile.height && { label: currentProfile.height, icon: <User size={13} color={accentGold} /> },
+                currentProfile.religion && { label: `${currentProfile.religion}${currentProfile.caste ? ` (${currentProfile.caste})` : ''}`, icon: <Globe size={13} color={accentGold} /> },
+                currentProfile.profession && { label: currentProfile.profession, icon: <Briefcase size={13} color={accentGold} /> },
+                currentProfile.city && { label: currentProfile.city, icon: <MapPin size={13} color={accentGold} /> },
+                currentProfile.maritalStatus && { label: currentProfile.maritalStatus, icon: <Heart size={13} color={accentGold} /> },
+                currentProfile.motherTongue && { label: currentProfile.motherTongue, icon: <Languages size={13} color={accentGold} /> }
+              ].filter(Boolean).map((chip: any, index) => (
+                <View key={index} style={[styles.highlightChip, { backgroundColor: cardBg, borderColor: isDark ? '#333' : '#EDE6F5' }]}>
+                  {chip.icon}
+                  <Text style={[styles.highlightChipText, { color: textColor }]}>{chip.label}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
 
-                  <RNText style={{ fontSize: 13, color: mutedText, lineHeight: 18, marginBottom: 16 }}>
-                    Watch a short voice/video greeting from this candidate to hear their voice, speech style, and expression.
-                  </RNText>
+          {/* Icon-Based Segmented Tab Navigator */}
+          <View style={[styles.tabContainer, { backgroundColor: cardBg, borderColor: isDark ? '#333' : '#EDE6F5' }]}>
+            {[
+              { id: 'overview', label: 'Overview', icon: <Eye size={16} /> },
+              { id: 'personal', label: 'Personal', icon: <User size={16} /> },
+              { id: 'family', label: 'Background', icon: <Users size={16} /> },
+              { id: 'preferences', label: 'Preferences', icon: <Heart size={16} /> }
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const activeColor = '#FFFFFF';
+              const inactiveColor = mutedText;
+              const tabIcon = React.cloneElement(tab.icon, { color: isActive ? activeColor : inactiveColor });
+              
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  style={[styles.tabButton, isActive && { backgroundColor: deepPurple }]}
+                  onPress={() => {
+                    setActiveTab(tab.id as any);
+                    scrollViewRef.current?.scrollTo({ y: 380, animated: true });
+                  }}
+                >
+                  {tabIcon}
+                  <Text style={[styles.tabText, { color: isActive ? activeColor : inactiveColor, marginTop: 4 }]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-                  <TouchableOpacity
-                    style={{
-                      height: 180,
-                      borderRadius: 12,
-                      overflow: 'hidden',
-                      position: 'relative',
-                      backgroundColor: '#1E1E1E',
-                    }}
-                    onPress={() => {
-                      if (currentProfile.introVideoUrl) {
-                        Linking.openURL(currentProfile.introVideoUrl).catch(err => {
-                          console.error("Failed to play video:", err);
-                        });
-                      }
-                    }}
-                    activeOpacity={0.9}
-                  >
-                    {/* Placeholder cover image with blur overlay */}
-                    <Image
-                      source={{
-                        uri: resolvePhotoUrl(
-                          currentProfile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
-                          currentProfile.photos?.[0]?.url ||
-                          `https://api.dicebear.com/7.x/avataaars/png?seed=${currentProfile.email || 'intro'}`
-                        )
-                      }}
-                      style={{ width: '100%', height: '100%', opacity: 0.6 }}
-                      blurRadius={10}
-                    />
-
-                    {/* Centered Play Button Overlay */}
-                    <RNView style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: 'transparent',
+          {/* Tab Content Rendering */}
+          {activeTab === 'overview' && (
+            <>
+              {/* Section: Profile Trust Score */}
+              {currentProfile.trustScore !== undefined && (
+                <View style={styles.detailCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 15 }}>
+                    <ShieldCheck size={22} color={palette.gold.main} />
+                    <Text style={[styles.detailCardTitle, { color: deepPurple, marginBottom: 0, borderBottomWidth: 0, paddingBottom: 0 }]}>
+                      Profile Trust Score
+                    </Text>
+                    <View style={{
+                      backgroundColor: 'rgba(214, 175, 55, 0.1)',
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 10,
+                      marginLeft: 'auto'
                     }}>
-                      <RNView style={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 30,
-                        backgroundColor: 'rgba(59, 30, 84, 0.85)',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 2,
-                        borderColor: palette.gold.main,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 6,
-                        elevation: 5,
-                      }}>
-                        <Play size={24} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: 3 }} />
+                      <Text style={{ fontSize: 13, ...fonts.bold, color: palette.gold.main }}>
+                        {currentProfile.trustScore}%
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Progress Bar */}
+                  <View style={{ height: 8, backgroundColor: isDark ? '#333' : '#EDE6F5', borderRadius: 4, overflow: 'hidden', marginBottom: 20 }}>
+                    <View style={{ height: '100%', width: `${currentProfile.trustScore}%`, backgroundColor: palette.gold.main, borderRadius: 4 }} />
+                  </View>
+
+                  {/* Checklist Grid */}
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
+                    {[
+                      {
+                        label: 'KYC Document',
+                        verified: !!(currentProfile.isKycVerified || currentProfile.user?.isIdentityVerified)
+                      },
+                      {
+                        label: 'Mobile Number',
+                        verified: !!currentProfile.user?.isMobileVerified
+                      },
+                      {
+                        label: 'Email Address',
+                        verified: !!currentProfile.user?.isEmailVerified
+                      },
+                      {
+                        label: 'Multiple Photos',
+                        verified: !!(currentProfile.photos && currentProfile.photos.length >= 2)
+                      },
+                      {
+                        label: 'Detailed Bio',
+                        verified: !!(currentProfile.bio && currentProfile.bio.length >= 100)
+                      },
+                      {
+                        label: 'Social Profiles',
+                        verified: !!(currentProfile.user?.isSocialVerified || (currentProfile.socialLinks && Object.keys(currentProfile.socialLinks).length > 0))
+                      }
+                    ].map((item, index) => (
+                      <View
+                        key={index}
+                        style={{
+                          width: '48%',
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: cardBg,
+                          padding: 10,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: isDark ? '#333' : '#EDE6F5',
+                          gap: 8
+                        }}
+                      >
+                        <View style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 9,
+                          backgroundColor: item.verified ? '#E8F5E9' : '#FFEBEE',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {item.verified ? (
+                            <Check size={10} color="#2E7D32" />
+                          ) : (
+                            <X size={10} color="#C62828" />
+                          )}
+                        </View>
+                        <Text style={{ fontSize: 11, ...fonts.semibold, color: textColor }}>
+                          {item.label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Section: 15-Sec Intro Video Reel */}
+              {currentProfile.introVideoUrl ? (
+                subscription ? (
+                  <RNView style={[styles.detailCard, { padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }]}>
+                    <LinearGradient
+                      colors={['#3B1E54', '#D4AF37']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ padding: 1.5, borderRadius: 20 }}
+                    >
+                      <RNView style={{ backgroundColor: cardBg, borderRadius: 19, padding: 16 }}>
+                        <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent' }}>
+                          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
+                            <PlayCircle size={22} color={palette.gold.main} />
+                            <RNText style={[styles.detailCardTitle, { color: deepPurple, marginBottom: 0 }]}>
+                              1-Minute Intro Video
+                            </RNText>
+                          </RNView>
+                          <RNView style={{ backgroundColor: 'rgba(214, 175, 55, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                            <RNText style={{ fontSize: 10, ...fonts.bold, color: palette.gold.main }}>PREMIUM REEL</RNText>
+                          </RNView>
+                        </RNView>
+
+                        <RNText style={{ fontSize: 13, color: mutedText, lineHeight: 18, marginBottom: 16 }}>
+                          Watch a short voice/video greeting from this candidate to hear their voice, speech style, and expression.
+                        </RNText>
+
+                        <TouchableOpacity
+                          style={{
+                            height: 180,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            backgroundColor: '#1E1E1E',
+                          }}
+                          onPress={() => {
+                            if (currentProfile.introVideoUrl) {
+                              Linking.openURL(currentProfile.introVideoUrl).catch(err => {
+                                console.error("Failed to play video:", err);
+                              });
+                            }
+                          }}
+                          activeOpacity={0.9}
+                        >
+                          {/* Placeholder cover image with blur overlay */}
+                          <Image
+                            source={{
+                              uri: resolvePhotoUrl(
+                                currentProfile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                                currentProfile.photos?.[0]?.url ||
+                                `https://api.dicebear.com/7.x/avataaars/png?seed=${currentProfile.email || 'intro'}`
+                              )
+                            }}
+                            style={{ width: '100%', height: '100%', opacity: 0.6 }}
+                            blurRadius={10}
+                          />
+
+                          {/* Centered Play Button Overlay */}
+                          <RNView style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: 'transparent',
+                          }}>
+                            <RNView style={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: 30,
+                              backgroundColor: 'rgba(59, 30, 84, 0.85)',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderWidth: 2,
+                              borderColor: palette.gold.main,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: 0.3,
+                              shadowRadius: 6,
+                              elevation: 5,
+                            }}>
+                              <Play size={24} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: 3 }} />
+                            </RNView>
+                            <RNText style={{ color: '#FFFFFF', ...fonts.bold, fontSize: 13, marginTop: 10, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
+                              Play Intro Video (1 min)
+                            </RNText>
+                          </RNView>
+                        </TouchableOpacity>
                       </RNView>
-                      <RNText style={{ color: '#FFFFFF', ...fonts.bold, fontSize: 13, marginTop: 10, textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
-                        Play Intro Video (15s)
-                      </RNText>
-                    </RNView>
-                  </TouchableOpacity>
-                </RNView>
-              </LinearGradient>
-            </RNView>
-          ) : null}
+                    </LinearGradient>
+                  </RNView>
+                ) : (
+                  <RNView style={[styles.detailCard, { padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }]}>
+                    <LinearGradient
+                      colors={['#E5E5EA', '#8E8E93']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{ padding: 1.5, borderRadius: 20 }}
+                    >
+                      <RNView style={{ backgroundColor: cardBg, borderRadius: 19, padding: 16 }}>
+                        <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, backgroundColor: 'transparent' }}>
+                          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'transparent' }}>
+                            <Lock size={20} color="#8E8E93" />
+                            <RNText style={[styles.detailCardTitle, { color: textColor, marginBottom: 0, opacity: 0.7 }]}>
+                              Intro Video Locked
+                            </RNText>
+                          </RNView>
+                          <RNView style={{ backgroundColor: 'rgba(142, 142, 147, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                            <RNText style={{ fontSize: 10, ...fonts.bold, color: '#8E8E93' }}>PREMIUM ONLY</RNText>
+                          </RNView>
+                        </RNView>
 
-          {/* Section: Personal Info */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Personal Details
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="First Name" value={currentProfile.firstName} />
-              <DataRow label="Last Name" value={currentProfile.lastName} />
-              <DataRow label="Custom ID" value={currentProfile.customId} />
-              <DataRow label="Gender" value={currentProfile.gender} />
-              <DataRow
-                label="DOB"
-                value={formatDateString(currentProfile.dob)}
-              />
-              <DataRow
-                label="Marital Status"
-                value={currentProfile.maritalStatus}
-              />
-              <DataRow label="Created By" value={currentProfile.createdBy} />
-            </View>
-          </View>
+                        <RNText style={{ fontSize: 13, color: mutedText, lineHeight: 18, marginBottom: 16 }}>
+                          Watch a short voice/video greeting from this candidate to hear their voice, speech style, and expression.
+                        </RNText>
 
-          {/* Section: Physical Appearance & Lifestyle */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Physical & Lifestyle
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Height" value={currentProfile.height} />
-              <DataRow
-                label="Weight"
-                value={
-                  currentProfile.weight ? `${currentProfile.weight} kg` : null
-                }
-              />
-              <DataRow label="Diet" value={currentProfile.diet} />
-              <DataRow label="Smoking" value={currentProfile.smoking} />
-              <DataRow label="Drinking" value={currentProfile.drinking} />
-              <DataRow
-                label="Physical Activity"
-                value={currentProfile.activity}
-              />
-            </View>
-          </View>
+                        <TouchableOpacity
+                          style={{
+                            height: 180,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            backgroundColor: '#1E1E1E',
+                          }}
+                          onPress={() => {
+                            navigation.navigate("Tabs", { screen: "Premium" });
+                          }}
+                          activeOpacity={0.9}
+                        >
+                          {/* Blurred placeholder cover image */}
+                          <Image
+                            source={{
+                              uri: resolvePhotoUrl(
+                                currentProfile.photos?.find((p: any) => p.isMain === true || p.isMain === 1 || p.isMain === "1")?.url ||
+                                currentProfile.photos?.[0]?.url ||
+                                `https://api.dicebear.com/7.x/avataaars/png?seed=${currentProfile.email || 'intro'}`
+                              )
+                            }}
+                            style={{ width: '100%', height: '100%', opacity: 0.3 }}
+                            blurRadius={15}
+                          />
 
-          {/* Section: Location */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Location Details
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Country" value={currentProfile.country} />
-              <DataRow label="State" value={currentProfile.state} />
-              <DataRow label="City" value={currentProfile.city} />
-              <DataRow label="Area" value={currentProfile.area} />
-              <DataRow
-                label="Open to Relocate"
-                value={currentProfile.relocate}
-              />
-            </View>
-          </View>
+                          {/* Centered Lock Overlay */}
+                          <RNView style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                          }}>
+                            <RNView style={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: 30,
+                              backgroundColor: 'rgba(59, 30, 84, 0.9)',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderWidth: 2,
+                              borderColor: palette.gold.main,
+                              shadowColor: '#000',
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: 0.3,
+                              shadowRadius: 6,
+                              elevation: 5,
+                            }}>
+                              <Lock size={24} color={palette.gold.main} />
+                            </RNView>
+                            <RNText style={{ color: '#FFFFFF', ...fonts.bold, fontSize: 13, marginTop: 10 }}>
+                              Play Intro Video (Locked)
+                            </RNText>
+                            <RNText style={{ color: palette.gold.main, ...fonts.medium, fontSize: 11, marginTop: 4 }}>
+                              Upgrade to Premium to Unlock
+                            </RNText>
+                          </RNView>
+                        </TouchableOpacity>
+                      </RNView>
+                    </LinearGradient>
+                  </RNView>
+                )
+              ) : null}
 
-          {/* Section: Religion & Culture */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Religion & Culture
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Religion" value={currentProfile.religion} />
-              <DataRow label="Caste" value={currentProfile.caste} />
-              <DataRow label="Sub Caste" value={currentProfile.subCaste} />
-              <DataRow
-                label="Mother Tongue"
-                value={currentProfile.motherTongue}
-              />
-              <DataRow label="Culture" value={currentProfile.culture} />
-            </View>
-          </View>
-
-          {/* Section: Education & Profession */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Education & Career
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow
-                label="Highest Degree"
-                value={currentProfile.highestDegree}
-              />
-              <DataRow label="College" value={currentProfile.college} />
-              <DataRow label="Profession" value={currentProfile.profession} />
-              <DataRow label="Industry" value={currentProfile.industry} />
-              <DataRow label="Company" value={currentProfile.company} />
-              <DataRow label="Annual Income" value={currentProfile.income} />
-            </View>
-          </View>
-
-          {/* Section: Family Details */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Family Background
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Family Type" value={currentProfile.familyType} />
-              <DataRow
-                label="Family Location"
-                value={currentProfile.familyLocation}
-              />
-              <DataRow
-                label="Father Status"
-                value={currentProfile.fatherStatus}
-              />
-              <DataRow
-                label="Mother Status"
-                value={currentProfile.motherStatus}
-              />
-              <DataRow label="Brothers" value={currentProfile.brothers} />
-              <DataRow label="Sisters" value={currentProfile.sisters} />
-              <DataRow label="Siblings" value={currentProfile.siblings} />
-              <DataRow
-                label="About Family"
-                value={currentProfile.familyAbout}
-              />
-            </View>
-          </View>
-
-          {/* Section: Personal Info & Hobbies */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              About & Hobbies
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Hobby" value={currentProfile.hobby} />
-              <DataRow label="Hobbies List" value={currentProfile.hobbies} />
-              <DataRow label="Bio" value={currentProfile.bio} />
-            </View>
-          </View>
-
-          {/* Section: Horoscope & Astro */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Horoscope & Astro
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Zodiac Sign" value={currentProfile.zodiacSign} />
-              <DataRow
-                label="Horoscope DOB"
-                value={formatDateString(currentProfile.horoscopeDob)}
-              />
-              <DataRow
-                label="Horoscope Time"
-                value={currentProfile.horoscopeTime}
-              />
-              <DataRow
-                label="Horoscope Place"
-                value={currentProfile.horoscopePlace}
-              />
-            </View>
-          </View>
-
-          {/* Section: Partner Preferences (from Profile) */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Partner Preferences
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow
-                label="Expectations"
-                value={currentProfile.expectations}
-              />
-              <DataRow label="Looking For" value={currentProfile.lookingFor} />
-              <DataRow
-                label="Preferred Age"
-                value={currentProfile.preferredAge}
-              />
-              <DataRow
-                label="Preferred Location"
-                value={currentProfile.preferredLocation}
-              />
-              <DataRow
-                label="Deal Breakers"
-                value={currentProfile.dealBreakers}
-              />
-            </View>
-          </View>
-
-          {/* Section: Detailed Partner Preferences (from PartnerPreference model) */}
-          {(partnerPref.minAge || partnerPref.maxAge || partnerPref.religion || partnerPref.education || partnerPref.incomeRange || partnerPref.country || partnerPref.city) && (
-            <View style={styles.detailCard}>
-              <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-                Desired Partner Criteria
-              </Text>
-              <View style={styles.dataGrid}>
-                <DataRow
-                  label="Age Range"
-                  value={
-                    partnerPref.minAge || partnerPref.maxAge
-                      ? `${partnerPref.minAge || '—'} – ${partnerPref.maxAge || '—'} yrs`
-                      : null
-                  }
-                />
-                <DataRow label="Min Height" value={partnerPref.minHeight} />
-                <DataRow
-                  label="Marital Status"
-                  value={
-                    Array.isArray(partnerPref.maritalStatus)
-                      ? partnerPref.maritalStatus.join(', ')
-                      : partnerPref.maritalStatus
-                  }
-                />
-                <DataRow label="Diet" value={partnerPref.diet} />
-                <DataRow label="Education" value={partnerPref.education} />
-                <DataRow
-                  label="Work Sector"
-                  value={
-                    Array.isArray(partnerPref.workSector)
-                      ? partnerPref.workSector.join(', ')
-                      : partnerPref.workSector
-                  }
-                />
-                <DataRow label="Income Range" value={partnerPref.incomeRange} />
-                <DataRow label="Religion" value={partnerPref.religion} />
-                <DataRow label="Caste" value={partnerPref.caste} />
-                <DataRow
-                  label="Caste No Bar"
-                  value={partnerPref.casteNoBar}
-                />
-                <DataRow label="Mother Tongue" value={partnerPref.motherTongue} />
-                <DataRow label="Country" value={partnerPref.country} />
-                <DataRow label="City" value={partnerPref.city} />
+              {/* Section: Personal Info & Hobbies */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  About & Hobbies
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Hobby" value={currentProfile.hobby} fullWidth={true} />
+                  <DataRow label="Hobbies List" value={currentProfile.hobbies} fullWidth={true} />
+                  <DataRow label="Bio" value={currentProfile.bio} fullWidth={true} />
+                </View>
               </View>
-            </View>
+
+              {/* Contact Section */}
+              <View style={{ marginVertical: 10 }}>
+                {contactRevealed ? (
+                  <View style={[styles.contactSection, { backgroundColor: deepPurple }]}>
+                    <View style={styles.contactHeader}>
+                      <Phone size={24} color={accentGold} />
+                      <Text style={styles.contactTitle}>Contact Details</Text>
+                    </View>
+                    <View style={styles.revealedContainer}>
+                      <View style={styles.revealItem}>
+                        <Phone size={18} color={accentGold} />
+                        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.revealText}>{revealedData?.mobile}</Text>
+                          <View style={{
+                            backgroundColor: currentProfile.user?.isMobileVerified ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 6
+                          }}>
+                            <Text style={{ fontSize: 9, ...fonts.bold, color: currentProfile.user?.isMobileVerified ? '#4CAF50' : '#FF9800' }}>
+                              {currentProfile.user?.isMobileVerified ? 'VERIFIED' : 'PENDING'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.revealItem}>
+                        <Mail size={18} color={accentGold} />
+                        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.revealText}>{revealedData?.email}</Text>
+                          <View style={{
+                            backgroundColor: currentProfile.user?.isEmailVerified ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)',
+                            paddingHorizontal: 8,
+                            paddingVertical: 2,
+                            borderRadius: 6
+                          }}>
+                            <Text style={{ fontSize: 9, ...fonts.bold, color: currentProfile.user?.isEmailVerified ? '#4CAF50' : '#FF9800' }}>
+                              {currentProfile.user?.isEmailVerified ? 'VERIFIED' : 'PENDING'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {(currentProfile.user?.nomineeName || currentProfile.user?.nomineeContact) && (
+                        <View style={{ borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 15, marginTop: 5 }}>
+                          <Text style={{ color: accentGold, fontSize: 13, ...fonts.bold, marginBottom: 10 }}>Nominee Contact Details</Text>
+                          {currentProfile.user?.nomineeName ? (
+                            <View style={[styles.revealItem, { backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: 8 }]}>
+                              <User size={18} color={accentGold} />
+                              <Text style={styles.revealText}>{currentProfile.user?.nomineeName}</Text>
+                            </View>
+                          ) : null}
+                          {currentProfile.user?.nomineeContact ? (
+                            <View style={[styles.revealItem, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+                              <Phone size={18} color={accentGold} />
+                              <Text style={styles.revealText}>{currentProfile.user?.nomineeContact}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <LinearGradient
+                    colors={['#3B1E54', '#8C52FF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.premiumLockCard}
+                  >
+                    <View style={styles.premiumLockInner}>
+                      <View style={styles.lockIconCircle}>
+                        <Lock size={26} color={accentGold} />
+                      </View>
+                      <Text style={styles.premiumLockTitle}>Contact Details Secured</Text>
+                      <Text style={styles.premiumLockDesc}>
+                        Upgrade your plan or use a premium reveal key to unlock verified mobile number and email.
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.premiumRevealBtn, { backgroundColor: accentGold }]}
+                        onPress={handleReveal}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <ActivityIndicator color={deepPurple} size="small" />
+                        ) : (
+                          <>
+                            <Zap size={16} color={deepPurple} />
+                            <Text style={styles.premiumRevealBtnText}>
+                              Reveal Contact (Remaining: {subscription?.plan?.maxContacts === -1
+                                ? 'Unlimited'
+                                : (subscription?.plan?.maxContacts ?? 0) - (subscription?.contactsUsed ?? 0)} left)
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </LinearGradient>
+                )}
+              </View>
+
+              {/* Section: Social Profiles */}
+              {currentProfile.socialLinks && Object.values(currentProfile.socialLinks).some(Boolean) && (
+                <View style={[styles.detailCard, { marginTop: 20 }]}>
+                  <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                    Social Profiles
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 15, flexWrap: 'wrap', marginTop: 5 }}>
+                    {Object.entries(currentProfile.socialLinks).map(([key, value]) => {
+                      if (!value || typeof value !== 'string' || value.trim() === '') return null;
+                      let iconElement = <Globe size={18} color="#333" />;
+                      const label = key.toUpperCase();
+                      
+                      if (key.toLowerCase().includes('facebook')) {
+                        iconElement = <FacebookIcon size={18} color="#1877F2" />;
+                      } else if (key.toLowerCase().includes('instagram')) {
+                        iconElement = <InstagramIcon size={18} color="#E4405F" />;
+                      } else if (key.toLowerCase().includes('linkedin')) {
+                        iconElement = <LinkedinIcon size={18} color="#0A66C2" />;
+                      }
+                      
+                      return (
+                        <TouchableOpacity
+                          key={key}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: cardBg,
+                            borderWidth: 1.5,
+                            borderColor: isDark ? '#333' : '#EDE6F5',
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            borderRadius: 14,
+                            gap: 8,
+                          }}
+                          onPress={() => {
+                            const url = value.startsWith('http') ? value : `https://${value}`;
+                            Linking.openURL(url).catch(err => {
+                              console.error("Failed to open link:", err);
+                            });
+                          }}
+                        >
+                          {iconElement}
+                          <Text style={{ fontSize: 13, ...fonts.bold, color: textColor }}>{label}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </>
           )}
 
-          {/* Section: Additional Info */}
-          <View style={styles.detailCard}>
-            <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
-              Additional Info
-            </Text>
-            <View style={styles.dataGrid}>
-              <DataRow label="Contact Time" value={currentProfile.contactTime} />
-              <DataRow label="Verification" value={currentProfile.verificationStatus} />
-              <DataRow label="KYC Verified" value={currentProfile.isKycVerified} />
-            </View>
-          </View>
-
-          {/* Contact Section */}
-          <View
-            style={[styles.contactSection, { backgroundColor: deepPurple }]}
-          >
-            <View style={styles.contactHeader}>
-              <Phone size={24} color={accentGold} />
-              <Text style={styles.contactTitle}>Contact Details</Text>
-            </View>
-
-            {contactRevealed ? (
-              <View style={styles.revealedContainer}>
-                <View style={styles.revealItem}>
-                  <Phone size={18} color={accentGold} />
-                  <Text style={styles.revealText}>{revealedData?.mobile}</Text>
-                </View>
-                <View style={styles.revealItem}>
-                  <Mail size={18} color={accentGold} />
-                  <Text style={styles.revealText}>{revealedData?.email}</Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.lockedContainer}>
-                <Lock
-                  size={32}
-                  color="rgba(255,255,255,0.3)"
-                  style={{ marginBottom: 15 }}
-                />
-                <Text style={styles.lockedText}>
-                  Contact details are locked for privacy
+          {activeTab === 'personal' && (
+            <>
+              {/* Section: Personal Info */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Personal Details
                 </Text>
-
-                <TouchableOpacity
-                  style={[styles.revealButton, { backgroundColor: accentGold }]}
-                  onPress={handleReveal}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={deepPurple} size="small" />
-                  ) : (
-                    <>
-                      <Zap size={18} color={deepPurple} />
-                      <Text style={styles.revealButtonText}>
-                        Reveal Contact (
-                        {subscription?.plan?.maxContacts === -1
-                          ? 'Unlimited'
-                          : (subscription?.plan?.maxContacts ?? 0) - (subscription?.contactsUsed ?? 0)}{' '}
-                        left)
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <View style={styles.dataGrid}>
+                  <DataRow label="First Name" value={currentProfile.firstName} />
+                  <DataRow label="Last Name" value={currentProfile.lastName} />
+                  <DataRow label="Custom ID" value={currentProfile.customId} />
+                  <DataRow label="Gender" value={currentProfile.gender} />
+                  <DataRow
+                    label="DOB"
+                    value={formatDateString(currentProfile.dob)}
+                  />
+                  <DataRow
+                    label="Marital Status"
+                    value={currentProfile.maritalStatus}
+                  />
+                  <DataRow label="Created By" value={currentProfile.createdBy} />
+                </View>
               </View>
-            )}
-          </View>
 
+              {/* Section: Physical Appearance & Lifestyle */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Physical & Lifestyle
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Height" value={currentProfile.height} />
+                  <DataRow
+                    label="Weight"
+                    value={
+                      currentProfile.weight ? `${currentProfile.weight} kg` : null
+                    }
+                  />
+                  <DataRow label="Diet" value={currentProfile.diet} />
+                  <DataRow label="Smoking" value={currentProfile.smoking} />
+                  <DataRow label="Drinking" value={currentProfile.drinking} />
+                  <DataRow
+                    label="Physical Activity"
+                    value={currentProfile.activity}
+                  />
+                </View>
+              </View>
 
+              {/* Section: Location */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Location Details
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Country" value={currentProfile.country} />
+                  <DataRow label="State" value={currentProfile.state} />
+                  <DataRow label="City" value={currentProfile.city} />
+                  <DataRow label="Area" value={currentProfile.area} />
+                  <DataRow
+                    label="Open to Relocate"
+                    value={currentProfile.relocate}
+                  />
+                </View>
+              </View>
+
+              {/* Section: Horoscope & Astro */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Horoscope & Astro
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Zodiac Sign" value={currentProfile.zodiacSign} />
+                  <DataRow
+                    label="Horoscope DOB"
+                    value={formatDateString(currentProfile.horoscopeDob)}
+                  />
+                  <DataRow
+                    label="Horoscope Time"
+                    value={currentProfile.horoscopeTime}
+                  />
+                  <DataRow
+                    label="Horoscope Place"
+                    value={currentProfile.horoscopePlace}
+                  />
+                </View>
+              </View>
+            </>
+          )}
+
+          {activeTab === 'family' && (
+            <>
+              {/* Section: Family Details */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Family Background
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Family Type" value={currentProfile.familyType} />
+                  <DataRow
+                    label="Family Location"
+                    value={currentProfile.familyLocation}
+                  />
+                  <DataRow
+                    label="Father Status"
+                    value={currentProfile.fatherStatus}
+                  />
+                  <DataRow
+                    label="Mother Status"
+                    value={currentProfile.motherStatus}
+                  />
+                  <DataRow label="Brothers" value={currentProfile.brothers} />
+                  <DataRow label="Sisters" value={currentProfile.sisters} />
+                  <DataRow label="Siblings" value={currentProfile.siblings} />
+                  <DataRow
+                    label="About Family"
+                    value={currentProfile.familyAbout}
+                    fullWidth={true}
+                  />
+                </View>
+              </View>
+
+              {/* Section: Religion & Culture */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Religion & Culture
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Religion" value={currentProfile.religion} />
+                  <DataRow label="Caste" value={currentProfile.caste} />
+                  <DataRow label="Sub Caste" value={currentProfile.subCaste} />
+                  <DataRow
+                    label="Mother Tongue"
+                    value={currentProfile.motherTongue}
+                  />
+                  <DataRow label="Culture" value={currentProfile.culture} />
+                  <DataRow label="Family Values" value={currentProfile.familyValues} />
+                </View>
+              </View>
+
+              {/* Section: Education & Profession */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Education & Career
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow
+                    label="Highest Degree"
+                    value={currentProfile.highestDegree}
+                  />
+                  <DataRow label="College" value={currentProfile.college} />
+                  <DataRow label="Profession" value={currentProfile.profession} />
+                  <DataRow label="Industry" value={currentProfile.industry} />
+                  <DataRow label="Company" value={currentProfile.company} />
+                  <DataRow label="Annual Income" value={currentProfile.income} />
+                </View>
+              </View>
+            </>
+          )}
+
+          {activeTab === 'preferences' && (
+            <>
+              {/* Section: Partner Preferences */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Partner Preferences
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow
+                    label="Expectations"
+                    value={currentProfile.expectations}
+                    fullWidth={true}
+                  />
+                  <DataRow label="Looking For" value={currentProfile.lookingFor} fullWidth={true} />
+                  <DataRow
+                    label="Preferred Age"
+                    value={currentProfile.preferredAge}
+                  />
+                  <DataRow
+                    label="Preferred Location"
+                    value={currentProfile.preferredLocation}
+                  />
+                  <DataRow
+                    label="Deal Breakers"
+                    value={currentProfile.dealBreakers}
+                    fullWidth={true}
+                  />
+                </View>
+              </View>
+
+              {/* Section: Desired Partner Criteria */}
+              {(partnerPref.minAge || partnerPref.maxAge || partnerPref.religion || partnerPref.education || partnerPref.incomeRange || partnerPref.country || partnerPref.city) && (
+                <View style={styles.detailCard}>
+                  <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                    Desired Partner Criteria
+                  </Text>
+                  <View style={styles.dataGrid}>
+                    <DataRow
+                      label="Age Range"
+                      value={
+                        partnerPref.minAge || partnerPref.maxAge
+                          ? `${partnerPref.minAge || '—'} – ${partnerPref.maxAge || '—'} yrs`
+                          : null
+                      }
+                    />
+                    <DataRow label="Min Height" value={partnerPref.minHeight} />
+                    <DataRow
+                      label="Marital Status"
+                      value={parseArrayOrString(partnerPref.maritalStatus)}
+                    />
+                    <DataRow label="Diet" value={partnerPref.diet} />
+                    <DataRow label="Education" value={partnerPref.education} />
+                    <DataRow
+                      label="Work Sector"
+                      value={parseArrayOrString(partnerPref.workSector)}
+                    />
+                    <DataRow label="Income Range" value={partnerPref.incomeRange} />
+                    <DataRow label="Religion" value={partnerPref.religion} />
+                    <DataRow label="Caste" value={partnerPref.caste} />
+                    <DataRow
+                      label="Caste No Bar"
+                      value={partnerPref.casteNoBar}
+                    />
+                    <DataRow label="Mother Tongue" value={partnerPref.motherTongue} />
+                    <DataRow label="Country" value={partnerPref.country} />
+                    <DataRow label="City" value={partnerPref.city} />
+                  </View>
+                </View>
+              )}
+
+              {/* Section: Additional Info */}
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailCardTitle, { color: deepPurple }]}>
+                  Additional Info
+                </Text>
+                <View style={styles.dataGrid}>
+                  <DataRow label="Contact Time" value={currentProfile.contactTime} />
+                  <DataRow label="Verification" value={currentProfile.verificationStatus} />
+                  <DataRow label="KYC Verified" value={currentProfile.isKycVerified} />
+                </View>
+              </View>
+            </>
+          )}
 
           <View style={{ height: 110 + insets.bottom }} />
         </View>
@@ -1880,5 +2237,137 @@ const styles = StyleSheet.create({
   },
   submitModalBtnDisabled: {
     opacity: 0.6,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    marginVertical: 15,
+    padding: 4,
+    borderWidth: 1.5,
+    justifyContent: 'space-between',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  tabText: {
+    fontSize: 10,
+    ...fonts.bold,
+  },
+  quickHeaderCard: {
+    marginTop: -40,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    padding: 20,
+    marginBottom: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  badgeKyc: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeTextKyc: {
+    fontSize: 10,
+    ...fonts.bold,
+    color: '#2E7D32',
+  },
+  badgeSocial: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeTextSocial: {
+    fontSize: 10,
+    ...fonts.bold,
+    color: '#1976D2',
+  },
+  premiumHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    gap: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  highlightChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  highlightChipText: {
+    fontSize: 11,
+    ...fonts.bold,
+  },
+  premiumLockCard: {
+    borderRadius: 24,
+    padding: 2,
+    overflow: 'hidden',
+    shadowColor: '#3B1E54',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  premiumLockInner: {
+    backgroundColor: 'rgba(59, 30, 84, 0.9)',
+    borderRadius: 22,
+    padding: 24,
+    alignItems: 'center',
+  },
+  lockIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  premiumLockTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    ...fonts.bold,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  premiumLockDesc: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  premiumRevealBtn: {
+    flexDirection: 'row',
+    height: 48,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+  },
+  premiumRevealBtnText: {
+    fontSize: 12,
+    ...fonts.bold,
+    color: '#3B1E54',
   },
 });

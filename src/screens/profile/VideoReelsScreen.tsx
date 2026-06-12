@@ -15,11 +15,11 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
 import VideoPlayer from 'react-native-video';
 import {
-  ArrowLeft, Heart, Play, Pause, User, MapPin, Briefcase, BadgeCheck, Sparkles, MessageCircle
+  ArrowLeft, Heart, Play, Pause, User, MapPin, Briefcase, BadgeCheck, Star, MessageCircle, Lock
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
-import { resolvePhotoUrl, getVideoReels, sendInterest } from '../../services/api';
+import { resolvePhotoUrl, getVideoReels, sendInterest, getMySubscription } from '../../services/api';
 import { showToast } from '../../utils/toast';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -39,20 +39,38 @@ export default function VideoReelsScreen() {
 
   const listRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    const passedReels = route.params?.reels;
-    const startIndex = route.params?.startIndex || 0;
+  const [isPremium, setIsPremium] = useState(false);
+  const [checkingSub, setCheckingSub] = useState(true);
 
-    if (passedReels && passedReels.length > 0) {
-      setReels(passedReels);
-      setActiveIndex(startIndex);
-      // Let layout complete, then scroll to startIndex
-      setTimeout(() => {
-        listRef.current?.scrollToIndex({ index: startIndex, animated: false });
-      }, 100);
-    } else {
-      loadReels();
-    }
+  useEffect(() => {
+    const initScreen = async () => {
+      try {
+        const subRes = await getMySubscription();
+        const premium = !!(subRes.data?.success && subRes.data?.subscription);
+        setIsPremium(premium);
+
+        if (premium) {
+          const passedReels = route.params?.reels;
+          const startIndex = route.params?.startIndex || 0;
+
+          if (passedReels && passedReels.length > 0) {
+            setReels(passedReels);
+            setActiveIndex(startIndex);
+            setTimeout(() => {
+              listRef.current?.scrollToIndex({ index: startIndex, animated: false });
+            }, 100);
+          } else {
+            await loadReels();
+          }
+        }
+      } catch (err) {
+        console.error("Init VideoReels Screen Error:", err);
+      } finally {
+        setCheckingSub(false);
+      }
+    };
+
+    initScreen();
   }, [route.params]);
 
   const loadReels = async () => {
@@ -225,7 +243,7 @@ export default function VideoReelsScreen() {
             )}
             {item.isPremium && (
               <View style={styles.premiumBadge}>
-                <Sparkles size={10} color="#FFFFFF" fill="#FFFFFF" />
+                <Star size={10} color="#FFFFFF" fill="#FFFFFF" />
                 <Text style={styles.premiumBadgeText}>PREMIUM</Text>
               </View>
             )}
@@ -255,11 +273,72 @@ export default function VideoReelsScreen() {
     );
   };
 
-  if (loading) {
+  if (checkingSub || loading) {
     return (
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color={palette.gold.main} />
-        <Text style={styles.loadingText}>Fetching video intros...</Text>
+        <Text style={styles.loadingText}>
+          {checkingSub ? "Checking subscription..." : "Fetching video intros..."}
+        </Text>
+      </View>
+    );
+  }
+
+  if (!isPremium) {
+    return (
+      <View style={styles.paywallContainer}>
+        <StatusBar barStyle="light-content" />
+        <SafeAreaView style={styles.paywallContent} edges={['top', 'left', 'right', 'bottom']}>
+          {/* Back button */}
+          <TouchableOpacity style={styles.paywallBackBtn} onPress={() => navigation.goBack()}>
+            <ArrowLeft size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          <View style={styles.paywallLockCard}>
+            <View style={styles.paywallIconOutline}>
+              <Lock size={44} color={palette.gold.main} />
+            </View>
+
+            <Text style={styles.paywallTitle}>Unlock Video Intros</Text>
+            
+            <Text style={styles.paywallDescription}>
+              Watch short 1-minute visual introductions from matching candidates to quickly understand their style, voice, and expression.
+            </Text>
+
+            <View style={styles.paywallBenefits}>
+              <View style={styles.paywallBenefitRow}>
+                <Star size={18} color={palette.gold.main} />
+                <Text style={styles.paywallBenefitText}>3x more profile responses</Text>
+              </View>
+              <View style={styles.paywallBenefitRow}>
+                <Star size={18} color={palette.gold.main} />
+                <Text style={styles.paywallBenefitText}>Direct visual compatibility check</Text>
+              </View>
+              <View style={styles.paywallBenefitRow}>
+                <Star size={18} color={palette.gold.main} />
+                <Text style={styles.paywallBenefitText}>Available on Diamond & Platinum plans</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.paywallUpgradeBtn}
+              onPress={() => {
+                navigation.navigate("Tabs", { screen: "Premium" });
+              }}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#3B1E54', '#663B8F']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.paywallUpgradeBtnGradient}
+              >
+                <Star size={18} color={palette.gold.main} style={{ marginRight: 8 }} />
+                <Text style={styles.paywallUpgradeBtnText}>Upgrade to Premium</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -502,5 +581,99 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  paywallContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paywallContent: {
+    flex: 1,
+    width: '100%',
+    padding: 24,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  paywallBackBtn: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  paywallLockCard: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(214, 175, 55, 0.3)',
+  },
+  paywallIconOutline: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(214, 175, 55, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: palette.gold.main,
+  },
+  paywallTitle: {
+    fontSize: 22,
+    ...fonts.bold,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  paywallDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  paywallBenefits: {
+    width: '100%',
+    backgroundColor: 'rgba(59, 30, 84, 0.2)',
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(214, 175, 55, 0.15)',
+  },
+  paywallBenefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  paywallBenefitText: {
+    fontSize: 13,
+    ...fonts.semibold,
+    color: '#FFFFFF',
+  },
+  paywallUpgradeBtn: {
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  paywallUpgradeBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  paywallUpgradeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    ...fonts.bold,
   },
 });

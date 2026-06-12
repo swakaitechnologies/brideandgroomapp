@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
-  ArrowLeft, Gift, Copy, Check, Share2, Sparkles, UserCheck, Clock, HelpCircle, Users
+  ArrowLeft, Gift, Copy, Check, Share2, Star, UserCheck, Clock, HelpCircle, Users
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
@@ -164,7 +164,7 @@ export default function ReferralDashboardScreen() {
 
           <View style={styles.statBox}>
             <View style={[styles.statIconCircle, { backgroundColor: 'rgba(214, 175, 55, 0.1)' }]}>
-              <Sparkles size={18} color="#D4AF37" />
+              <Star size={18} color="#D4AF37" />
             </View>
             <Text style={[styles.statVal, { color: '#B58D14' }]}>+{stats.premiumDaysEarned}d</Text>
             <Text style={styles.statLabel}>Premium Gained</Text>

@@ -18,7 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
   ArrowLeft, Video, Trash2, Play, Pause,
-  ShieldAlert, Check, X, Camera, Info, Sparkles, Lock, ShieldCheck, Clock, Gift
+  ShieldAlert, Check, X, Camera, Info, Star, Lock, ShieldCheck, Clock, Gift
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { getProfile, getMySubscription, uploadIntroVideo, deleteIntroVideo } from '../../services/api';
@@ -147,7 +147,7 @@ export default function MyVideoIntroScreen() {
       const result = await launchCamera({
         mediaType: 'video',
         videoQuality: 'high',
-        durationLimit: 15,
+        durationLimit: 60,
       });
 
       if (result.didCancel) return;
@@ -285,20 +285,20 @@ export default function MyVideoIntroScreen() {
             <Text style={[styles.lockedTitle, { color: textColor }]}>Premium Feature Locked</Text>
             
             <Text style={styles.lockedDescription}>
-              Upload a short 15-second voice/video greeting to stand out! Visual intros instantly build compatibility by letting others see your style, posture, and speech.
+              Upload a short 1-minute voice/video greeting to stand out! Visual intros instantly build compatibility by letting others see your style, posture, and speech.
             </Text>
 
             <View style={styles.benefitsContainer}>
               <View style={styles.benefitRow}>
-                <Sparkles size={18} color={accentGold} />
+                <Star size={18} color={accentGold} />
                 <Text style={[styles.benefitText, { color: textColor }]}>3x More Profile Interactions</Text>
               </View>
               <View style={styles.benefitRow}>
-                <Sparkles size={18} color={accentGold} />
+                <Star size={18} color={accentGold} />
                 <Text style={[styles.benefitText, { color: textColor }]}>Instantly Verifies Profile Trust</Text>
               </View>
               <View style={styles.benefitRow}>
-                <Sparkles size={18} color={accentGold} />
+                <Star size={18} color={accentGold} />
                 <Text style={[styles.benefitText, { color: textColor }]}>Celestial Premium Diamond & Platinum Exclusive</Text>
               </View>
             </View>
@@ -347,7 +347,7 @@ export default function MyVideoIntroScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.gradientBtn}
               >
-                <Sparkles size={18} color={accentGold} style={{ marginRight: 8 }} />
+                <Star size={18} color={accentGold} style={{ marginRight: 8 }} />
                 <Text style={styles.upgradeBtnText}>Upgrade to Premium</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -435,7 +435,7 @@ export default function MyVideoIntroScreen() {
               <Video size={48} color={mutedText} />
               <Text style={[styles.placeholderTitle, { color: textColor }]}>No Intro Video Yet</Text>
               <Text style={styles.placeholderSubtitle}>
-                Record or upload a short 15-second voice/video introduction story on your profile.
+                Record or upload a short 1-minute voice/video introduction story on your profile.
               </Text>
             </View>
           )}
@@ -455,7 +455,7 @@ export default function MyVideoIntroScreen() {
               activeOpacity={0.8}
             >
               <Camera size={20} color="#FFFFFF" />
-              <Text style={styles.primaryActionBtnText}>Record 15s Video</Text>
+              <Text style={styles.primaryActionBtnText}>Record 1 min Video</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -487,7 +487,7 @@ export default function MyVideoIntroScreen() {
             <Text style={[styles.guidelinesTitle, { color: textColor }]}>Moderation Guidelines</Text>
           </View>
           <Text style={styles.guidelinesText}>
-            • Video must be strictly under 15 seconds.{'\n'}
+            • Video must be strictly under 1 minute.{'\n'}
             • Speak clearly and present yourself confidently.{'\n'}
             • Ensure good lighting and a quiet background.{'\n'}
             • Inappropriate language, commercial advertisements, or phone numbers in the recording will result in immediate rejection.

@@ -1,5 +1,5 @@
 const logger = require("../utils/logger");
-const { Coupon, SubscriptionPlan } = require("../models/associations");
+const { Coupon, SubscriptionPlan, User } = require("../models/associations");
 const { Op } = require("sequelize");
 
 /**
@@ -31,6 +31,7 @@ exports.createCoupon = async (req, res) => {
       isPromoBanner,
       expiresAt,
       maxUses,
+      userId,
     } = req.body;
 
     if (!code || !description || discountValue === undefined) {
@@ -43,10 +44,22 @@ exports.createCoupon = async (req, res) => {
       return res.status(409).json({ success: false, message: "A coupon with this code already exists" });
     }
 
+    let targetUserId = null;
+    if (userId) {
+      const userExists = await User.findByPk(userId);
+      if (!userExists) {
+        return res.status(404).json({ success: false, message: "User for coupon restriction not found" });
+      }
+      targetUserId = userId;
+    }
+
     // If marked as promo banner, unset isPromoBanner on all other coupons
     if (isPromoBanner) {
       await Coupon.update({ isPromoBanner: false }, { where: {} });
     }
+
+    // Default maxUses to 1 for custom user coupons if not explicitly provided
+    const finalMaxUses = maxUses !== undefined ? maxUses : (targetUserId ? 1 : -1);
 
     const coupon = await Coupon.create({
       code: uppercaseCode,
@@ -56,7 +69,8 @@ exports.createCoupon = async (req, res) => {
       isActive: isActive !== undefined ? isActive : true,
       isPromoBanner: isPromoBanner || false,
       expiresAt: expiresAt || null,
-      maxUses: maxUses !== undefined ? maxUses : -1,
+      maxUses: finalMaxUses,
+      userId: targetUserId,
     });
 
     res.status(201).json({ success: true, coupon });
@@ -177,6 +191,10 @@ exports.validateCoupon = async (req, res) => {
 
     if (!coupon) {
       return res.status(400).json({ success: false, message: "Invalid coupon code" });
+    }
+
+    if (coupon.userId && coupon.userId !== req.userId) {
+      return res.status(400).json({ success: false, message: "This coupon code is not valid for your account" });
     }
 
     if (!coupon.isActive) {

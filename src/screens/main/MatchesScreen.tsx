@@ -22,7 +22,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { 
   Heart, 
-  Sparkles, 
   Search, 
   SlidersHorizontal, 
   MapPin, 
@@ -478,7 +477,7 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
           </View>
 
           <View style={styles.cardInfoDetailRow}>
-            <Sparkles size={13} color="#D4AF37" style={{ marginRight: 6 }} />
+            <Star size={13} color="#D4AF37" style={{ marginRight: 6 }} />
             <Text style={styles.cardInfoDetailText}>
               {(profile.religion || profile.caste) ? `${profile.religion || ""}${profile.caste ? `, ${profile.caste}` : ""}` : "Not Specified"}{profile.motherTongue ? ` • ${profile.motherTongue}` : ""}
             </Text>
@@ -664,7 +663,7 @@ export default function MatchesScreen({ onSubTabChange }: { onSubTabChange?: (su
             style={[styles.tabItem, activeTab === "new" && styles.tabItemActive]}
             onPress={() => setActiveTab("new")}
           >
-            <Sparkles size={12} color={activeTab === "new" ? accentColor : deepPurple} />
+            <Star size={12} color={activeTab === "new" ? accentColor : deepPurple} />
             <Text style={[styles.tabLabel, activeTab === "new" && styles.tabLabelActive]}>New Arrival</Text>
             <View style={[styles.tabBadge, activeTab === "new" ? styles.tabBadgeActive : styles.tabBadgeInactive]}>
               <Text style={[styles.tabBadgeText, activeTab === "new" && styles.tabBadgeTextActive]}>{tabCounts.new}</Text>

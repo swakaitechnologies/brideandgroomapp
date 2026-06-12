@@ -25,7 +25,7 @@ import {
   ChevronRight,
   Crown,
   Clock,
-  Sparkles,
+  Star,
   ShieldCheck,
   BadgeCheck,
   AlertCircle,
@@ -141,7 +141,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
   const [featuredStory, setFeaturedStory] = useState<any>(null);
 
   // Theme-aware colors
-  const themeBg = isDark ? "#0F0F0F" : "#FFFFFF";
+  const themeBg = isDark ? "#0F0F0F" : "#FDFBFF";
   const textColor = isDark ? "#F0F0F0" : "#1A1A1A";
   const mutedText = isDark ? "#A0A0A0" : "#8E8E93";
   const accentColor = palette.gold.main;
@@ -608,7 +608,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             ) : (
               <View style={[styles.promoBanner, { backgroundColor: deepPurple }]}>
                 <View style={styles.promoContent}>
-                  <Sparkles size={32} color={accentColor} />
+                  <Star size={32} color={accentColor} />
                   <View style={{ marginLeft: 15 }}>
                     <Text style={styles.promoTitle}>BrideandGroom Special</Text>
                     <Text style={styles.promoSub}>
@@ -679,7 +679,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             </ScrollView>
           ) : (
             <View style={[styles.emptyStateCard, { backgroundColor: isDark ? '#1E1E1E' : '#FAFAFA' }]}>
-              <Sparkles size={36} color={accentColor} style={{ opacity: 0.6 }} />
+              <Star size={36} color={accentColor} style={{ opacity: 0.6 }} />
               <Text style={[styles.emptyStateTitle, { color: textColor }]}>
                 Premium picks coming soon
               </Text>
@@ -720,7 +720,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                       type="grid"
                       isDark={isDark}
                       layout="vertical"
-                      style={{ width: 150, marginBottom: 0 }}
+                      style={{ width: 150, marginBottom: 8 }}
                       onPress={() => {
                         if (!isBlocked) {
                           navigation.navigate("ProfileDetail", { profile: item });
@@ -837,10 +837,10 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
             >
               <View style={styles.featuredStoryHeader}>
                 <View style={styles.featuredStoryBadge}>
-                  <Sparkles size={10} color="#D4AF37" fill="#D4AF37" />
+                  <Star size={10} color="#D4AF37" fill="#D4AF37" />
                   <Text style={styles.featuredStoryBadgeText}>FEATURED STORY</Text>
                 </View>
-                <Sparkles size={16} color="#D4AF37" />
+                <Star size={16} color="#D4AF37" />
               </View>
 
               <View style={styles.featuredStoryContent}>
@@ -851,7 +851,7 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
                   />
                 ) : (
                   <View style={[styles.featuredStoryThumb, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAF9FC' }]}>
-                    <Sparkles size={24} color="rgba(212, 175, 55, 0.4)" />
+                    <Star size={24} color="rgba(212, 175, 55, 0.4)" />
                   </View>
                 )}
                 <View style={styles.featuredStoryTextContainer}>
@@ -908,6 +908,8 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
               autoPlay
               loop={true}
               style={styles.celebrationLottie}
+              cacheComposition={true}
+              renderMode="HARDWARE"
             />
             <Text style={styles.celebrationTitle}>Welcome to Bride & Groom! 🎉</Text>
             <Text style={styles.celebrationSub}>
@@ -929,6 +931,18 @@ export default function HomeScreen({ setActiveTab }: { setActiveTab?: (tab: stri
           </View>
         </View>
       </Modal>
+
+      {/* Pre-load heavy celebration Lottie animation offscreen to warm up native composition cache */}
+      {!showCelebration && (
+        <View style={{ position: 'absolute', opacity: 0.01, width: 1, height: 1, top: -100, left: -100, overflow: 'hidden' }} pointerEvents="none">
+          <LottieView
+            source={require('../../../assets/animations/c22b3edc-116e-11ee-b29e-6b53b36a56ea.json')}
+            autoPlay={false}
+            loop={false}
+            cacheComposition={true}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1146,7 +1160,7 @@ const styles = StyleSheet.create({
   // Banner
   bannerContainer: {
     marginTop: 24,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   bannerItem: {
     width: width - 40,
@@ -1212,7 +1226,7 @@ const styles = StyleSheet.create({
 
   // Sections
   section: {
-    marginBottom: 35,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",

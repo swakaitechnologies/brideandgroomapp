@@ -26,7 +26,7 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
-  Sparkles,
+  Star,
   Eye,
   EyeOff,
   Shield,
@@ -540,7 +540,7 @@ export default function RegisterScreen() {
             ) : (
               <>
                 <Text style={s.primaryBtnText}>Finish & Join</Text>
-                <Sparkles size={14} color="#FFF" />
+                <Star size={14} color="#FFF" />
               </>
             )}
           </LinearGradient>

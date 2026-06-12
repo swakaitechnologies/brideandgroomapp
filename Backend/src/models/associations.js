@@ -216,6 +216,10 @@ Payment.belongsTo(SubscriptionPlan, { foreignKey: "planId", as: "plan" });
 Coupon.hasMany(Payment, { foreignKey: "couponId", as: "payments" });
 Payment.belongsTo(Coupon, { foreignKey: "couponId", as: "coupon" });
 
+// User <-> Coupon
+User.hasMany(Coupon, { foreignKey: "userId", as: "coupons", onDelete: "CASCADE" });
+Coupon.belongsTo(User, { foreignKey: "userId", as: "user" });
+
 const PhotoRequest = require("./PhotoRequest");
 
 // Photo Request Associations

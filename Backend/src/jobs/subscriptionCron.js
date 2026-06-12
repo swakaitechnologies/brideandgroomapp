@@ -25,7 +25,50 @@ async function checkExpiries() {
   const now = new Date();
 
   try {
-    // === 1. Send 3-day expiry reminders ===
+    // === 1. Send 7-day expiry reminders ===
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysStart = new Date(sevenDaysFromNow);
+    sevenDaysStart.setHours(0, 0, 0, 0);
+    const sevenDaysEnd = new Date(sevenDaysFromNow);
+    sevenDaysEnd.setHours(23, 59, 59, 999);
+
+    const expiringSevenDays = await Subscription.findAll({
+      where: {
+        status: { [Op.in]: ["active", "trialing"] },
+        endDate: { [Op.between]: [sevenDaysStart, sevenDaysEnd] },
+      },
+      include: [
+        { model: SubscriptionPlan, as: "plan", attributes: ["name"] },
+        { model: User, as: "user", attributes: ["id", "email", "firstName"] },
+      ],
+    });
+
+    for (const sub of expiringSevenDays) {
+      const user = sub.user;
+      const planName = sub.plan ? sub.plan.name : "Premium";
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      const formattedDate = new Date(sub.endDate).toLocaleDateString('en-US', options);
+
+      // Push notification
+      await sendNotification({
+        receiverId: user.id,
+        type: "plan_expiring_soon",
+        message: `⏰ Your ${planName} plan is going to expire in 7 days on ${formattedDate}. Renew now to keep your premium features!`,
+      });
+
+      // Email notification
+      if (sendPlanExpiryEmail && user.email) {
+        try {
+          await sendPlanExpiryEmail(user.email, user.firstName, planName, sub.endDate, true);
+        } catch (emailErr) {
+          logger.error(`[CRON] Failed to send 7-day expiry reminder email to ${user.email}:`, emailErr.message);
+        }
+      }
+
+      logger.info(`[CRON] Sent 7-day expiry reminder to user ${user.id} for ${planName} plan.`);
+    }
+
+    // === 2. Send 3-day expiry reminders ===
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const threeDaysStart = new Date(threeDaysFromNow);
     threeDaysStart.setHours(0, 0, 0, 0);
@@ -50,7 +93,7 @@ async function checkExpiries() {
       // Push notification
       await sendNotification({
         receiverId: user.id,
-        type: "feedback",
+        type: "plan_expiring_soon",
         message: `⏰ Your ${planName} plan is expiring in 3 days! Renew now to keep your premium features.`,
       });
 
@@ -59,14 +102,14 @@ async function checkExpiries() {
         try {
           await sendPlanExpiryEmail(user.email, user.firstName, planName, sub.endDate, true);
         } catch (emailErr) {
-          logger.error(`[CRON] Failed to send expiry reminder email to ${user.email}:`, emailErr.message);
+          logger.error(`[CRON] Failed to send 3-day expiry reminder email to ${user.email}:`, emailErr.message);
         }
       }
 
       logger.info(`[CRON] Sent 3-day expiry reminder to user ${user.id} for ${planName} plan.`);
     }
 
-    // === 2. Mark expired subscriptions ===
+    // === 3. Mark expired subscriptions ===
     const expiredSubs = await Subscription.findAll({
       where: {
         status: { [Op.in]: ["active", "trialing"] },
@@ -93,7 +136,7 @@ async function checkExpiries() {
       // Push notification
       await sendNotification({
         receiverId: user.id,
-        type: "feedback",
+        type: "plan_expiry",
         message: `Your ${planName} plan has expired. Upgrade now to continue enjoying premium features!`,
       });
 
@@ -109,8 +152,8 @@ async function checkExpiries() {
       logger.info(`[CRON] Expired subscription for user ${user.id} (${planName}).`);
     }
 
-    if (expiringSoon.length > 0 || expiredSubs.length > 0) {
-      logger.info(`[CRON] Subscription sweep complete: ${expiringSoon.length} reminders sent, ${expiredSubs.length} subscriptions expired.`);
+    if (expiringSevenDays.length > 0 || expiringSoon.length > 0 || expiredSubs.length > 0) {
+      logger.info(`[CRON] Subscription sweep complete: ${expiringSevenDays.length} 7-day reminders, ${expiringSoon.length} 3-day reminders sent, ${expiredSubs.length} subscriptions expired.`);
     }
   } catch (err) {
     logger.error("[CRON] Subscription expiry check failed:", err);

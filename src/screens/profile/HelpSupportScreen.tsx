@@ -67,17 +67,35 @@ const FAQ_DATA = [
   {
     id: 3,
     question: 'What benefits do premium plans provide?',
-    answer: 'Our premium subscription plans offer extra features. Gold plan allows you to reveal contact details for 15 matches. Diamond plan allows 50 contact reveals and highlights your profile in search results. Platinum plan allows 100 contact reveals and assigns you a VIP spotlight badge.',
+    answer: 'Our premium plans allow you to reveal contact details (phone and email) of match profiles, watch match video introductions, display VIP badges, and increase your overall profile visibility by up to 3x.',
     category: 'subscription'
   },
   {
     id: 4,
+    question: 'What is the 100% Money-Back Guarantee?',
+    answer: 'If you upgrade to premium and do not receive any match interests or response messages within 30 days, we will issue a full refund. Terms and conditions apply.',
+    category: 'subscription'
+  },
+  {
+    id: 5,
+    question: 'How long is my subscription valid?',
+    answer: 'Depending on your selected tier, subscriptions are valid for 90 Days (3 Months), 180 Days (6 Months), or 365 Days (1 Year). You can check your active plan validity directly in your Dashboard.',
+    category: 'subscription'
+  },
+  {
+    id: 6,
+    question: 'Are payment transactions secure?',
+    answer: 'Absolutely. All payment transactions are securely processed and fully encrypted via industry-standard protocols, supporting UPI, credit/debit cards, net banking, and wallets.',
+    category: 'subscription'
+  },
+  {
+    id: 7,
     question: 'How do I deactivate or delete my account?',
     answer: 'If you want a temporary break, navigate to "Account Settings" and toggle "Deactivate Profile". This hides you from recommendations and search lists. To delete your account permanently, tap "Delete Account" in the Danger Zone and confirm your password.',
     category: 'account'
   },
   {
-    id: 5,
+    id: 8,
     question: 'Is my personal data safe on the app?',
     answer: 'Absolutely. We use industry-standard encryption protocols to secure your private chat messages, database records, and authentication details. We do not sell your personal data or profile logs to third-party ad networks.',
     category: 'security'
@@ -150,33 +168,19 @@ export default function HelpSupportScreen() {
     setReportModalVisible(true);
   };
 
-  // Custom Alert State
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'confirm' | 'info';
-    onConfirm?: () => void;
-  }>({
-    visible: false,
-    title: '',
-    message: '',
-    type: 'info',
-  });
-
   const showAlert = (
     title: string,
     message: string,
     type: 'success' | 'error' | 'confirm' | 'info' = 'info',
     onConfirm?: () => void
   ) => {
-    setAlertConfig({
-      visible: true,
+    Alert.alert(
       title,
       message,
-      type,
-      onConfirm,
-    });
+      [
+        { text: 'OK', onPress: onConfirm }
+      ]
+    );
   };
 
   // Fetch Ticket History from backend
@@ -1045,31 +1049,6 @@ export default function HelpSupportScreen() {
         </View>
       </Modal>
 
-      {/* Custom Alert Modal */}
-      <Modal visible={alertConfig.visible} transparent={true} animationType="fade">
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertCard}>
-            <View style={styles.alertIconWrapper}>
-              {alertConfig.type === 'success' && <CheckCircle size={40} color="#4CAF50" />}
-              {alertConfig.type === 'error' && <XCircle size={40} color={palette.status.error} />}
-              {alertConfig.type === 'info' && <AlertCircle size={40} color={palette.purple.muted} />}
-            </View>
-            <Text style={styles.alertTitle}>{alertConfig.title}</Text>
-            <Text style={styles.alertMessage}>{alertConfig.message}</Text>
-            <View style={styles.alertBtnContainer}>
-              <TouchableOpacity
-                style={styles.alertBtnSingle}
-                onPress={() => {
-                  setAlertConfig(prev => ({ ...prev, visible: false }));
-                  if (alertConfig.onConfirm) alertConfig.onConfirm();
-                }}
-              >
-                <Text style={styles.alertBtnTextPrimary}>OK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Report Details Modal Popup */}
       <Modal
@@ -1802,60 +1781,7 @@ const styles = StyleSheet.create({
     color: palette.purple.deep,
     ...fonts.medium,
   },
-  // Custom Alert Modal Overlays
-  alertOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertCard: {
-    width: 280,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: palette.purple.border,
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  alertIconWrapper: {
-    marginBottom: 15,
-  },
-  alertTitle: {
-    fontSize: 16,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  alertMessage: {
-    fontSize: 13,
-    color: palette.purple.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  alertBtnContainer: {
-    width: '100%',
-  },
-  alertBtnSingle: {
-    width: '100%',
-    backgroundColor: palette.purple.deep,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertBtnTextPrimary: {
-    color: '#FFFFFF',
-    ...fonts.semibold,
-    fontSize: 14,
-  },
+
   subTabContainer: {
     flexDirection: 'row',
     backgroundColor: '#FAF9FC',

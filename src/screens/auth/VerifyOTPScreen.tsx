@@ -27,7 +27,7 @@ import {
   ArrowRight,
   Phone,
   Crown,
-  Sparkles,
+  Star,
 } from "lucide-react-native";
 import { palette } from "../../theme/colors";
 import LinearGradient from "react-native-linear-gradient";
@@ -334,6 +334,8 @@ export default function VerifyOTPScreen() {
             style={styles.confettiAnimation}
             autoPlay={false}
             loop={false}
+            cacheComposition={true}
+            renderMode="HARDWARE"
           />
 
           <Animated.View
@@ -359,7 +361,7 @@ export default function VerifyOTPScreen() {
               </Text>
 
               <View style={promoDetails ? styles.promoBadge : { display: "none" }}>
-                <Sparkles size={16} color="#D4AF37" style={{ marginRight: 6 }} />
+                <Star size={16} color="#D4AF37" style={{ marginRight: 6 }} />
                 <Text style={styles.promoBadgeText}>
                   {promoDetails?.planName || "Diamond"} Premium
                 </Text>

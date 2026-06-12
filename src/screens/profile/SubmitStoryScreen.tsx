@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
-  ArrowLeft, Heart, Calendar, FileText, Image as ImageIcon, Sparkles, X, Camera, CheckCircle2
+  ArrowLeft, Heart, Calendar, FileText, Image as ImageIcon, Star, X, Camera, CheckCircle2
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { fonts } from '@/src/theme';
@@ -259,7 +259,7 @@ export default function SubmitStoryScreen() {
           {isApproved && (
             <View style={styles.approvedCard}>
               <View style={styles.liveBadge}>
-                <Sparkles size={14} color="#D4AF37" />
+                <Star size={14} color="#D4AF37" />
                 <Text style={styles.liveBadgeText}>APPROVED & LIVE</Text>
               </View>
               
@@ -394,7 +394,7 @@ export default function SubmitStoryScreen() {
             style={styles.bannerCard}
           >
             <View style={styles.bannerHeader}>
-              <Sparkles size={24} color={palette.gold.main} />
+              <Star size={24} color={palette.gold.main} />
               <Text style={styles.bannerSubtitle}>We'd Love to Celebrate You!</Text>
             </View>
             <Text style={styles.bannerDescription}>
@@ -541,7 +541,7 @@ export default function SubmitStoryScreen() {
                 ) : (
                   <>
                     <Text style={styles.submitBtnText}>Submit Success Story</Text>
-                    <Sparkles size={16} color={palette.gold.main} />
+                    <Star size={16} color={palette.gold.main} />
                   </>
                 )}
               </LinearGradient>

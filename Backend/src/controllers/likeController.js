@@ -1,5 +1,6 @@
 const { Like, Profile, Photo, User, Block } = require("../models/associations");
 const { Op } = require("sequelize");
+const { sendNotification } = require("../utils/notificationHelper");
 
 exports.toggleLike = async (req, res) => {
   console.log(`[DEBUG] Attempting Like Toggle. Body:`, req.body);
@@ -24,6 +25,19 @@ exports.toggleLike = async (req, res) => {
       return res.status(200).json({ success: true, message: "Removed from likes", isLiked: false });
     } else {
       await Like.create({ userId, likedId });
+
+      // Send notification to the liked user
+      try {
+        await sendNotification({
+          receiverId: likedId,
+          senderId: userId,
+          type: "like",
+          message: "Someone liked your profile."
+        });
+      } catch (err) {
+        console.error("Failed to send like notification:", err);
+      }
+
       return res.status(201).json({ success: true, message: "Added to likes", isLiked: true });
     }
   } catch (error) {

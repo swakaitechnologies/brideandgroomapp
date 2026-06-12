@@ -78,4 +78,23 @@ foreach ($folder in $notificationSizes.Keys) {
     Resize-Image -SourcePath $source -TargetPath $target -Width $size -Height $size
 }
 
+# 3. iOS Launcher Icons
+$iosAppIconDir = "p:\BrideandGroom\ios\BrideandGroom\Images.xcassets\AppIcon.appiconset"
+$iosIcons = @(
+    @{ filename = "AppIcon-20x20@2x.png"; width = 40; height = 40 }
+    @{ filename = "AppIcon-20x20@3x.png"; width = 60; height = 60 }
+    @{ filename = "AppIcon-29x29@2x.png"; width = 58; height = 58 }
+    @{ filename = "AppIcon-29x29@3x.png"; width = 87; height = 87 }
+    @{ filename = "AppIcon-40x40@2x.png"; width = 80; height = 80 }
+    @{ filename = "AppIcon-40x40@3x.png"; width = 120; height = 120 }
+    @{ filename = "AppIcon-60x60@2x.png"; width = 120; height = 120 }
+    @{ filename = "AppIcon-60x60@3x.png"; width = 180; height = 180 }
+    @{ filename = "AppIcon-1024x1024@1x.png"; width = 1024; height = 1024 }
+)
+
+foreach ($icon in $iosIcons) {
+    $targetPath = Join-Path $iosAppIconDir $icon.filename
+    Resize-Image -SourcePath $source -TargetPath $targetPath -Width $icon.width -Height $icon.height
+}
+
 Write-Host "Icon generation completed successfully!"

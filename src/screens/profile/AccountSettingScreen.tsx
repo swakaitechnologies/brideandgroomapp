@@ -12,6 +12,7 @@ import {
   FlatList,
   Clipboard,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -22,24 +23,25 @@ import {
   CheckCircle, XCircle, AlertCircle, HelpCircle,
   Copy, Check, Mail, Phone, Calendar, Trash2,
   Eye, EyeOff, Ban, Monitor, Smartphone, LogOut,
-  Gift, Share2
+  Gift, Share2, Crown
 } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
-import { 
-  getBlockedUsers, 
-  unblockUser, 
-  getMe, 
-  getProfile, 
-  getPrivacySettings, 
-  resendVerificationEmail, 
-  updateAccountInfo, 
-  updateNominee, 
-  exportUserData, 
-  getActiveSessions, 
-  logoutOtherSessions, 
-  changePassword, 
-  updatePrivacySettings, 
-  deleteAccount 
+import {
+  getBlockedUsers,
+  unblockUser,
+  getMe,
+  getProfile,
+  getPrivacySettings,
+  resendVerificationEmail,
+  updateAccountInfo,
+  updateNominee,
+  exportUserData,
+  getActiveSessions,
+  logoutOtherSessions,
+  changePassword,
+  updatePrivacySettings,
+  deleteAccount,
+  getMySubscription
 } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { secureStorage } from '../../services/secureStorage';
@@ -47,11 +49,28 @@ import { logout } from '../../store/authSlice';
 import { fonts } from "@/src/theme";
 import { setAnalyticsConsent, TrackService } from '../../services/analyticsService';
 
+export interface PickerOption {
+  label: string;
+  value: string;
+}
+
 // Options definitions for Privacy settings
 const VISIBILITY_OPTIONS = ['Everyone', 'Members', 'Interacted'];
-const PHOTO_VISIBILITY_OPTIONS = ['All', 'Verified', 'Selected', 'None'];
-const PHONE_VISIBILITY_OPTIONS = ['Hidden', 'Matches', 'Paid'];
-const EMAIL_VISIBILITY_OPTIONS = ['Hidden', 'Matches'];
+const PHOTO_VISIBILITY_OPTIONS: PickerOption[] = [
+  { label: 'Visible to All Members', value: 'All' },
+  { label: 'Premium Members Only', value: 'Verified' },
+  { label: 'Members I Liked', value: 'Selected' },
+  { label: 'My Matches Only', value: 'None' },
+];
+const PHONE_VISIBILITY_OPTIONS: PickerOption[] = [
+  { label: 'Hidden from Everyone', value: 'Hidden' },
+  { label: 'Visible to Matches Only', value: 'Matches' },
+  { label: 'Premium Members Only', value: 'Paid' },
+];
+const EMAIL_VISIBILITY_OPTIONS: PickerOption[] = [
+  { label: 'Hidden from Everyone', value: 'Hidden' },
+  { label: 'Visible to Matches Only', value: 'Matches' },
+];
 
 export default function AccountSettingScreen() {
   const navigation = useNavigation<any>();
@@ -157,13 +176,13 @@ export default function AccountSettingScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Privacy & Settings States
-  const [profileVisibility, setProfileVisibility] = useState('Everyone');
   const [photoVisibility, setPhotoVisibility] = useState('All');
   const [photoLock, setPhotoLock] = useState(false);
   const [phoneVisibility, setPhoneVisibility] = useState('Matches');
   const [emailVisibility, setEmailVisibility] = useState('Hidden');
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [isDeactivated, setIsDeactivated] = useState(false);
+  const [isProfilePaused, setIsProfilePaused] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
   // Notification Preference States
   const [notifyInterests, setNotifyInterests] = useState(true);
@@ -174,7 +193,7 @@ export default function AccountSettingScreen() {
   // Modal Picker States
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerTitle, setPickerTitle] = useState('');
-  const [pickerOptions, setPickerOptions] = useState<string[]>([]);
+  const [pickerOptions, setPickerOptions] = useState<PickerOption[]>([]);
   const [pickerSelectedVal, setPickerSelectedVal] = useState('');
   const [pickerSaveTarget, setPickerSaveTarget] = useState('');
 
@@ -183,23 +202,6 @@ export default function AccountSettingScreen() {
   const [deletePassword, setDeletePassword] = useState(false);
   const [confirmPasswordText, setConfirmPasswordText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
-
-  // Custom Alert State
-  const [alertConfig, setAlertConfig] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    type: 'success' | 'error' | 'confirm' | 'info';
-    onConfirm?: () => void;
-    onCancel?: () => void;
-    confirmText?: string;
-    cancelText?: string;
-  }>({
-    visible: false,
-    title: '',
-    message: '',
-    type: 'info',
-  });
 
   const showAlert = (
     title: string,
@@ -210,16 +212,24 @@ export default function AccountSettingScreen() {
     confirmText = 'OK',
     cancelText = 'Cancel'
   ) => {
-    setAlertConfig({
-      visible: true,
-      title,
-      message,
-      type,
-      onConfirm,
-      onCancel,
-      confirmText,
-      cancelText,
-    });
+    if (type === 'confirm') {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: cancelText, onPress: onCancel, style: 'cancel' },
+          { text: confirmText, onPress: onConfirm }
+        ]
+      );
+    } else {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: confirmText, onPress: onConfirm }
+        ]
+      );
+    }
   };
 
   // Fetch initial data
@@ -260,14 +270,13 @@ export default function AccountSettingScreen() {
       const privacyResult = privacyRes.data;
       if (privacyResult && privacyResult.success && privacyResult.data) {
         const p = privacyResult.data;
-        setProfileVisibility(p.profileVisibility || 'Everyone');
         setPhotoVisibility(p.photoVisibility || 'All');
         setPhotoLock(!!p.photoLock);
         setPhoneVisibility(p.phoneVisibility || 'Matches');
         setEmailVisibility(p.emailVisibility || 'Hidden');
-        setTwoFactorEnabled(!!p.twoFactorEnabled);
         setIsDeactivated(!!p.isDeactivated);
-        
+        setIsProfilePaused(!!p.isProfilePaused);
+
         // Consent settings (granular purposing)
         if (p.consentMatchmaking !== undefined) setConsentMatchmaking(!!p.consentMatchmaking);
         if (p.consentPhotoProcessing !== undefined) setConsentPhotoProcessing(!!p.consentPhotoProcessing);
@@ -275,12 +284,24 @@ export default function AccountSettingScreen() {
           setConsentAnalytics(!!p.consentAnalytics);
           setAnalyticsConsent(!!p.consentAnalytics);
         }
-        
+
         // Notifications settings (unified in PrivacySetting model)
         if (p.notifyInterests !== undefined) setNotifyInterests(!!p.notifyInterests);
         if (p.notifyMessages !== undefined) setNotifyMessages(!!p.notifyMessages);
         if (p.notifyContactRequests !== undefined) setNotifyContactRequests(!!p.notifyContactRequests);
         if (p.notifyShortlists !== undefined) setNotifyShortlists(!!p.notifyShortlists);
+      }
+
+      // 4. Fetch subscription to check premium status
+      try {
+        const subRes = await getMySubscription();
+        if (subRes && subRes.data && subRes.data.success && subRes.data.subscription) {
+          const sub = subRes.data.subscription;
+          const isSubActive = sub.endDate && new Date(sub.endDate) > new Date();
+          setIsPremium(!!isSubActive);
+        }
+      } catch (subErr) {
+        console.error('fetchSubscription error in AccountSettings:', subErr);
       }
     } catch (error) {
       console.error('Fetch Account Settings Error:', error);
@@ -405,8 +426,8 @@ export default function AccountSettingScreen() {
         const dataStr = JSON.stringify(result.data, null, 2);
         Clipboard.setString(dataStr);
         showAlert(
-          'Data Exported', 
-          'All your personal profile data, settings, preferences, payments, and feedbacks have been securely compiled and copied to your clipboard. You can paste it into any notes app or document editor.', 
+          'Data Exported',
+          'All your personal profile data, settings, preferences, payments, and feedbacks have been securely compiled and copied to your clipboard. You can paste it into any notes app or document editor.',
           'success'
         );
         TrackService.trackEvent('download_user_data_export_success');
@@ -525,7 +546,7 @@ export default function AccountSettingScreen() {
   };
 
   // Handle Visibility Dropdown selections
-  const openSinglePicker = (title: string, options: string[], currentVal: string, target: string) => {
+  const openSinglePicker = (title: string, options: PickerOption[], currentVal: string, target: string) => {
     setPickerTitle(title);
     setPickerOptions(options);
     setPickerSelectedVal(currentVal);
@@ -533,25 +554,54 @@ export default function AccountSettingScreen() {
     setPickerVisible(true);
   };
 
-  const handleSingleSelect = (item: string) => {
+  const handleSingleSelect = (val: string) => {
     setPickerVisible(false);
     switch (pickerSaveTarget) {
-      case 'profileVisibility':
-        setProfileVisibility(item);
-        updateSetting({ profileVisibility: item });
-        break;
       case 'photoVisibility':
-        setPhotoVisibility(item);
-        updateSetting({ photoVisibility: item });
+        setPhotoVisibility(val);
+        updateSetting({ photoVisibility: val });
         break;
       case 'phoneVisibility':
-        setPhoneVisibility(item);
-        updateSetting({ phoneVisibility: item });
+        setPhoneVisibility(val);
+        updateSetting({ phoneVisibility: val });
         break;
       case 'emailVisibility':
-        setEmailVisibility(item);
-        updateSetting({ emailVisibility: item });
+        setEmailVisibility(val);
+        updateSetting({ emailVisibility: val });
         break;
+    }
+  };
+
+  // Profile Pause (Smart Profile Hiding) Toggle Handler
+  const handleProfilePauseToggle = async (val: boolean) => {
+    if (!isPremium) {
+      showAlert(
+        'Premium Feature',
+        'Smart Profile Hiding is a premium-exclusive feature. Upgrade to one of our premium plans (Silver, Gold, Diamond, Platinum) to access this feature!',
+        'confirm',
+        () => {
+          navigation.navigate('Tabs', { screen: 'Premium' });
+        },
+        undefined,
+        'View Plans',
+        'Cancel'
+      );
+      return;
+    }
+
+    setIsProfilePaused(val);
+    try {
+      const token = await secureStorage.getItem('token');
+      const response = await updatePrivacySettings({ isProfilePaused: val });
+      const result = response.data;
+      if (!result.success) {
+        showAlert('Error', result.message || 'Failed to update smart hiding setting.', 'error');
+        setIsProfilePaused(!val); // revert switch state
+      }
+    } catch (error) {
+      console.error(error);
+      showAlert('Error', 'Network request failed. Could not save setting.', 'error');
+      setIsProfilePaused(!val); // revert switch state
     }
   };
 
@@ -630,24 +680,24 @@ export default function AccountSettingScreen() {
 
       {/* Tab Segment Controls */}
       <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'general' && styles.activeTabButton]} 
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'general' && styles.activeTabButton]}
           onPress={() => setActiveTab('general')}
           activeOpacity={0.8}
         >
           <User size={16} color={activeTab === 'general' ? palette.gold.main : palette.purple.muted} style={{ marginRight: 6 }} />
           <Text style={[styles.tabButtonText, activeTab === 'general' && styles.activeTabButtonText]}>General</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'privacy' && styles.activeTabButton]} 
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'privacy' && styles.activeTabButton]}
           onPress={() => setActiveTab('privacy')}
           activeOpacity={0.8}
         >
           <Shield size={16} color={activeTab === 'privacy' ? palette.gold.main : palette.purple.muted} style={{ marginRight: 6 }} />
           <Text style={[styles.tabButtonText, activeTab === 'privacy' && styles.activeTabButtonText]}>Privacy</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'security' && styles.activeTabButton]} 
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'security' && styles.activeTabButton]}
           onPress={() => setActiveTab('security')}
           activeOpacity={0.8}
         >
@@ -854,8 +904,8 @@ export default function AccountSettingScreen() {
                 Invite friends to join Bride & Groom Matrimony. Both of you will get 15 days of free premium features when they sign up and verify their account!
               </Text>
 
-              <TouchableOpacity 
-                style={[styles.saveBtn, { backgroundColor: palette.gold.main, borderColor: palette.gold.main }]} 
+              <TouchableOpacity
+                style={[styles.saveBtn, { backgroundColor: palette.gold.main, borderColor: palette.gold.main }]}
                 onPress={() => navigation.navigate('ReferralDashboard')}
               >
                 <Share2 size={18} color={palette.purple.deep} style={{ marginRight: 6 }} />
@@ -875,23 +925,14 @@ export default function AccountSettingScreen() {
 
             {/* Visibility Dropdown Fields */}
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Profile Visibility</Text>
-              <TouchableOpacity
-                style={styles.dropdownTrigger}
-                onPress={() => openSinglePicker('Profile Visibility', VISIBILITY_OPTIONS, profileVisibility, 'profileVisibility')}
-              >
-                <Text style={styles.dropdownText}>{profileVisibility}</Text>
-                <ChevronDown size={20} color={palette.gold.main} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.inputWrapper}>
               <Text style={styles.label}>Photo Visibility</Text>
               <TouchableOpacity
                 style={styles.dropdownTrigger}
                 onPress={() => openSinglePicker('Photo Visibility', PHOTO_VISIBILITY_OPTIONS, photoVisibility, 'photoVisibility')}
               >
-                <Text style={styles.dropdownText}>{photoVisibility}</Text>
+                <Text style={styles.dropdownText}>
+                  {PHOTO_VISIBILITY_OPTIONS.find(o => o.value === photoVisibility)?.label || photoVisibility}
+                </Text>
                 <ChevronDown size={20} color={palette.gold.main} />
               </TouchableOpacity>
             </View>
@@ -918,7 +959,9 @@ export default function AccountSettingScreen() {
                 style={styles.dropdownTrigger}
                 onPress={() => openSinglePicker('Phone Visibility', PHONE_VISIBILITY_OPTIONS, phoneVisibility, 'phoneVisibility')}
               >
-                <Text style={styles.dropdownText}>{phoneVisibility}</Text>
+                <Text style={styles.dropdownText}>
+                  {PHONE_VISIBILITY_OPTIONS.find(o => o.value === phoneVisibility)?.label || phoneVisibility}
+                </Text>
                 <ChevronDown size={20} color={palette.gold.main} />
               </TouchableOpacity>
             </View>
@@ -929,23 +972,31 @@ export default function AccountSettingScreen() {
                 style={styles.dropdownTrigger}
                 onPress={() => openSinglePicker('Email Visibility', EMAIL_VISIBILITY_OPTIONS, emailVisibility, 'emailVisibility')}
               >
-                <Text style={styles.dropdownText}>{emailVisibility}</Text>
+                <Text style={styles.dropdownText}>
+                  {EMAIL_VISIBILITY_OPTIONS.find(o => o.value === emailVisibility)?.label || emailVisibility}
+                </Text>
                 <ChevronDown size={20} color={palette.gold.main} />
               </TouchableOpacity>
             </View>
 
+            {/* Smart Profile Hiding (Pause Profile) - Premium Exclusive */}
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleLabel}>Two-Factor Authentication</Text>
-                <Text style={styles.toggleHint}>Secure your account updates with verification codes.</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+                  <Text style={styles.toggleLabel}>Smart Profile Hiding (Pause)</Text>
+                  {!isPremium && (
+                    <View style={styles.premiumBadge}>
+                      <Crown size={10} color="#FFFFFF" style={{ marginRight: 2 }} />
+                      <Text style={styles.premiumBadgeText}>PRO</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.toggleHint}>Temporarily hide your profile from matchmaking and feeds without deactivating. (Premium Exclusive)</Text>
               </View>
               <Switch
-                value={twoFactorEnabled}
-                onValueChange={(val) => {
-                  setTwoFactorEnabled(val);
-                  updateSetting({ twoFactorEnabled: val });
-                }}
-                thumbColor={twoFactorEnabled ? palette.gold.main : '#E8E0F0'}
+                value={isProfilePaused}
+                onValueChange={handleProfilePauseToggle}
+                thumbColor={isProfilePaused ? palette.gold.main : '#E8E0F0'}
                 trackColor={{ false: '#E8E0F0', true: 'rgba(212, 175, 55, 0.4)' }}
               />
             </View>
@@ -953,7 +1004,7 @@ export default function AccountSettingScreen() {
             {/* Granular Consent Purposing */}
             <View style={styles.divider} />
             <Text style={[styles.label, { marginBottom: 10 }]}>Granular Consent PURPOSES (DPDP)</Text>
-            
+
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.toggleLabel}>Matchmaking & Compatibility</Text>
@@ -1082,8 +1133,8 @@ export default function AccountSettingScreen() {
         {/* Section 4.5: Blocked Profiles */}
         {activeTab === 'privacy' && (
           <View style={styles.card}>
-            <TouchableOpacity 
-              style={[styles.cardHeader, { marginBottom: blockedExpanded ? 15 : 0 }]} 
+            <TouchableOpacity
+              style={[styles.cardHeader, { marginBottom: blockedExpanded ? 15 : 0 }]}
               onPress={toggleBlockedSection}
               activeOpacity={0.7}
             >
@@ -1091,10 +1142,10 @@ export default function AccountSettingScreen() {
                 <Ban size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
                 <Text style={styles.cardTitle}>Blocked Profiles</Text>
               </View>
-              <ChevronDown 
-                size={20} 
-                color={palette.purple.muted} 
-                style={{ transform: [{ rotate: blockedExpanded ? '180deg' : '0deg' }] }} 
+              <ChevronDown
+                size={20}
+                color={palette.purple.muted}
+                style={{ transform: [{ rotate: blockedExpanded ? '180deg' : '0deg' }] }}
               />
             </TouchableOpacity>
 
@@ -1106,19 +1157,19 @@ export default function AccountSettingScreen() {
                   <Text style={styles.noBlockedText}>No blocked profiles found.</Text>
                 ) : (
                   blockedUsers.map((item) => {
-                    const name = item.profile 
-                      ? `${item.profile.firstName || ''} ${item.profile.lastName || ''}`.trim() 
+                    const name = item.profile
+                      ? `${item.profile.firstName || ''} ${item.profile.lastName || ''}`.trim()
                       : 'Blocked User';
                     const customId = item.profile?.customId || `ID: ${item.userId}`;
-                    
+
                     return (
                       <View key={item.userId} style={styles.blockedRow}>
                         <View style={{ flex: 1, marginRight: 10 }}>
                           <Text style={styles.blockedName}>{name}</Text>
                           <Text style={styles.blockedIdText}>{customId}</Text>
                         </View>
-                        <TouchableOpacity 
-                          style={styles.unblockBtn} 
+                        <TouchableOpacity
+                          style={styles.unblockBtn}
                           onPress={() => handleUnblockUser(item.userId)}
                         >
                           <Text style={styles.unblockBtnText}>Unblock</Text>
@@ -1139,11 +1190,11 @@ export default function AccountSettingScreen() {
               <User size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
               <Text style={styles.cardTitle}>Matrimonial Nominee Setup</Text>
             </View>
-            
+
             <Text style={styles.toggleHint}>
               Under Section 14 of the DPDP Act 2023, you have the right to nominate any individual to operate or manage your account profile in the event of death or incapacity.
             </Text>
-            
+
             <View style={[styles.inputWrapper, { marginTop: 15 }]}>
               <Text style={styles.label}>Nominee Full Name</Text>
               <TextInput
@@ -1154,7 +1205,7 @@ export default function AccountSettingScreen() {
                 onChangeText={setNomineeName}
               />
             </View>
-            
+
             <View style={styles.inputWrapper}>
               <Text style={styles.label}>Nominee Contact Info (Email or Phone)</Text>
               <TextInput
@@ -1165,7 +1216,7 @@ export default function AccountSettingScreen() {
                 onChangeText={setNomineeContact}
               />
             </View>
-            
+
             <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNominee} disabled={savingNominee}>
               {savingNominee ? (
                 <ActivityIndicator size="small" color={palette.purple.deep} />
@@ -1187,14 +1238,14 @@ export default function AccountSettingScreen() {
                 <Shield size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
                 <Text style={styles.cardTitle}>Data Portability (Right to Access)</Text>
               </View>
-              
+
               <Text style={styles.toggleHint}>
                 Under Section 11 of the DPDP Act 2023, you have the right to access and download a portable copy of all personal data we process about you.
               </Text>
-              
-              <TouchableOpacity 
-                style={[styles.saveBtn, { backgroundColor: palette.purple.deep, marginTop: 15 }]} 
-                onPress={handleDownloadData} 
+
+              <TouchableOpacity
+                style={[styles.saveBtn, { backgroundColor: palette.purple.deep, marginTop: 15 }]}
+                onPress={handleDownloadData}
                 disabled={exportingData}
               >
                 {exportingData ? (
@@ -1214,11 +1265,11 @@ export default function AccountSettingScreen() {
                 <Monitor size={20} color={palette.gold.main} style={{ marginRight: 8 }} />
                 <Text style={styles.cardTitle}>Active Login Sessions</Text>
               </View>
-              
+
               <Text style={styles.toggleHint}>
                 Manage and review your active login sessions on different devices. You can log out of all other devices if you notice any unrecognized activity.
               </Text>
-              
+
               {sessionsLoading ? (
                 <ActivityIndicator size="small" color={palette.gold.main} style={{ marginVertical: 20 }} />
               ) : (
@@ -1237,8 +1288,8 @@ export default function AccountSettingScreen() {
                           <Smartphone size={20} color={isCurrent ? palette.gold.main : palette.purple.muted} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.sessionDevice} numberOfLines={1}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1 }}>
+                            <Text style={styles.sessionDevice}>
                               {session.deviceSignature || 'Unknown Device'}
                             </Text>
                             {isCurrent && (
@@ -1254,7 +1305,7 @@ export default function AccountSettingScreen() {
                       </View>
                     );
                   })}
-                  
+
                   {sessions.length > 1 && (
                     <TouchableOpacity
                       style={[styles.saveBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: palette.purple.border, marginTop: 15 }]}
@@ -1316,24 +1367,26 @@ export default function AccountSettingScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{pickerTitle}</Text>
-              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+              <View style={{ flex: 1, marginRight: 15 }}>
+                <Text style={styles.modalTitle} numberOfLines={1} ellipsizeMode="tail">{pickerTitle}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setPickerVisible(false)} style={{ flexShrink: 0 }}>
                 <Text style={styles.modalCloseText}>Cancel</Text>
               </TouchableOpacity>
             </View>
 
             <FlatList
               data={pickerOptions}
-              keyExtractor={(item) => item}
+              keyExtractor={(item) => item.value}
               renderItem={({ item }) => {
-                const isSelected = pickerSelectedVal === item;
+                const isSelected = pickerSelectedVal === item.value;
                 return (
                   <TouchableOpacity
                     style={[styles.optionItem, isSelected && styles.optionItemSelected]}
-                    onPress={() => handleSingleSelect(item)}
+                    onPress={() => handleSingleSelect(item.value)}
                   >
                     <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
-                      {item}
+                      {item.label}
                     </Text>
                     {isSelected && <Text style={styles.optionCheck}>✓</Text>}
                   </TouchableOpacity>
@@ -1347,10 +1400,12 @@ export default function AccountSettingScreen() {
       {/* Delete Account Password Confirmation Modal */}
       <Modal visible={deleteModalVisible} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, { maxHeight: 300 }]}>
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: palette.status.error }]}>Confirm Deletion</Text>
-              <TouchableOpacity onPress={() => { setDeleteModalVisible(false); setConfirmPasswordText(''); }}>
+              <View style={{ flex: 1, marginRight: 15 }}>
+                <Text style={[styles.modalTitle, { color: palette.status.error }]} numberOfLines={1} ellipsizeMode="tail">Confirm Deletion</Text>
+              </View>
+              <TouchableOpacity onPress={() => { setDeleteModalVisible(false); setConfirmPasswordText(''); }} style={{ flexShrink: 0 }}>
                 <Text style={styles.modalCloseText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -1366,8 +1421,8 @@ export default function AccountSettingScreen() {
                 value={confirmPasswordText}
                 onChangeText={setConfirmPasswordText}
               />
-              <TouchableOpacity 
-                style={[styles.deleteBtn, { marginTop: 20 }]} 
+              <TouchableOpacity
+                style={[styles.deleteBtn, { marginTop: 20 }]}
                 onPress={handleDeleteAccountSubmit}
                 disabled={deletingAccount}
               >
@@ -1382,56 +1437,6 @@ export default function AccountSettingScreen() {
         </View>
       </Modal>
 
-      {/* Custom Alert Modal */}
-      <Modal visible={alertConfig.visible} transparent={true} animationType="fade">
-        <View style={styles.alertOverlay}>
-          <View style={styles.alertCard}>
-            <View style={styles.alertIconWrapper}>
-              {alertConfig.type === 'success' && <CheckCircle size={40} color="#4CAF50" />}
-              {alertConfig.type === 'error' && <XCircle size={40} color={palette.status.error} />}
-              {alertConfig.type === 'confirm' && <HelpCircle size={40} color={palette.gold.main} />}
-              {alertConfig.type === 'info' && <AlertCircle size={40} color={palette.purple.muted} />}
-            </View>
-            <Text style={styles.alertTitle}>{alertConfig.title}</Text>
-            <Text style={styles.alertMessage}>{alertConfig.message}</Text>
-
-            <View style={styles.alertBtnContainer}>
-              {alertConfig.type === 'confirm' ? (
-                <>
-                  <TouchableOpacity
-                    style={[styles.alertBtn, styles.alertBtnSecondary]}
-                    onPress={() => {
-                      setAlertConfig(prev => ({ ...prev, visible: false }));
-                      if (alertConfig.onCancel) alertConfig.onCancel();
-                    }}
-                  >
-                    <Text style={styles.alertBtnTextSecondary}>{alertConfig.cancelText || 'Cancel'}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.alertBtn, styles.alertBtnPrimary]}
-                    onPress={() => {
-                      setAlertConfig(prev => ({ ...prev, visible: false }));
-                      if (alertConfig.onConfirm) alertConfig.onConfirm();
-                    }}
-                  >
-                    <Text style={styles.alertBtnTextPrimary}>{alertConfig.confirmText || 'OK'}</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.alertBtn, styles.alertBtnSingle]}
-                  onPress={() => {
-                    setAlertConfig(prev => ({ ...prev, visible: false }));
-                    if (alertConfig.onConfirm) alertConfig.onConfirm();
-                  }}
-                >
-                  <Text style={styles.alertBtnTextPrimary}>{alertConfig.confirmText || 'OK'}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -1589,7 +1594,8 @@ const styles = StyleSheet.create({
     borderColor: palette.purple.border,
     borderWidth: 1,
     borderRadius: 12,
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 12,
     paddingHorizontal: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1598,6 +1604,8 @@ const styles = StyleSheet.create({
   dropdownText: {
     color: palette.purple.deep,
     fontSize: 14,
+    flex: 1,
+    marginRight: 10,
   },
   saveBtn: {
     backgroundColor: palette.gold.main,
@@ -1627,6 +1635,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     ...fonts.semibold,
     color: palette.purple.deep,
+    flexShrink: 1,
   },
   toggleHint: {
     fontSize: 11,
@@ -1634,6 +1643,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     paddingRight: 10,
     lineHeight: 15,
+    flexShrink: 1,
   },
   // Danger Zone
   dangerCard: {
@@ -1663,7 +1673,7 @@ const styles = StyleSheet.create({
   // Options Picker Modals
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'transparent',
     justifyContent: 'flex-end',
   },
   modalCard: {
@@ -1689,7 +1699,8 @@ const styles = StyleSheet.create({
   },
   modalCloseText: {
     color: palette.purple.muted,
-    fontSize: 15,
+    fontSize: 13,
+    ...fonts.regular,
   },
   optionItem: {
     flexDirection: 'row',
@@ -1700,11 +1711,13 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F7F5FA',
   },
   optionItemSelected: {
-    backgroundColor: '#FAF7FC',
+    backgroundColor: 'transparent',
   },
   optionText: {
     fontSize: 15,
     color: palette.purple.deep,
+    flex: 1,
+    marginRight: 10,
   },
   optionTextSelected: {
     ...fonts.semibold,
@@ -1715,76 +1728,7 @@ const styles = StyleSheet.create({
     color: palette.gold.main,
     ...fonts.semibold,
   },
-  // Custom Alert Modals
-  alertOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  alertCard: {
-    width: '85%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    shadowColor: palette.purple.deep,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  alertIconWrapper: {
-    marginBottom: 15,
-  },
-  alertTitle: {
-    fontSize: 18,
-    ...fonts.semibold,
-    color: palette.purple.deep,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  alertMessage: {
-    fontSize: 14,
-    color: palette.purple.muted,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 20,
-  },
-  alertBtnContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-  },
-  alertBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 5,
-  },
-  alertBtnPrimary: {
-    backgroundColor: palette.gold.main,
-  },
-  alertBtnSecondary: {
-    backgroundColor: '#FAF9FC',
-    borderWidth: 1,
-    borderColor: palette.purple.border,
-  },
-  alertBtnSingle: {
-    backgroundColor: palette.gold.main,
-    width: '100%',
-  },
-  alertBtnTextPrimary: {
-    color: palette.purple.deep,
-    ...fonts.semibold,
-    fontSize: 14,
-  },
-  alertBtnTextSecondary: {
-    color: palette.purple.deep,
-    fontSize: 14,
-  },
+
   noBlockedText: {
     fontSize: 14,
     color: palette.purple.muted,
@@ -1891,8 +1835,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     ...fonts.semibold,
     color: palette.purple.muted,
+    flexShrink: 1,
   },
   activeTabButtonText: {
     color: palette.purple.deep,
+  },
+  premiumBadge: {
+    backgroundColor: palette.gold.main,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  premiumBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    ...fonts.bold,
   },
 });

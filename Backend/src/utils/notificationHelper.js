@@ -5,6 +5,7 @@ const logger = require("./logger");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 const PrivacySetting = require("../models/PrivacySetting");
+const { Profile } = require("../models/associations");
 const { getIO } = require("../config/socket");
 
 let firebaseInitialized = false;
@@ -45,12 +46,27 @@ try {
  */
 async function sendNotification({ receiverId, senderId = null, type, message, relatedId = null }) {
   try {
+    // Lookup sender's first name if senderId is provided
+    let firstName = "Someone";
+    if (senderId) {
+      try {
+        const senderProfile = await Profile.findOne({ where: { userId: senderId } });
+        if (senderProfile && senderProfile.firstName) {
+          firstName = senderProfile.firstName;
+        }
+      } catch (err) {
+        logger.error(`[NOTIFICATION] Failed to fetch sender profile: ${err.message}`);
+      }
+    }
+
+    const finalMessage = formatNotificationMessage(type, firstName, message);
+
     // 1. Create database notification record (always keep database log)
     const notification = await Notification.create({
       userId: receiverId,
       senderId,
       type,
-      message,
+      message: finalMessage,
       relatedId,
       isRead: false,
     });
@@ -86,7 +102,7 @@ async function sendNotification({ receiverId, senderId = null, type, message, re
         id: notification.id,
         senderId,
         type,
-        message,
+        message: finalMessage,
         relatedId,
         createdAt: notification.createdAt,
       };
@@ -101,7 +117,7 @@ async function sendNotification({ receiverId, senderId = null, type, message, re
       const payload = {
         notification: {
           title: formatNotificationTitle(type),
-          body: message,
+          body: finalMessage,
         },
         android: {
           notification: {
@@ -169,6 +185,10 @@ function formatNotificationTitle(type) {
       return "KYC Rejected";
     case "feedback":
       return "Feedback Update";
+    case "plan_expiry":
+      return "Plan Expired";
+    case "plan_expiring_soon":
+      return "Plan Expiring Soon";
     case "block":
     case "banned":
       return "Account Restricted";
@@ -199,10 +219,64 @@ function formatNotificationTitle(type) {
 }
 
 /**
+ * Formats notification body dynamically using the sender's first name
+ */
+function formatNotificationMessage(type, firstName, defaultMessage) {
+  switch (type) {
+    case "interest":
+      return `${firstName} has expressed interest in your profile.`;
+    case "interest_accept":
+      return `${firstName} accepted your interest.`;
+    case "chat":
+    case "message":
+      return `New message from ${firstName}`;
+    case "contact_request":
+      return `${firstName} has requested your contact details.`;
+    case "contact_accept":
+      return `${firstName} approved your contact request.`;
+    case "contact_reject":
+      return `${firstName} declined your contact request.`;
+    case "contact_reveal":
+      return `${firstName} viewed your contact details.`;
+    case "like":
+      return `${firstName} liked your profile.`;
+    case "shortlist":
+      return `${firstName} added you to their shortlist.`;
+    case "profile_view":
+      return `${firstName} viewed your profile.`;
+    case "call_incoming":
+      return `Incoming call from ${firstName}`;
+    case "call_missed":
+      return `Missed call from ${firstName}`;
+    case "photo_request":
+      return `${firstName} has requested to view your photos.`;
+    case "photo_approve":
+      return `${firstName} approved your photo request.`;
+    default:
+      return defaultMessage;
+  }
+}
+
+/**
  * Sends a push and socket notification for a pre-existing notification record.
  */
 async function sendPushAndSocketNotification({ id, userId, senderId = null, type, message, relatedId = null, createdAt }) {
   try {
+    // Lookup sender's first name if senderId is provided
+    let firstName = "Someone";
+    if (senderId) {
+      try {
+        const senderProfile = await Profile.findOne({ where: { userId: senderId } });
+        if (senderProfile && senderProfile.firstName) {
+          firstName = senderProfile.firstName;
+        }
+      } catch (err) {
+        logger.error(`[NOTIFICATION] Failed to fetch sender profile: ${err.message}`);
+      }
+    }
+
+    const finalMessage = formatNotificationMessage(type, firstName, message);
+
     // 1. Fetch receiver's privacy preferences and user details
     const [privacy, receiver] = await Promise.all([
       PrivacySetting.findOne({ where: { userId } }),
@@ -234,7 +308,7 @@ async function sendPushAndSocketNotification({ id, userId, senderId = null, type
         id,
         senderId,
         type,
-        message,
+        message: finalMessage,
         relatedId,
         createdAt,
       };
@@ -249,7 +323,7 @@ async function sendPushAndSocketNotification({ id, userId, senderId = null, type
       const payload = {
         notification: {
           title: formatNotificationTitle(type),
-          body: message,
+          body: finalMessage,
         },
         android: {
           notification: {
