@@ -1,5 +1,5 @@
 const logger = require("../utils/logger");
-const { Coupon, SubscriptionPlan, User } = require("../models/associations");
+const { Coupon, SubscriptionPlan, Profile } = require("../models/associations");
 const { Op } = require("sequelize");
 
 /**
@@ -31,7 +31,7 @@ exports.createCoupon = async (req, res) => {
       isPromoBanner,
       expiresAt,
       maxUses,
-      userId,
+      customId,
     } = req.body;
 
     if (!code || !description || discountValue === undefined) {
@@ -44,13 +44,14 @@ exports.createCoupon = async (req, res) => {
       return res.status(409).json({ success: false, message: "A coupon with this code already exists" });
     }
 
-    let targetUserId = null;
-    if (userId) {
-      const userExists = await User.findByPk(userId);
-      if (!userExists) {
-        return res.status(404).json({ success: false, message: "User for coupon restriction not found" });
+    let targetCustomId = null;
+    if (customId) {
+      const cleanCustomId = customId.trim();
+      const profileExists = await Profile.findOne({ where: { customId: cleanCustomId } });
+      if (!profileExists) {
+        return res.status(404).json({ success: false, message: "Profile with this Custom ID not found" });
       }
-      targetUserId = userId;
+      targetCustomId = cleanCustomId;
     }
 
     // If marked as promo banner, unset isPromoBanner on all other coupons
@@ -59,7 +60,7 @@ exports.createCoupon = async (req, res) => {
     }
 
     // Default maxUses to 1 for custom user coupons if not explicitly provided
-    const finalMaxUses = maxUses !== undefined ? maxUses : (targetUserId ? 1 : -1);
+    const finalMaxUses = maxUses !== undefined ? maxUses : (targetCustomId ? 1 : -1);
 
     const coupon = await Coupon.create({
       code: uppercaseCode,
@@ -70,7 +71,7 @@ exports.createCoupon = async (req, res) => {
       isPromoBanner: isPromoBanner || false,
       expiresAt: expiresAt || null,
       maxUses: finalMaxUses,
-      userId: targetUserId,
+      customId: targetCustomId,
     });
 
     res.status(201).json({ success: true, coupon });
@@ -193,8 +194,11 @@ exports.validateCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid coupon code" });
     }
 
-    if (coupon.userId && coupon.userId !== req.userId) {
-      return res.status(400).json({ success: false, message: "This coupon code is not valid for your account" });
+    if (coupon.customId) {
+      const profile = await Profile.findOne({ where: { userId: req.userId } });
+      if (!profile || coupon.customId !== profile.customId) {
+        return res.status(400).json({ success: false, message: "This coupon code is not valid for your account" });
+      }
     }
 
     if (!coupon.isActive) {

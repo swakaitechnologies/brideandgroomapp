@@ -89,8 +89,11 @@ exports.createPaymentOrder = async (req, res) => {
       const uppercaseCode = couponCode.trim().toUpperCase();
       const coupon = await Coupon.findOne({ where: { code: uppercaseCode, isActive: true } });
       if (coupon) {
-        if (coupon.userId && coupon.userId !== req.userId) {
-          return res.status(400).json({ success: false, message: "This coupon is not valid for your account" });
+        if (coupon.customId) {
+          const callerProfile = await Profile.findOne({ where: { userId: req.userId } });
+          if (!callerProfile || coupon.customId !== callerProfile.customId) {
+            return res.status(400).json({ success: false, message: "This coupon is not valid for your account" });
+          }
         }
 
         const now = new Date();

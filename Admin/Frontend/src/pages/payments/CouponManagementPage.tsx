@@ -15,7 +15,7 @@ interface Coupon {
   expiresAt: string | null;
   maxUses: number;
   usedCount: number;
-  userId?: string | null;
+  customId?: string | null;
   createdAt: string;
 }
 
@@ -34,7 +34,7 @@ const CouponManagementPage = () => {
     maxUses: -1,
     isPromoBanner: false,
     isActive: true,
-    userId: "",
+    customId: "",
   });
 
   const fetchCoupons = async () => {
@@ -63,7 +63,7 @@ const CouponManagementPage = () => {
       maxUses: -1,
       isPromoBanner: false,
       isActive: true,
-      userId: "",
+      customId: "",
     });
     setShowForm(false);
   };
@@ -80,7 +80,7 @@ const CouponManagementPage = () => {
         maxUses: form.maxUses,
         isPromoBanner: form.isPromoBanner,
         isActive: form.isActive,
-        userId: form.userId.trim() || null,
+        customId: form.customId.trim() || null,
       };
 
       await api.post("/coupons", payload);
@@ -201,8 +201,8 @@ const CouponManagementPage = () => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Restricted User ID (Optional)</label>
-              <input className="input-admin" placeholder="e.g., 3ccd38ac-adae-..." value={form.userId} onChange={e => setForm({...form, userId: (e.target as HTMLInputElement).value})} />
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-black/60">Restricted Custom ID (Optional)</label>
+              <input className="input-admin" placeholder="e.g., MAT-123456" value={form.customId} onChange={e => setForm({...form, customId: (e.target as HTMLInputElement).value})} />
             </div>
 
             <div className="flex items-center gap-2 mt-4">
@@ -253,10 +253,10 @@ const CouponManagementPage = () => {
                       <div>
                         <p className="text-sm font-medium text-foreground">{coupon.code}</p>
                         <p className="text-[10px] text-black/60 tracking-wider">{coupon.description}</p>
-                        {coupon.userId && (
+                        {coupon.customId && (
                           <div className="mt-1">
                             <span className="inline-block px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 bg-amber-50 rounded border border-amber-200">
-                              LOCKED TO USER: {coupon.userId.slice(0, 8)}...
+                              LOCKED TO ID: {coupon.customId}
                             </span>
                           </div>
                         )}

@@ -51,14 +51,10 @@ const Coupon = sequelize.define(
       defaultValue: 0,
       allowNull: false,
     },
-    userId: {
-      type: DataTypes.UUID,
+    customId: {
+      type: DataTypes.STRING,
       allowNull: true,
-      references: {
-        model: "Users",
-        key: "id",
-      },
-      comment: "If set, this coupon is restricted to this specific user",
+      comment: "If set, this coupon is restricted to the profile with this Custom ID",
     },
   },
   {

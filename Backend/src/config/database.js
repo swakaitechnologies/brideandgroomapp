@@ -261,9 +261,9 @@ const connectDB = async () => {
       allowNull: true,
     });
 
-    // Programmatically ensure userId column exists in Coupons
-    await ensureColumn("Coupons", "userId", {
-      type: Sequelize.UUID,
+    // Programmatically ensure customId column exists in Coupons
+    await ensureColumn("Coupons", "customId", {
+      type: Sequelize.STRING,
       allowNull: true,
     });
 
