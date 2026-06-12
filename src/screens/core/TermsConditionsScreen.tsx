@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, FileText, UserCheck, ShieldAlert, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, FileText, UserCheck, ShieldAlert, AlertCircle, CreditCard, Ban, Scale, BookOpen, RefreshCw, Gavel, Shield } from 'lucide-react-native';
 import { palette } from '../../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { fonts } from "@/src/theme";
@@ -28,56 +28,138 @@ export default function TermsConditionsScreen() {
 
   const sections = [
     {
-      title: "1. Eligibility & Registration",
+      title: "1. Acceptance of Terms",
+      icon: FileText,
+      content: "By downloading, installing, registering, or using the Bride & Groom application, you agree to be bound by these Terms and Conditions. These Terms constitute a legally binding agreement between you and Swakai Technologies and govern all use of the Platform.",
+      items: [
+        "If you do not agree to these Terms, you must not access or use the Service.",
+        "These Terms apply whether you access the Platform through mobile devices, desktops, or any other medium.",
+      ]
+    },
+    {
+      title: "2. Eligibility & Registration",
       icon: UserCheck,
-      content: "By registering an account on Bride & Groom, you represent and warrant that:",
+      content: "To use the Platform, you must meet all of the following eligibility criteria:",
       items: [
-        "You are of legal marriageable age (minimum 18 years for females, 21 years for males).",
-        "Your registration intent is strictly for seeking a life partner / matrimonial purposes.",
-        "You will provide complete, accurate, and genuine personal details on your profile."
+        "Age Requirement: You must be 18 years of age or older. The Platform is strictly prohibited for minors, in accordance with Section 9 of the Digital Personal Data Protection Act, 2023 (DPDP Act).",
+        "Legal Capacity: You must be legally competent to enter into a binding contract under the Indian Contract Act, 1872.",
+        "Marital Eligibility: You must be legally eligible for marriage under Indian law. Users who are already married and not legally separated/divorced are not permitted to seek a new partner.",
+        "Single Account Policy: Each user is permitted only one account. Duplicate registrations may result in permanent suspension.",
+        "You agree to provide accurate, truthful, current, and complete information during registration and profile creation.",
       ]
     },
     {
-      title: "2. User Code of Conduct",
+      title: "3. Account Verification",
+      icon: Shield,
+      content: "We implement multiple layers of verification to maintain a trustworthy platform:",
+      items: [
+        "Mobile & Email Verification: Your mobile number and email address will be verified using OTP and verification link mechanisms respectively.",
+        "KYC Verification (Optional but Encouraged): Users may complete identity verification by uploading a valid government-issued photo ID (Aadhaar Card, PAN Card, Voter ID, Passport, Driving License) along with a live selfie.",
+        "KYC-verified profiles receive a Trust Badge and higher visibility in search results.",
+        "Profile Moderation: All user profiles, photos, and introduction videos are subject to manual review by our moderation team. We reserve the right to reject, suspend, or remove any content that violates these Terms.",
+      ]
+    },
+    {
+      title: "4. User Code of Conduct",
       icon: ShieldAlert,
-      content: "To maintain a safe and respectful community, all members agree to follow these guidelines:",
+      content: "By using the Platform, you agree NOT to engage in any of the following prohibited activities:",
       items: [
-        "Communication: Be polite, respectful, and genuine when messaging other members.",
-        "Content Policy: Do not upload obscene, offensive, commercial, or copyrighted photos.",
-        "Authenticity: Do not create fake profiles, impersonate others, or misrepresent family details.",
-        "No Solicitation: Matrimonial profiles must not be used for financial aid requests, marketing, or business promotion."
+        "Impersonate any person or entity, or falsely represent your affiliation with any person or entity.",
+        "Upload photos or videos of other individuals without their explicit consent.",
+        "Use the Platform for casual dating, extramarital affairs, or any purpose other than genuine matrimonial matchmaking.",
+        "Harass, stalk, intimidate, threaten, abuse, or discriminate against other users in any form.",
+        "Send unsolicited commercial messages, spam, or promotional content to other users.",
+        "Share, distribute, or upload content that is obscene, pornographic, defamatory, hateful, or incites violence.",
+        "Attempt to reverse-engineer, decompile, hack, or gain unauthorized access to the Platform, its servers, or databases.",
+        "Use automated scripts, bots, or crawlers to access the Platform.",
+        "Solicit money, gifts, or financial benefits from other users.",
+        "Create fake, misleading, or joke profiles.",
       ]
     },
     {
-      title: "3. Account Suspension & Termination",
+      title: "5. Premium Subscription Services",
+      icon: CreditCard,
+      content: "The Platform offers a freemium model. Basic profile browsing is free; premium features require a paid subscription:",
+      items: [
+        "Premium Features include: Viewing contact details (phone number, email), sending and receiving direct messages, audio and video calling with matched profiles, priority profile visibility and enhanced search ranking.",
+        "Subscription Plans are offered in various durations (e.g., 30, 90, 180, 365 days) with pricing displayed in applicable currency (INR, USD, AED).",
+        "All prices are inclusive of applicable taxes (GST at 18%, or as prescribed).",
+        "Subscriptions become active immediately upon successful payment confirmation.",
+        "Auto-Renewal: If opted in, your subscription renews automatically at the end of the billing period. You may disable auto-renewal from Account Settings before the renewal date.",
+      ]
+    },
+    {
+      title: "6. Fair Usage Policy",
+      icon: RefreshCw,
+      content: "Some subscription plans include usage limits to ensure fair usage across the platform:",
+      items: [
+        "Limits may apply to: contacts viewed, messages sent, and calls initiated per billing period.",
+        "Usage counters reset at the start of each new billing cycle.",
+        "Exceeding fair usage limits may result in temporary restriction of specific features until the next billing cycle.",
+      ]
+    },
+    {
+      title: "7. Intellectual Property Rights",
+      icon: BookOpen,
+      content: "All content, trademarks, logos, designs, text, graphics, software, and other materials on the Platform are the property of Swakai Technologies:",
+      items: [
+        "Protected under the Indian Copyright Act, 1957, and the Trademarks Act, 1999.",
+        "You are granted a limited, revocable, non-exclusive, non-transferable license to use the Platform for personal, non-commercial matrimonial purposes only.",
+        "Unauthorized reproduction, distribution, modification, or commercial use is strictly prohibited.",
+        "You retain ownership of content you upload (photos, bio, videos). By uploading, you grant us a non-exclusive, royalty-free license to display your content for operating the Platform.",
+      ]
+    },
+    {
+      title: "8. Limitation of Liability",
       icon: AlertCircle,
-      content: "Bride & Groom reserves the right to review, suspend, or terminate accounts immediately if:",
+      content: "The Platform acts as an intermediary connecting individuals seeking matrimonial alliances:",
       items: [
-        "A profile fails the mandatory KYC Verification process or provides fake IDs.",
-        "A member accumulates multiple reports or blocks from other verified users.",
-        "There is a breach of these Terms of Service or our Safety Guidelines."
+        "We do not guarantee the accuracy, authenticity, or truthfulness of information provided by other users.",
+        "Swakai Technologies shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages arising from your use of the Platform.",
+        "We do not conduct background checks, criminal record verifications, or financial standing assessments. Users are strongly encouraged to perform independent due diligence.",
+        "The Company shall not be liable for delays, interruptions, or errors due to technical issues, server downtime, or force majeure events.",
       ]
     },
     {
-      title: "4. Disclaimers & Limitation of Liability",
-      icon: FileText,
-      content: "While we verify users using KYC, members must exercise caution and carry out independent background checks:",
+      title: "9. Indemnification",
+      icon: Scale,
+      content: "You agree to indemnify, defend, and hold harmless Swakai Technologies, its directors, employees, agents, and affiliates from claims arising from:",
       items: [
-        "We do not guarantee matches or the marriage compatibility of members.",
-        "We are not liable for any personal, emotional, or financial disputes arising between members after connecting."
+        "Your use or misuse of the Platform.",
+        "Your violation of these Terms or applicable law.",
+        "Any third-party claim arising from content you uploaded to the Platform.",
+        "Any dispute between you and another user of the Platform.",
       ]
     },
     {
-      title: "5. Grievance Officer & Resolution Details",
-      icon: FileText,
-      content: "Matrimonial disputes, safety reports, and data privacy concerns can be escalated directly to our Grievance Officer:",
+      title: "10. Account Termination",
+      icon: Ban,
+      content: "Either party may terminate the account relationship under these conditions:",
       items: [
-        "Grievance Officer Name: Mr. Rajesh Kumar (CTO & Legal Head)",
-        "Direct Email: grievance@brideandgroom.co.in",
-        "Registered Office: Swakai Technologies, 4th Floor, Tech Hub Building, Bangalore, Karnataka - 560001, India",
-        "Verification Redressal: If your KYC or mobile verification is mistakenly suspended, please write to our resolution desk with your profile ID."
+        "By the User: You may delete your account at any time from Account Settings. Deletion will permanently erase all your personal data from our active servers.",
+        "By the Company: We may suspend or terminate your account without prior notice if you have violated these Terms, engaged in fraudulent behavior, or created risk for the Platform or its users.",
+        "Upon termination for cause, any active premium subscription will be forfeited with no refund unless explicitly covered under our Refund Policy.",
       ]
-    }
+    },
+    {
+      title: "11. Dispute Resolution & Governing Law",
+      icon: Gavel,
+      content: "These Terms are governed by and construed in accordance with the laws of India:",
+      items: [
+        "All disputes shall be subject to the exclusive jurisdiction of the courts of Jalgaon, Maharashtra, India.",
+        "Before initiating legal proceedings, parties agree to attempt resolution through good-faith negotiation and/or mediation for a minimum period of 30 days.",
+      ]
+    },
+    {
+      title: "12. Amendments",
+      icon: FileText,
+      content: "We reserve the right to modify these Terms at any time:",
+      items: [
+        "Updated Terms will be posted on the Platform with the revised 'Last Updated' date.",
+        "Continued use of the Platform after amendments constitutes your acceptance of the updated Terms.",
+        "For material changes, we will notify you via email or in-app notification.",
+      ]
+    },
   ];
 
   return (
@@ -96,13 +178,10 @@ export default function TermsConditionsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Title Section */}
         <View style={styles.heroSection}>
-          <View style={[styles.heroIconBox, { borderColor: accentColor }]}>
-            <FileText size={40} color={accentColor} />
-          </View>
-          <Text style={[styles.heroTitle, { color: textColor }]}>Terms of Service</Text>
           <Text style={[styles.heroSub, { color: mutedText }]}>
-            Please review the platform rules and member terms of service for Bride & Groom Matrimony.
+            Please review the terms and conditions governing your use of the Bride & Groom Matrimonial Platform.
           </Text>
+          <Text style={[styles.lastUpdated, { color: mutedText }]}>Last Updated: June 12, 2026</Text>
         </View>
 
         {/* Content Sections */}
@@ -131,6 +210,19 @@ export default function TermsConditionsScreen() {
               </View>
             );
           })}
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: mutedText }]}>
+              By using the Bride & Groom application, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
+            </Text>
+            <Text style={[styles.footerCopyright, { color: textColor }]}>
+              © 2026 Swakai Technologies. All rights reserved.
+            </Text>
+            <Text style={[styles.footerContact, { color: accentColor }]}>
+              support@brideandgroom.co.in
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -153,28 +245,14 @@ const styles = StyleSheet.create({
     ...fonts.bold,
   },
   scrollContent: {
-    paddingBottom: 80,
+    paddingBottom: 120,
   },
   heroSection: {
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingVertical: 20,
+    paddingVertical: 16,
     backgroundColor: 'rgba(59, 30, 84, 0.02)',
     marginBottom: 20,
-  },
-  heroIconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-    borderWidth: 2,
-    ...Platform.select({
-      ios: { shadowColor: '#3B1E54', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10 },
-      android: { elevation: 6 },
-    }),
   },
   heroTitle: {
     fontSize: 20,
@@ -187,6 +265,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 10,
+  },
+  lastUpdated: {
+    fontSize: 11,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   contentSection: {
     paddingHorizontal: 20,
@@ -232,5 +315,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     flex: 1,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(59, 30, 84, 0.08)',
+  },
+  footerText: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
+    marginBottom: 12,
+    color: '#3B1E54',
+  },
+  footerCopyright: {
+    fontSize: 12,
+    marginBottom: 6,
+    color: '#3B1E54',
+    ...fonts.semibold,
+  },
+  footerContact: {
+    fontSize: 13,
+    color: '#D4AF37',
+    ...fonts.bold,
   },
 });
